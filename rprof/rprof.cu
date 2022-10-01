@@ -1,7 +1,9 @@
 #include "cpu.h"
 #include "mem.h"
 #include "nvml.h"
+#include "rprof.cuh"
 
+extern "C" {
 // ---- SIGNAL HANDLING -------------------------------------------------------
 
 static int interrupt = 0;
@@ -66,44 +68,13 @@ static const char * usage_msg = \
 "  timeout (s)             Approximate start up wait time. Increase on slow\n"
 "                             machines (default is 10s).\n";
 
-int rprof(int argc, char ** argv) {
+EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
   int retval = 0;
-  // if (argc <= 1) {
-  //   puts(usage_msg);
-  //   return retval;
-  // }
-  //int a      = 1;
-  
-  utime_t profile_interval = 100;
-  // if (argc >= 2){
-  //   if (1 == strtonum(argv[1], &profile_interval)){
-  //     printf("failed to get profile_interval, %s, use default 100 ms\n", argv[1]); 
-  //     // return 1;
-  //   };
-  // }
+
   printf("profile_interval=%llu ms\n", profile_interval);
   profile_interval = profile_interval * 1e3;
   FILE* output_file = stdout;
-  // if (argc >= 3){
-  //   char* output_filename = argv[2];
-  //   output_file = fopen(output_filename, "w");
-  //   if (NULL == output_file)
-  //   {
-  //     printf("failed to write, %s, write to stdout\n", output_filename);
-  //     output_file = stdout;
-  //   }
-  //   else {
-  //     printf("log to %s\n", output_filename);
-  //   }
-  // }
 
-  utime_t timeout = 100; // 10 s
-  // if (argc >= 4){
-  //   if (1 == strtonum(argv[3], &timeout)){
-  //     printf("failed to get timeout, %s, default to 10 seconds\n", argv[1]); 
-  //     // return 1;
-  //   };
-  // }
   printf("timeout=%llu s\n", timeout);
   timeout = timeout*1e6;
   // Register signal handler for Ctrl+C and terminate signals.
@@ -245,6 +216,4 @@ int rprof(int argc, char ** argv) {
   return retval;
 }
 
-int main(int argc, char ** argv){
-  return rprof(argc, argv);
 }
