@@ -59,5 +59,13 @@ RUN chmod +x entrypoint.sh
 RUN conda env create --name $ENV_NAME --file /workspace/environment.yml \
     && rm /workspace/environment.yml \
     && conda clean -y --all
+
+# Install likwid in monitor CPU and DRAM energy
+# https://github.com/RRZE-HPC/likwid.git
+RUN git clone https://github.com/RRZE-HPC/likwid.git \
+    && cd likwid \
+    && make && make install \
+    && cd .. \
+    && rm -rf likwid
 # RUN conda activate ${ENV_NAME}
 # ENTRYPOINT ["./entrypoint.sh"]
