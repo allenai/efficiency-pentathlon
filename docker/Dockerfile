@@ -58,13 +58,17 @@ RUN chmod +x entrypoint.sh
 # RUN eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
 RUN conda env create --name $ENV_NAME --file /workspace/environment.yml
 
-# Install likwid in monitor CPU and DRAM energy
+# Install likwid to monitor CPU and DRAM energy
 # https://github.com/RRZE-HPC/likwid.git
 RUN git clone https://github.com/RRZE-HPC/likwid.git \
     && cd likwid \
     && make && make install \
     && cd .. \
     && rm -rf likwid
+
+# Install rprof to monitor GPU energy
 COPY rprof ./rprof
+RUN cd rprof \
+    && pip install -e .
 # RUN conda activate ${ENV_NAME}
 # ENTRYPOINT ["./entrypoint.sh"]
