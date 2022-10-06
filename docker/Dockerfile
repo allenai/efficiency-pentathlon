@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04
 ENV ENV_NAME=efficiency
 # Codebase
 # COPY distill /
@@ -56,9 +56,7 @@ RUN chmod +x entrypoint.sh
 
 # SHELL ["/bin/bash", "--login"]
 # RUN eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
-RUN conda env create --name $ENV_NAME --file /workspace/environment.yml \
-    && rm /workspace/environment.yml \
-    && conda clean -y --all
+RUN conda env create --name $ENV_NAME --file /workspace/environment.yml
 
 # Install likwid in monitor CPU and DRAM energy
 # https://github.com/RRZE-HPC/likwid.git
@@ -67,5 +65,6 @@ RUN git clone https://github.com/RRZE-HPC/likwid.git \
     && make && make install \
     && cd .. \
     && rm -rf likwid
+COPY rprof ./rprof
 # RUN conda activate ${ENV_NAME}
 # ENTRYPOINT ["./entrypoint.sh"]
