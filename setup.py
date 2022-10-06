@@ -12,14 +12,15 @@ import sys
 # nvcc is assumed to be in user's PATH
 nvcc_compile_args = ['-O3', '--ptxas-options=-v', '--compiler-options=-fPIC']
 nvcc_compile_args = os.environ.get('NVCCFLAGS', '').split() + nvcc_compile_args
-cuda_libs = ['cublas']
+cuda_libs = ['nvidia-ml']
 
 rprof_ext = Extension(
     'rprof.librprof',
-    sources=['rprof/rprof.c'],
+    sources=['rprof/rprof.cu'],
     libraries=cuda_libs,
     extra_compile_args=nvcc_compile_args
 )
+
 
 class CUDA_build_ext(build_ext):
     """
@@ -104,13 +105,14 @@ class CUDA_build_ext(build_ext):
             # This could be done by a NVCCCompiler class for all platforms.
         spawn(cmd, search_path, verbose, dry_run)
 
+
 setup(name="efficiency-monitor",
       version="0.0",
       description="Monitors efficiency",
-      ext_modules=[cudamat_ext, cudalearn_ext],
+      ext_modules=[rprof_ext],
       packages=find_packages(exclude=['examples', 'test']),
       include_package_data=True,
-      package_data={'cudamat': ['rnd_multipliers_32bit.txt']},
-      author="Volodymyr Mnih",
-      url="https://github.com/cudamat/cudamat",
-      cmdclass={'build_ext': CUDA_build_ext})
+      author="Hao Peng",
+      cmdclass={'build_ext': CUDA_build_ext}
+)
+
