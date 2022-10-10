@@ -180,7 +180,13 @@ if __name__ == "__main__":
     print(f"Memory: {max_mem:.2f} MiB| Power: {power:.2f} W.s")
 EOF
 
+python rprof/profile_gpu.py & 
+RPROF_PID=$!
+
+sh profile_cpu.sh &
+CPU_PID=$!
+while true; do docker stats $CONTAINER_ID --no-stream --format "{{.CPUPerc}} {{.MemPerc}}" | tee --append stats.txt; sleep 1; done
 # Execute the arguments to this script as commands themselves, piping output into a log file.
 # shellcheck disable=SC2296
-# exec "$@" 2>&1 | tee "${{ RESULTS_DIR }}/.gantry/out.log"
-python execute.py "$@" 2>&1 | tee "${{ RESULTS_DIR }}/.gantry/out.log"
+exec "$@" 2>&1 | tee "${{ RESULTS_DIR }}/.gantry/out.log"
+# python execute.py "$@" 2>&1 | tee "${{ RESULTS_DIR }}/.gantry/out.log"

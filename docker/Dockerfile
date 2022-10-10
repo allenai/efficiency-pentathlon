@@ -43,8 +43,6 @@ RUN wget \
     && mkdir /root/.conda \
     && bash Miniconda3-latest-Linux-x86_64.sh -b \
     && rm -f Miniconda3-latest-Linux-x86_64.sh
-RUN conda --version
-
 
 # Create a working directory
 RUN mkdir /workspace
@@ -56,7 +54,7 @@ RUN chmod +x entrypoint.sh
 
 # SHELL ["/bin/bash", "--login"]
 # RUN eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
-RUN conda env create --name $ENV_NAME --file /workspace/environment.yml
+# RUN conda env create --name ${ENV_NAME} --file /workspace/environment.yml
 
 # Install likwid to monitor CPU and DRAM energy
 # https://github.com/RRZE-HPC/likwid.git
@@ -69,6 +67,9 @@ RUN git clone https://github.com/RRZE-HPC/likwid.git \
 # Install rprof to monitor GPU energy
 COPY rprof ./rprof
 RUN cd rprof \
-    && pip install -e .
+    && pip install -e . \
+    && rm -rf rprof
+
+COPY profile_cpu.sh ./profile_cpu.sh
 # RUN conda activate ${ENV_NAME}
-# ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["./entrypoint.sh"]

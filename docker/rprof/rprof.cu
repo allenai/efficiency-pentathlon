@@ -75,6 +75,16 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
   profile_interval = profile_interval * 1e3;
   FILE* output_file = stdout;
 
+  output_file = fopen("rprof_log.csv", "w");
+  if (NULL == output_file)
+  {
+    printf("failed to write, %s, write to stdout\n", "rprof_log.csv");
+    output_file = stdout;
+  }
+  else {
+    printf("log to %s\n", "rprof_log.csv");
+  }
+
   printf("timeout=%llu s\n", timeout);
   timeout = timeout*1e6;
   // Register signal handler for Ctrl+C and terminate signals.
