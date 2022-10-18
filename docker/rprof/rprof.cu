@@ -1,6 +1,6 @@
+#include "nvml.h"
 #include "cpu.h"
 #include "mem.h"
-#include "nvml.h"
 #include "rprof.cuh"
 
 extern "C" {
@@ -60,7 +60,7 @@ signal_callback_handler(int signum)
 
 static const char * usage_msg = \
 "Usage: rprof [OPTION...] command [ARG...]\n"
-"Rprof -- A high frequency resources (cpu, mem, gpu, gpu mem) profiler.\n"
+"Rprof -- A high frequency resources (gpu, gpu mem) profiler.\n"
 "\n"
 "  profile_interval (ms)    Sampling profile_interval (default is 100 ms).\n"
 "  output_file              Specify an output file for the collected samples.\n"
@@ -136,29 +136,21 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
   
   unsigned long print_count = 0;
   unsigned int print_gap = 10;
-  struct cpustat cpu_util_prev, cpu_util_cur;
-  struct meminfo mem_util;
-  get_stats(&cpu_util_prev, -1);
   usleep(profile_interval); // sleep one interval to avoid negative first sample
-  fprintf(output_file, "timestamp,cpu,mem,n_gpu");
+  fprintf(output_file, "timestamp");
   for (unsigned device_idx = 0; device_idx < device_count; device_idx++)
   {
-    fprintf(output_file, ",gpu,gpu_mem,gpu_power,gpu_clk,gpu_mem_clk");
+    fprintf(output_file, ",gpu,gpu_power");
   }
   fprintf(output_file, "\n");
   while (interrupt == 0 && (sample_time - start_time) < timeout)
-  {
-
-    get_stats(&cpu_util_cur, -1);
-    double cpu_util = calculate_load(&cpu_util_prev, &cpu_util_cur);
-    double mem_usage = calculate_mem_usage(&mem_util);
-    
+  { 
     sample_time = gettime();
-    fprintf(output_file, "%.6f,%.1f,%.1f,%i", sample_time/1e6, cpu_util, mem_usage, device_count);
+    fprintf(output_file, "%.6f", sample_time/1e6);
     if (print_count%print_gap==0)
     {
       printf("\33[2K\r");
-      printf("t=%.6f, cpu=%.1f, mem=%.1f, n_gpu=%i", sample_time/1e6, cpu_util, mem_usage, device_count);
+      printf("t=%.6f", sample_time/1e6);
     }
     for (unsigned device_idx = 0; device_idx < device_count; device_idx++) 
     {
@@ -176,30 +168,16 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
         return nv_status;
       }
       unsigned int gpu_util = nv_util.gpu;
-      unsigned int gpu_mem_util = nv_util.memory;
       unsigned int gpu_power = 0;
       nv_status = nvmlDeviceGetPowerUsage(device, &gpu_power);
       if (NVML_SUCCESS != nv_status){
         fprintf(stderr, "error: %s\n", nvmlErrorString(nv_status));
         return nv_status;
       }
-      unsigned int sm_clock;
-      unsigned int mem_clock;
-
-      nv_status = nvmlDeviceGetClock(device, NVML_CLOCK_SM, NVML_CLOCK_ID_CURRENT, &sm_clock);
-      if (NVML_SUCCESS != nv_status){
-        fprintf(stderr, "error: %s\n", nvmlErrorString(nv_status));
-        return nv_status;
-      }
-      nv_status = nvmlDeviceGetClock(device, NVML_CLOCK_MEM, NVML_CLOCK_ID_CURRENT, &mem_clock);
-      if (NVML_SUCCESS != nv_status){
-        fprintf(stderr, "error: %s\n", nvmlErrorString(nv_status));
-        return nv_status;
-      }
-      fprintf(output_file, ",%i,%i,%i,%i,%i", gpu_util, gpu_mem_util, gpu_power, sm_clock, mem_clock);
+      fprintf(output_file, ",%i,%i", gpu_util, gpu_power);
       if (print_count%print_gap==0)
       {
-        printf(", gpu=%i, gpu_mem=%i, gpu_power=%i, sm_clock=%i, gpu_mem_clock=%i", gpu_util, gpu_mem_util, gpu_power, sm_clock, mem_clock);
+        printf(", gpu=%i, gpu_power=%i", gpu_util, gpu_power);
       }
     }
     fprintf(output_file, "\n");
@@ -208,8 +186,6 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
       printf("\n");
     }
     print_count++;
-
-    get_stats(&cpu_util_prev, -1);
     utime_t delta = gettime() - sample_time;
     if (delta < profile_interval){
       usleep(profile_interval - delta);
