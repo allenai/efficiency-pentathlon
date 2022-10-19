@@ -7,7 +7,7 @@ extern "C" {
 // ---- SIGNAL HANDLING -------------------------------------------------------
 
 static int interrupt = 0;
-
+static unsigned int MAX_NUM_DEVICES = 64;
 static void
 signal_callback_handler(int signum)
 {
@@ -72,7 +72,8 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
   int retval = 0;
 
   printf("profile_interval=%llu ms\n", profile_interval);
-  profile_interval = profile_interval * 1e3;
+  float profile_interval_in_s = profile_interval / 1e3;  // s
+  profile_interval = profile_interval * 1e3;  // us
   FILE* output_file = stdout;
 
   output_file = fopen("rprof_log.csv", "w");
@@ -143,6 +144,7 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
     fprintf(output_file, ",gpu,gpu_power");
   }
   fprintf(output_file, "\n");
+  float energy[MAX_NUM_DEVICES] = {0.0f};  // in W.s
   while (interrupt == 0 && (sample_time - start_time) < timeout)
   { 
     sample_time = gettime();
@@ -168,13 +170,14 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
         return nv_status;
       }
       unsigned int gpu_util = nv_util.gpu;
-      unsigned int gpu_power = 0;
+      unsigned int gpu_power = 0;  // in mW
       nv_status = nvmlDeviceGetPowerUsage(device, &gpu_power);
       if (NVML_SUCCESS != nv_status){
         fprintf(stderr, "error: %s\n", nvmlErrorString(nv_status));
         return nv_status;
       }
       fprintf(output_file, ",%i,%i", gpu_util, gpu_power);
+      energy[device_idx] = energy[device_idx] + gpu_power / 1e3 * profile_interval_in_s; 
       if (print_count%print_gap==0)
       {
         printf(", gpu=%i, gpu_power=%i", gpu_util, gpu_power);
@@ -199,6 +202,9 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
     return nv_status;
   }
   printf("\nelapsed %.3f ms\n", (sample_time - start_time)/1e3);
+  for (unsigned device_idx = 0; device_idx < device_count; device_idx++) {
+    printf("GPU %i: %fW.s\n", device_idx, energy[device_idx]);
+  }
   return retval;
 }
 
