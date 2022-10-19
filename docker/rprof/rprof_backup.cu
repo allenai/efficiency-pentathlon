@@ -83,7 +83,7 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
     output_file = stdout;
   }
   else {
-    printf("log to %s\n", "gpu_log");
+    printf("log to %s\n", "rprof_log.csv");
   }
 
   printf("timeout=%llu s\n", timeout);
@@ -138,10 +138,17 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
   unsigned long print_count = 0;
   unsigned int print_gap = 10;
   usleep(profile_interval); // sleep one interval to avoid negative first sample
+  fprintf(output_file, "timestamp");
+  for (unsigned device_idx = 0; device_idx < device_count; device_idx++)
+  {
+    fprintf(output_file, ",gpu,gpu_power");
+  }
+  fprintf(output_file, "\n");
   float energy[MAX_NUM_DEVICES] = {0.0f};  // in W.s
   while (interrupt == 0 && (sample_time - start_time) < timeout)
   { 
     sample_time = gettime();
+    fprintf(output_file, "%.6f", sample_time/1e6);
     if (print_count%print_gap==0)
     {
       printf("\33[2K\r");
@@ -169,12 +176,14 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
         fprintf(stderr, "error: %s\n", nvmlErrorString(nv_status));
         return nv_status;
       }
+      fprintf(output_file, ",%i,%i", gpu_util, gpu_power);
       energy[device_idx] = energy[device_idx] + gpu_power / 1e3 * profile_interval_in_s; 
       if (print_count%print_gap==0)
       {
         printf(", gpu=%i, gpu_power=%i", gpu_util, gpu_power);
       }
     }
+    fprintf(output_file, "\n");
     if (print_count%print_gap==0)
     {
       printf("\n");
@@ -185,10 +194,7 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
       usleep(profile_interval - delta);
     }
   }
-  for (unsigned device_idx = 0; device_idx < device_count; device_idx++) {
-    fprintf(output_file, "GPU %i: %fW.s\n", device_idx, energy[device_idx]);
-    printf("GPU %i: %fW.s\n", device_idx, energy[device_idx]);
-  }
+
   fclose(output_file);
   nv_status = nvmlShutdown();
   if (NVML_SUCCESS != nv_status){
@@ -196,6 +202,9 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
     return nv_status;
   }
   printf("\nelapsed %.3f ms\n", (sample_time - start_time)/1e3);
+  for (unsigned device_idx = 0; device_idx < device_count; device_idx++) {
+    printf("GPU %i: %fW.s\n", device_idx, energy[device_idx]);
+  }
   return retval;
 }
 
