@@ -76,7 +76,7 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
   profile_interval = profile_interval * 1e3;  // us
   FILE* output_file = stdout;
 
-  output_file = fopen("rprof_log.csv", "w");
+  output_file = fopen("gpu_log", "w");
   if (NULL == output_file)
   {
     printf("failed to write, %s, write to stdout\n", "rprof_log.csv");
@@ -185,6 +185,8 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
       usleep(profile_interval - delta);
     }
   }
+  printf("\nelapsed %.3f ms\n", (sample_time - start_time)/1e3);
+  fprintf(output_file, "elapsed %.3f ms\n", (sample_time - start_time)/1e3);
   for (unsigned device_idx = 0; device_idx < device_count; device_idx++) {
     fprintf(output_file, "GPU %i: %fW.s\n", device_idx, energy[device_idx]);
     printf("GPU %i: %fW.s\n", device_idx, energy[device_idx]);
@@ -195,7 +197,6 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
     fprintf(stderr, "error: %s\n", nvmlErrorString(nv_status));
     return nv_status;
   }
-  printf("\nelapsed %.3f ms\n", (sample_time - start_time)/1e3);
   return retval;
 }
 

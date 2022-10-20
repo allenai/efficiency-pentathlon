@@ -63,36 +63,10 @@ RUN cd rprof \
     && pip install -e . \
    && rm -rf rprof
 
-COPY profile_cpu.sh ./profile_cpu.sh
+COPY profile_cpu.sh ./
+COPY hello_world.py ./
+COPY entrypoint.py ./
+COPY profile_gpu.py ./
+
 # RUN conda activate ${ENV_NAME}
 # ENTRYPOINT ["./entrypoint.sh"]
-
-
-#!/usr/bin/env python
-
-# import pylikwid
-# import time
-
-# domainid = 0
-# pylikwid.inittopology()
-# topodict = pylikwid.getcputopology()
-# pylikwid.finalizetopology()
-
-# cpus = []
-# for i in range(topodict["numSockets"]):
-#     cpus.append(i * topodict["numCoresPerSocket"])
-
-# pylikwid.init(cpus)
-# _ = pylikwid.getpowerinfo()
-# e_starts, e_stops = [], []
-
-# for cpu in cpus:
-#     e_starts.append(pylikwid.startpower(cpu, domainid))
-
-# time.sleep(5)
-
-# for cpu in cpus:
-#     e_stops.append(pylikwid.stoppower(cpu, domainid))
-
-# for i in range(len(cpus)):
-#     print(f"CPU {i}: {pylikwid.getpower(e_starts[i], e_stops[i], domainid)}")
