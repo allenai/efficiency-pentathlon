@@ -4,11 +4,8 @@ import pylikwid
 import time
 import sys
 import os
-import subprocess
-import signal
 
 if __name__ == "__main__":
-    devnull = open('/dev/null', 'w')
     pylikwid.inittopology()
     topodict = pylikwid.getcputopology()
 
@@ -19,17 +16,18 @@ if __name__ == "__main__":
     cpu_domainid = pinfo["domains"]["PKG"]["ID"]
     dram_domainid = pinfo["domains"]["DRAM"]["ID"]
     pylikwid.init(cpus)
-    e_starts, e_stops = [], []
+    cpu_starts, cpu_stops = [], []
+    dram_starts, dram_stops = [], []
     for cpu in cpus:
-        e_starts.append(pylikwid.startpower(cpu, domainid))
-    
-    p = subprocess.Popen([f"{sys.executable}", "profile_gpu.py"], stdout=devnull, shell=False)
+        cpu_starts.append(pylikwid.startpower(cpu, cpu_domainid))
+        dram_starts.append(pylikwid.startpower(cpu, dram_domainid))
     print(" ".join(sys.argv[1:]))
     os.system(" ".join(sys.argv[1:]))
-    os.kill(p.pid, signal.SIGTERM)
-    if not p.poll():
-        print("Process correctly halted")
     for cpu in cpus:
-        e_stops.append(pylikwid.stoppower(cpu, domainid))
+        cpu_stops.append(pylikwid.stoppower(cpu, cpu_domainid))
+        dram_stops.append(pylikwid.stoppower(cpu, dram_domainid))
     for i in range(len(cpus)):
-        print(f"CPU {i}: {pylikwid.getpower(e_starts[i], e_stops[i], domainid)}")
+        print(f"CPU {i}: {pylikwid.getpower(cpu_starts[i], cpu_stops[i], cpu_domainid)}")
+        print(f"DRAM {i}: {pylikwid.getpower(dram_starts[i], dram_stops[i], dram_domainid)}")
+    
+    
