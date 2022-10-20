@@ -32,16 +32,16 @@ RUN wget \
     && rm -f Miniconda3-latest-Linux-x86_64.sh
 
 # Create a working directory
-RUN mkdir /workspace
-WORKDIR /workspace
+RUN mkdir /app
+WORKDIR /app
 
-COPY environment.yml /workspace/environment.yml
+COPY environment.yml /app/environment.yml
 COPY entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
 # SHELL ["/bin/bash", "--login"]
 # RUN eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
-RUN conda env create --name ${ENV_NAME} --file /workspace/environment.yml
+RUN conda env create --name ${ENV_NAME} --file /app/environment.yml
 
 # Install likwid to monitor CPU and DRAM energy
 # https://github.com/RRZE-HPC/likwid.git
@@ -51,7 +51,7 @@ RUN git clone https://github.com/RRZE-HPC/likwid.git \
     && cd .. \ 
     && git clone https://github.com/RRZE-HPC/pylikwid.git \
     && cd pylikwid \
-    && python setup.py build_ext -I /workspace/likwid/src/includes/ -L /workspace/likwid/ -R /workspace/likwid/ \
+    && python setup.py build_ext -I /app/likwid/src/includes/ -L /app/likwid/ -R /app/likwid/ \
     && pip install -e . \
     && cd .. 
 
