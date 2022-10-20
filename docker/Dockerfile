@@ -17,9 +17,7 @@ RUN apt update --fix-missing -y && \
     git \
     sudo \
     curl \
-    bzip2 \
     libx11-6 \
-    vim \
     wget && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
@@ -63,10 +61,10 @@ RUN cd rprof \
     && pip install -e . \
    && rm -rf rprof
 
-COPY profile_cpu.sh ./
-COPY hello_world.py ./
-COPY entrypoint.py ./
-COPY profile_gpu.py ./
+# COPY profile_cpu.sh ./
+# COPY hello_world.py ./
+# COPY entrypoint.py ./
+# COPY profile_gpu.py ./
 
 # RUN conda activate ${ENV_NAME}
 # ENTRYPOINT ["./entrypoint.sh"]
