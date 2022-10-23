@@ -76,14 +76,14 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
   profile_interval = profile_interval * 1e3;  // us
   FILE* output_file = stdout;
 
-  output_file = fopen("log/gpu_log", "w");
+  output_file = fopen("workspace/log/gpu.csv", "w");
   if (NULL == output_file)
   {
-    printf("Failed to write, %s, write to stdout\n", "log/gpu_log");
+    printf("Failed to write, %s, write to stdout\n", "workspace/log/gpu.csv");
     output_file = stdout;
   }
   else {
-    printf("Log to %s\n", "log/gpu_log");
+    printf("Log to %s\n", "workspace/log/gpu.csv");
   }
 
   printf("Timeout: %llu s\n", timeout);
@@ -175,7 +175,7 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
       // max_mem[device_idx] = 3; //max(max_mem[device_idx], gpu_mem_util);
       if (print_count%print_gap==0)
       {
-        printf(", GPU ID: %i, GPU Memory: %i, GPU Power: %i", gpu_util, gpu_mem_util, gpu_power);
+        printf(", GPU ID: %i, GPU Memory: %i, GPU Power: %iW", gpu_util, gpu_mem_util, gpu_power / 1e3);
       }
     }
     if (print_count%print_gap==0)
@@ -188,11 +188,12 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
       usleep(profile_interval - delta);
     }
   }
-  printf("\nelapsed %.3f ms\n", (sample_time - start_time)/1e3);
-  fprintf(output_file, "elapsed %.3f ms\n", (sample_time - start_time)/1e3);
+  float time_elapsed = (sample_time - start_time) / 1e3;
+  printf("\nTime Elapsed %.3f ms\n", time_elapsed);
   for (unsigned device_idx = 0; device_idx < device_count; device_idx++) {
-    fprintf(output_file, "GPU %i: energy %fW.s, max-mem %i \n", device_idx, energy[device_idx], max_mem[device_idx]);
-    printf("GPU %i: Energy %fW.s, Max Memory %i \n", device_idx, energy[device_idx], max_mem[device_idx]);
+    fprintf(output_file, "gpu_id,time_elapsed,energy,max_mem\n");
+    fprintf(output_file, "%i,%.3f,%.3f,%i\n", device_idx, time_elapsed, energy[device_idx], max_mem[device_idx]);
+    printf("GPU %i: Energy %.3ffW.s, Max Memory %i \n", device_idx, energy[device_idx], max_mem[device_idx]);
   }
   fclose(output_file);
   nv_status = nvmlShutdown();
