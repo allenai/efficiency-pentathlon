@@ -12,6 +12,7 @@ def sigterm_handler(_signo, _stack_frame):
 
 
 if __name__ == "__main__":
+    init_start = time.time()
     signal.signal(signal.SIGTERM, sigterm_handler)
     pylikwid.inittopology()
     topodict = pylikwid.getcputopology()
@@ -29,16 +30,21 @@ if __name__ == "__main__":
         cpu_starts.append(pylikwid.startpower(cpu, cpu_domainid))
         dram_starts.append(pylikwid.startpower(cpu, dram_domainid))
     start = time.time()
+    init_time = start - init_start
+    print(f"Init time: {init_time}s")
     try:
         while True:
             time.sleep(0.1)
     finally:
+        time.sleep(init_time)
         for cpu in cpus:
             cpu_stops.append(pylikwid.stoppower(cpu, cpu_domainid))
             dram_stops.append(pylikwid.stoppower(cpu, dram_domainid))
-        with open("cpu_log", "w") as fout:
+        with open(f"{os.getcwd()}/workspace/cpu_log", "w") as fout:
             fout.write(f"Time elapsed: {time.time() - start}s\n")
             for i in range(len(cpus)):
+                print(f"CPU {i}: {pylikwid.getpower(cpu_starts[i], cpu_stops[i], cpu_domainid)}\n")
+                print(f"DRAM {i}: {pylikwid.getpower(dram_starts[i], dram_stops[i], dram_domainid)}\n")
                 fout.write(f"CPU {i}: {pylikwid.getpower(cpu_starts[i], cpu_stops[i], cpu_domainid)}\n")
                 fout.write(f"DRAM {i}: {pylikwid.getpower(dram_starts[i], dram_stops[i], dram_domainid)}\n")
         sys.exit()

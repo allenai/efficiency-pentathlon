@@ -56,10 +56,10 @@ RUN git clone https://github.com/RRZE-HPC/likwid.git \
     && cd .. 
 
 # Install rprof to monitor GPU energy
-COPY rprof ./rprof
-RUN cd rprof \
-    && pip install -e . \
-   && rm -rf rprof
+# COPY rprof ./rprof
+# RUN cd rprof \
+#     && pip install -e . \
+#    && rm -rf rprof
 
 # COPY profile_cpu.sh ./
 # COPY hello_world.py ./
