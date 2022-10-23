@@ -29,11 +29,11 @@ if __name__ == "__main__":
 
     print(" ".join(sys.argv[1:]))
     os.system(" ".join(sys.argv[1:]))
-    #####
+
     os.kill(p.pid, signal.SIGTERM)
     if not p.poll():
         print("Process correctly halted")
     container.kill("SIGTERM")
     for line in output:
-        print(line)
+        print(line.strip())
     

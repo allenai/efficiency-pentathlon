@@ -188,8 +188,8 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
       usleep(profile_interval - delta);
     }
   }
-  float time_elapsed = (sample_time - start_time) / 1e3;
-  printf("\nTime Elapsed %.3f ms\n", time_elapsed);
+  float time_elapsed = (sample_time - start_time) / 1e6;
+  printf("\nTime Elapsed %.3fs\n", time_elapsed);
   for (unsigned device_idx = 0; device_idx < device_count; device_idx++) {
     fprintf(output_file, "gpu_id,time_elapsed,energy,max_mem\n");
     fprintf(output_file, "%i,%.3f,%.3f,%i\n", device_idx, time_elapsed, energy[device_idx], max_mem[device_idx]);

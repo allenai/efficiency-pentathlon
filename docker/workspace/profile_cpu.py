@@ -40,13 +40,16 @@ if __name__ == "__main__":
         for cpu in cpus:
             cpu_stops.append(pylikwid.stoppower(cpu, cpu_domainid))
             dram_stops.append(pylikwid.stoppower(cpu, dram_domainid))
-        with open(f"{os.getcwd()}/workspace/log/cpu_log", "w") as fout:
-            fout.write(f"Time elapsed: {time.time() - start}s\n")
+        with open(f"{os.getcwd()}/workspace/log/cpu.csv", "w") as fout:
+            time_elapsed = time.time() - start
+            print(f"Time elapsed: {time_elapsed:.3f}s\n")
+            fout.write("id,time_elapsed,cpu_energy,dram_energy\n")
             for i in range(len(cpus)):
-                print(f"CPU {i}: {pylikwid.getpower(cpu_starts[i], cpu_stops[i], cpu_domainid)}\n")
-                print(f"DRAM {i}: {pylikwid.getpower(dram_starts[i], dram_stops[i], dram_domainid)}\n")
-                fout.write(f"CPU {i}: {pylikwid.getpower(cpu_starts[i], cpu_stops[i], cpu_domainid)}\n")
-                fout.write(f"DRAM {i}: {pylikwid.getpower(dram_starts[i], dram_stops[i], dram_domainid)}\n")
+                cpu_energy = pylikwid.getpower(cpu_starts[i], cpu_stops[i], cpu_domainid)
+                dram_energy = pylikwid.getpower(dram_starts[i], dram_stops[i], dram_domainid)
+                print(f"CPU {i}: {cpu_energy:.3f}\n")
+                print(f"DRAM {i}: {dram_energy:.3f}\n")
+                fout.write(f"{i},{time_elapsed:.3f},{cpu_energy:.3f},{dram_energy:.3f}\n")
         sys.exit()
 
     
