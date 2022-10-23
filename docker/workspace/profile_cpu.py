@@ -40,7 +40,7 @@ if __name__ == "__main__":
         for cpu in cpus:
             cpu_stops.append(pylikwid.stoppower(cpu, cpu_domainid))
             dram_stops.append(pylikwid.stoppower(cpu, dram_domainid))
-        with open(f"{os.getcwd()}/workspace/cpu_log", "w") as fout:
+        with open(f"{os.getcwd()}/workspace/log/cpu_log", "w") as fout:
             fout.write(f"Time elapsed: {time.time() - start}s\n")
             for i in range(len(cpus)):
                 print(f"CPU {i}: {pylikwid.getpower(cpu_starts[i], cpu_stops[i], cpu_domainid)}\n")

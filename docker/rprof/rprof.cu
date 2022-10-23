@@ -71,22 +71,22 @@ static const char * usage_msg = \
 EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
   int retval = 0;
 
-  printf("profile_interval=%llu ms\n", profile_interval);
+  printf("Profile Interval: %llu ms\n", profile_interval);
   float profile_interval_in_s = profile_interval / 1e3;  // s
   profile_interval = profile_interval * 1e3;  // us
   FILE* output_file = stdout;
 
-  output_file = fopen("gpu_log", "w");
+  output_file = fopen("log/gpu_log", "w");
   if (NULL == output_file)
   {
-    printf("failed to write, %s, write to stdout\n", "rprof_log.csv");
+    printf("Failed to write, %s, write to stdout\n", "log/gpu_log");
     output_file = stdout;
   }
   else {
-    printf("log to %s\n", "gpu_log");
+    printf("Log to %s\n", "log/gpu_log");
   }
 
-  printf("timeout=%llu s\n", timeout);
+  printf("Timeout: %llu s\n", timeout);
   timeout = timeout*1e6;
   // Register signal handler for Ctrl+C and terminate signals.
   signal(SIGINT, signal_callback_handler);
@@ -101,12 +101,12 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
   char driver_version[80];
   nv_status = nvmlInit();
   if (NVML_SUCCESS != nv_status){
-    fprintf(stderr, "error: %s\n", nvmlErrorString(nv_status));
+    fprintf(stderr, "Error: %s\n", nvmlErrorString(nv_status));
     return nv_status;
   }
   nv_status = nvmlSystemGetDriverVersion(driver_version, 80);
   if (NVML_SUCCESS != nv_status){
-    fprintf(stderr, "error: %s\n", nvmlErrorString(nv_status));
+    fprintf(stderr, "Error: %s\n", nvmlErrorString(nv_status));
     return nv_status;
   }
   printf("\nDriver version:  %s \n\n", driver_version);
@@ -124,12 +124,12 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
     // nvmlComputeMode_t compute_mode;
     nv_status = nvmlDeviceGetHandleByIndex(i, &device);
     if (NVML_SUCCESS != nv_status){
-      fprintf(stderr, "error: %s\n", nvmlErrorString(nv_status));
+      fprintf(stderr, "Error: %s\n", nvmlErrorString(nv_status));
       return nv_status;
     }
     nv_status = nvmlDeviceGetName(device, name, sizeof(name)/sizeof(name[0]));
     if (NVML_SUCCESS != nv_status){
-      fprintf(stderr, "error: %s\n", nvmlErrorString(nv_status));
+      fprintf(stderr, "Error: %s\n", nvmlErrorString(nv_status));
       return nv_status;
     }
     printf("%d. %s \n", i, name);
@@ -139,13 +139,14 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
   unsigned int print_gap = 10;
   usleep(profile_interval); // sleep one interval to avoid negative first sample
   float energy[MAX_NUM_DEVICES] = {0.0f};  // in W.s
+  unsigned int max_mem[MAX_NUM_DEVICES] = {0};
   while (interrupt == 0 && (sample_time - start_time) < timeout)
   { 
     sample_time = gettime();
     if (print_count%print_gap==0)
     {
       printf("\33[2K\r");
-      printf("t=%.6f", sample_time/1e6);
+      printf("Timestamp: %.6f", sample_time/1e6);
     }
     for (unsigned device_idx = 0; device_idx < device_count; device_idx++) 
     {
@@ -153,26 +154,28 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
       char name[64];  
       nv_status = nvmlDeviceGetHandleByIndex(device_idx, &device);
       if (NVML_SUCCESS != nv_status){
-        fprintf(stderr, "error: %s\n", nvmlErrorString(nv_status));
+        fprintf(stderr, "Error: %s\n", nvmlErrorString(nv_status));
         return nv_status;
       }
       nvmlUtilization_t nv_util;
       nv_status = nvmlDeviceGetUtilizationRates(device, &nv_util);
       if (NVML_SUCCESS != nv_status){
-        fprintf(stderr, "error: %s\n", nvmlErrorString(nv_status));
+        fprintf(stderr, "Error: %s\n", nvmlErrorString(nv_status));
         return nv_status;
       }
       unsigned int gpu_util = nv_util.gpu;
+      unsigned int gpu_mem_util = nv_util.memory;
       unsigned int gpu_power = 0;  // in mW
       nv_status = nvmlDeviceGetPowerUsage(device, &gpu_power);
       if (NVML_SUCCESS != nv_status){
-        fprintf(stderr, "error: %s\n", nvmlErrorString(nv_status));
+        fprintf(stderr, "Error: %s\n", nvmlErrorString(nv_status));
         return nv_status;
       }
       energy[device_idx] = energy[device_idx] + gpu_power / 1e3 * profile_interval_in_s; 
+      // max_mem[device_idx] = 3; //max(max_mem[device_idx], gpu_mem_util);
       if (print_count%print_gap==0)
       {
-        printf(", gpu=%i, gpu_power=%i", gpu_util, gpu_power);
+        printf(", GPU ID: %i, GPU Memory: %i, GPU Power: %i", gpu_util, gpu_mem_util, gpu_power);
       }
     }
     if (print_count%print_gap==0)
@@ -188,8 +191,8 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
   printf("\nelapsed %.3f ms\n", (sample_time - start_time)/1e3);
   fprintf(output_file, "elapsed %.3f ms\n", (sample_time - start_time)/1e3);
   for (unsigned device_idx = 0; device_idx < device_count; device_idx++) {
-    fprintf(output_file, "GPU %i: %fW.s\n", device_idx, energy[device_idx]);
-    printf("GPU %i: %fW.s\n", device_idx, energy[device_idx]);
+    fprintf(output_file, "GPU %i: energy %fW.s, max-mem %i \n", device_idx, energy[device_idx], max_mem[device_idx]);
+    printf("GPU %i: Energy %fW.s, Max Memory %i \n", device_idx, energy[device_idx], max_mem[device_idx]);
   }
   fclose(output_file);
   nv_status = nvmlShutdown();
@@ -199,5 +202,4 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
   }
   return retval;
 }
-
 }
