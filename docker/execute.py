@@ -8,6 +8,7 @@ import docker
 import time
 import csv
 import multiprocessing
+from utils import get_num_instances
 
 
 if __name__ == "__main__":
@@ -36,10 +37,10 @@ if __name__ == "__main__":
     end_time = time.time()
     os.kill(p_gpu.pid, signal.SIGTERM)
     if not p_gpu.poll():
-        print("GPU process correctly halted")
+        print("GPU monitor correctly halted")
     os.kill(p_docker.pid, signal.SIGTERM)
     if not p_docker.poll():
-        print("Docker process correctly halted")
+        print("Docker monitor correctly halted")
     container.kill("SIGTERM")
     cpu_energy, mem_energy = 0, 0
     for line in output:
@@ -75,7 +76,10 @@ if __name__ == "__main__":
     mem_energy = mem_energy * mem_util
     total_memory = subprocess.getoutput("cat /proc/meminfo | grep MemTotal")  # in kB
     total_memory = float(total_memory.split()[1]) / 2 ** 20
-    print(f"Time Elapsed: {end_time - start_time:.3f} s", end="; ") 
+    num_instances = get_num_instances("iwslt14ende")
+    time_elapsed = end_time - start_time
+    print(f"Time Elapsed: {time_elapsed:.3f} s") 
+    print(f"Throughput: {num_instances / time_elapsed: .3f} instances/s")
     print(f"GPU Energy: {gpu_energy:.3f} W.s", end="; ")
     print(f"CPU Energy: {cpu_energy: .3f} W.s", end="; ")
     print(f"Memory Energy: {mem_energy: .3f} W.s", end="; ")
