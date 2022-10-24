@@ -9,9 +9,17 @@ import time
 import csv
 import multiprocessing
 from utils import get_num_instances
+from utils import LOG_DIR
+import pathlib
 
 
 if __name__ == "__main__":
+    cur_dir = os.getcwd()
+    monitor_dir = pathlib.Path(__file__).parent.resolve()
+    os.chdir(monitor_dir)
+    print(os.getcwd())
+    if not os.path.exists(LOG_DIR):
+        os.mkdir(LOG_DIR)
     num_cpus = multiprocessing.cpu_count()
     client = docker.from_env()
     devnull = open("/dev/null", "w")
@@ -32,9 +40,11 @@ if __name__ == "__main__":
     p_docker = subprocess.Popen([f"sh", "docker_monitor.sh"], stdout=devnull, shell=False)
 
     print(" ".join(sys.argv[1:]))
+    os.chdir(cur_dir)
     start_time = time.time()
     os.system(" ".join(sys.argv[1:]))
     end_time = time.time()
+    os.chdir(monitor_dir)
     os.kill(p_gpu.pid, signal.SIGTERM)
     if not p_gpu.poll():
         print("GPU monitor correctly halted")
@@ -45,11 +55,12 @@ if __name__ == "__main__":
     cpu_energy, mem_energy = 0, 0
     for line in output:
         ts = line.split()
+        
         if len(ts) > 5:
             cpu_energy = cpu_energy + float(ts[5]) + float(ts[11])
             mem_energy = mem_energy + float(ts[8]) + float(ts[14])
 
-    with open("workspace/log/gpu.csv") as csvfile:
+    with open(f"{LOG_DIR}/gpu.csv") as csvfile:
         reader = csv.DictReader(csvfile)
         gpu_energy, max_gpu_mem = 0, 0
         for row in reader:
@@ -61,7 +72,7 @@ if __name__ == "__main__":
     #     for row in reader:
     #         cpu_energy = cpu_energy + float(row["cpu_energy"])
     #         mem_energy = mem_energy + float(row["dram_energy"])
-    with open("workspace/log/docker.csv") as csvfile:
+    with open(f"{LOG_DIR}/docker.csv") as csvfile:
         reader = csv.DictReader(csvfile)
         cpu_util, mem_util, max_mem_util = 0, 0, 0
         num_rows = 1e-6
