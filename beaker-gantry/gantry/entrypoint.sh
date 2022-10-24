@@ -133,7 +133,7 @@ git clone https://github.com/haopeng-nlp/efficiency-benchmark.git
 cd efficiency-benchmark/docker
 docker build -t test .
 cd $CUR_DIR
-python ../efficiency-benchmark/execute.py python workspace/hello_world.py
+python ../efficiency-benchmark/execute.py "$@" 2>&1 | tee "${{ RESULTS_DIR }}/.gantry/out.log"
 
 # Execute the arguments to this script as commands themselves, piping output into a log file.
 # shellcheck disable=SC2296
