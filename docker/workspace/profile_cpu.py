@@ -31,7 +31,7 @@ if __name__ == "__main__":
         dram_starts.append(pylikwid.startpower(cpu, dram_domainid))
     start = time.time()
     init_time = start - init_start
-    print(f"Init time: {init_time}s")
+    print(f"Init time: {init_time:.3f}s")
     try:
         while True:
             time.sleep(0.1)
@@ -40,8 +40,8 @@ if __name__ == "__main__":
         for cpu in cpus:
             cpu_stops.append(pylikwid.stoppower(cpu, cpu_domainid))
             dram_stops.append(pylikwid.stoppower(cpu, dram_domainid))
+        time_elapsed = time.time() - start
         with open(f"{os.getcwd()}/workspace/log/cpu.csv", "w") as fout:
-            time_elapsed = time.time() - start
             print(f"Time elapsed: {time_elapsed:.3f}s\n")
             fout.write("id,time_elapsed,cpu_energy,dram_energy\n")
             for i in range(len(cpus)):

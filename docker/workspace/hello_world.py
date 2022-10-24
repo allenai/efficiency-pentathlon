@@ -1,5 +1,9 @@
 import time
+import torch
 
-for i in range(10):
-    print("hello world")
-    time.sleep(1)
+a = torch.randn(256, 5000, 5000)
+for i in range(5):
+    c = torch.randn(256, 5000, 5000)
+    b = torch.einsum("bmn,bnk->bmk", a, a)
+    time.sleep(0.0001)
+    
