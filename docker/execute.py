@@ -39,7 +39,7 @@ if __name__ == "__main__":
     p_gpu = subprocess.Popen([f"{sys.executable}", "workspace/profile_gpu.py"], stdout=devnull, shell=False)
     p_docker = subprocess.Popen([f"sh", "docker_monitor.sh"], stdout=devnull, shell=False)
 
-    print(" ".join(sys.argv[1:]))
+    print("Executing", " ".join(sys.argv[1:]))
     os.chdir(cur_dir)
     start_time = time.time()
     os.system(" ".join(sys.argv[1:]))
