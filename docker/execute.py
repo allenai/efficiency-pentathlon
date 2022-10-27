@@ -39,7 +39,7 @@ if __name__ == "__main__":
     p_gpu = subprocess.Popen([f"{sys.executable}", "workspace/profile_gpu.py"], stdout=devnull, shell=False)
     p_docker = subprocess.Popen([f"sh", "docker_monitor.sh"], stdout=devnull, shell=False)
 
-    print("Executing", " ".join(sys.argv[1:]))
+    print("Executing:", " ".join(sys.argv[1:]))
     os.chdir(cur_dir)
     start_time = time.time()
     os.system(" ".join(sys.argv[1:]))
@@ -52,26 +52,19 @@ if __name__ == "__main__":
     if not p_docker.poll():
         print("Docker monitor correctly halted")
     container.kill("SIGTERM")
-    cpu_energy, mem_energy = 0, 0
-    for line in output:
-        ts = line.split()
-        
-        if len(ts) > 5:
-            cpu_energy = cpu_energy + float(ts[5]) + float(ts[11])
-            mem_energy = mem_energy + float(ts[8]) + float(ts[14])
 
+    gpu_energy, max_gpu_mem = 0, 0
+    cpu_energy, mem_energy = 0, 0
     with open(f"{LOG_DIR}/gpu.csv") as csvfile:
         reader = csv.DictReader(csvfile)
-        gpu_energy, max_gpu_mem = 0, 0
         for row in reader:
             gpu_energy = gpu_energy + float(row["energy"])
             max_gpu_mem = max_gpu_mem + float(row["max_mem"])
-    # with open("workspace/log/cpu.csv") as csvfile:
-    #     reader = csv.DictReader(csvfile)
-    #     cpu_energy, mem_energy = 0, 0
-    #     for row in reader:
-    #         cpu_energy = cpu_energy + float(row["cpu_energy"])
-    #         mem_energy = mem_energy + float(row["dram_energy"])
+    with open("workspace/log/cpu.csv") as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            cpu_energy = cpu_energy + float(row["cpu_energy"])
+            mem_energy = mem_energy + float(row["dram_energy"])
     with open(f"{LOG_DIR}/docker.csv") as csvfile:
         reader = csv.DictReader(csvfile)
         cpu_util, mem_util, max_mem_util = 0, 0, 0
@@ -95,6 +88,6 @@ if __name__ == "__main__":
     print(f"CPU Energy: {cpu_energy: .3f} W.s", end="; ")
     print(f"Memory Energy: {mem_energy: .3f} W.s", end="; ")
     print(f"Total Energy: {gpu_energy + cpu_energy + mem_energy: .3f} W.s")
-    print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .3f} GB")
-    print(f"Max GPU Memory Usage: {max_gpu_mem: .3f} GB")  # TODO: check with Qingqing why is this always zero
+    print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .3f} GiB")
+    print(f"Max GPU Memory Usage: {max_gpu_mem: .3f} GiB")  # TODO: check with Qingqing why is this always zero
     

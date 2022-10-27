@@ -14,6 +14,7 @@ def sigterm_handler(_signo, _stack_frame):
 if __name__ == "__main__":
     init_start = time.time()
     signal.signal(signal.SIGTERM, sigterm_handler)
+    signal.signal(signal.SIGINT, sigterm_handler)
     pylikwid.inittopology()
     topodict = pylikwid.getcputopology()
 
@@ -32,10 +33,8 @@ if __name__ == "__main__":
     start = time.time()
     init_time = start - init_start
     print(f"Init time: {init_time:.3f}s")
-    try:
-        while True:
-            time.sleep(0.1)
-    finally:
+
+    def _wrap_up():
         time.sleep(init_time)
         for cpu in cpus:
             cpu_stops.append(pylikwid.stoppower(cpu, cpu_domainid))
@@ -51,6 +50,14 @@ if __name__ == "__main__":
                 print(f"DRAM {i}: {dram_energy:.3f}\n")
                 fout.write(f"{i},{time_elapsed:.3f},{cpu_energy:.3f},{dram_energy:.3f}\n")
         sys.exit()
+    try:
+        while True:
+            time.sleep(0.1)
+    # except KeyboardInterrupt:
+    #     _wrap_up()
+    finally:
+        _wrap_up()
+        
 
     
     
