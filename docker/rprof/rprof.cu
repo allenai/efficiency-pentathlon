@@ -8,6 +8,7 @@ extern "C" {
 
 static int interrupt = 0;
 static unsigned int MAX_NUM_DEVICES = 64;
+static double b_to_gib = pow(2, 30);
 static void
 signal_callback_handler(int signum)
 {
@@ -138,8 +139,8 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
   unsigned long print_count = 0;
   unsigned int print_gap = 10;
   usleep(profile_interval); // sleep one interval to avoid negative first sample
-  float energy[MAX_NUM_DEVICES] = {0.0f};  // in W.s
-  unsigned int max_mem[MAX_NUM_DEVICES] = {0};
+  double energy[MAX_NUM_DEVICES] = {0.0f};  // in W.s
+  unsigned long long max_mem[MAX_NUM_DEVICES] = {0}; // in Bytes
   while (interrupt == 0 && (sample_time - start_time) < timeout)
   { 
     sample_time = gettime();
@@ -157,25 +158,33 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
         fprintf(stderr, "Error: %s\n", nvmlErrorString(nv_status));
         return nv_status;
       }
-      nvmlUtilization_t nv_util;
-      nv_status = nvmlDeviceGetUtilizationRates(device, &nv_util);
+      // nvmlUtilization_t nv_util;
+      // nv_status = nvmlDeviceGetUtilizationRates(device, &nv_util);
+      // if (NVML_SUCCESS != nv_status){
+      //   fprintf(stderr, "Error: %s\n", nvmlErrorString(nv_status));
+      //   return nv_status;
+      // }
+      nvmlMemory_t memory;
+      nv_status = nvmlDeviceGetMemoryInfo (device, &memory );
       if (NVML_SUCCESS != nv_status){
         fprintf(stderr, "Error: %s\n", nvmlErrorString(nv_status));
         return nv_status;
       }
-      unsigned int gpu_util = nv_util.gpu;
-      unsigned int gpu_mem_util = nv_util.memory;
+      // unsigned int gpu_util = nv_util.gpu;
+      unsigned long long gpu_mem = memory.used;
+      // unsigned int gpu_mem_util = nv_util.memory;
       unsigned int gpu_power = 0;  // in mW
       nv_status = nvmlDeviceGetPowerUsage(device, &gpu_power);
       if (NVML_SUCCESS != nv_status){
         fprintf(stderr, "Error: %s\n", nvmlErrorString(nv_status));
         return nv_status;
       }
-      energy[device_idx] = energy[device_idx] + gpu_power / 1e3 * profile_interval_in_s; 
-      // max_mem[device_idx] = 3; //max(max_mem[device_idx], gpu_mem_util);
+      float gpu_power_in_w = gpu_power / 1e3;
+      energy[device_idx] = energy[device_idx] + gpu_power_in_w * profile_interval_in_s; 
+      max_mem[device_idx] = max(max_mem[device_idx], gpu_mem);
       if (print_count%print_gap==0)
       {
-        printf(", GPU ID: %i, GPU Memory: %i, GPU Power: %iW", gpu_util, gpu_mem_util, gpu_power / 1e3);
+        printf(", GPU ID: %i, GPU Memory: %llu Bytes, GPU Power: %fW", device_idx, gpu_mem, gpu_power_in_w);
       }
     }
     if (print_count%print_gap==0)
@@ -191,9 +200,10 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
   float time_elapsed = (sample_time - start_time) / 1e6;
   printf("\nTime Elapsed %.3fs\n", time_elapsed);
   for (unsigned device_idx = 0; device_idx < device_count; device_idx++) {
+    double memory_in_gib = max_mem[device_idx] / b_to_gib;
     fprintf(output_file, "gpu_id,time_elapsed,energy,max_mem\n");
-    fprintf(output_file, "%i,%.3f,%.3f,%i\n", device_idx, time_elapsed, energy[device_idx], max_mem[device_idx]);
-    printf("GPU %i: Energy %.3ffW.s, Max Memory %i \n", device_idx, energy[device_idx], max_mem[device_idx]);
+    fprintf(output_file, "%i,%.3f,%.3f,%f\n", device_idx, time_elapsed, energy[device_idx], memory_in_gib);
+    printf("GPU %i: Energy %.3ffW.s, Max Memory %f GiB\n", device_idx, energy[device_idx], memory_in_gib);
   }
   fclose(output_file);
   nv_status = nvmlShutdown();
