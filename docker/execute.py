@@ -89,5 +89,5 @@ if __name__ == "__main__":
     print(f"Memory Energy: {mem_energy: .3f} W.s", end="; ")
     print(f"Total Energy: {gpu_energy + cpu_energy + mem_energy: .3f} W.s")
     print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .3f} GiB")
-    print(f"Max GPU Memory Usage: {max_gpu_mem: .3f} GiB")  # TODO: check with Qingqing why is this always zero
+    print(f"Max GPU Memory Usage: {max_gpu_mem: .3f} GiB")
     
