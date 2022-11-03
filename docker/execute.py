@@ -53,6 +53,8 @@ if __name__ == "__main__":
     if not p_docker.poll():
         print("Docker monitor correctly halted")
     container.kill("SIGTERM")
+    p_gpu.wait()
+    p_docker.wait()
 
     gpu_energy, max_gpu_mem = 0, 0
     cpu_energy, mem_energy = 0, 0
@@ -91,9 +93,9 @@ if __name__ == "__main__":
     print(f"Throughput: {num_instances / time_elapsed: .2f} instances/s")
     print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .2f} GiB")
     print(f"Max GPU Memory Usage: {max_gpu_mem: .2f} GiB")
-    print(f"GPU Energy: {gpu_energy:.3e} Wh", end="; ")
-    print(f"CPU Energy: {cpu_energy: .3e} Wh", end="; ")
-    print(f"Memory Energy: {mem_energy: .3e} Wh", end="; ")
-    print(f"Total Energy: {total_energy: .3e} Wh", end="; ")
-    print(f"CO2 emission: {carbon: .3e} grams.")
+    print(f"GPU Energy: {gpu_energy:.2e} Wh", end="; ")
+    print(f"CPU Energy: {cpu_energy: .2e} Wh", end="; ")
+    print(f"Memory Energy: {mem_energy: .2e} Wh", end="; ")
+    print(f"Total Energy: {total_energy: .2e} Wh", end="; ")
+    print(f"CO2 emission: {carbon: .2e} grams.")
     
