@@ -10,6 +10,7 @@ import csv
 import multiprocessing
 from utils import get_num_instances
 from utils import LOG_DIR
+from carbon import get_realtime_carbon
 import pathlib
 
 
@@ -76,18 +77,23 @@ if __name__ == "__main__":
             max_mem_util = max(max_mem_util, mem_util)
         cpu_util = cpu_util / (num_rows) / num_cpus
         mem_util = mem_util / (num_rows)
-    cpu_energy = cpu_energy * cpu_util
-    mem_energy = mem_energy * mem_util
-    total_memory = subprocess.getoutput("cat /proc/meminfo | grep MemTotal")  # in kB
+    gpu_energy = gpu_energy / 3600.0
+    cpu_energy = cpu_energy * cpu_util / 3600.0
+    mem_energy = mem_energy * mem_util / 3600.0
+    total_memory = subprocess.getoutput("cat /proc/meminfo | grep MemTotal")  # in KiB
     total_memory = float(total_memory.split()[1]) / 2 ** 20
     num_instances = get_num_instances("iwslt14ende")
     time_elapsed = end_time - start_time
-    print(f"Time Elapsed: {time_elapsed:.3f} s") 
-    print(f"Throughput: {num_instances / time_elapsed: .3f} instances/s")
-    print(f"GPU Energy: {gpu_energy:.3f} W.s", end="; ")
-    print(f"CPU Energy: {cpu_energy: .3f} W.s", end="; ")
-    print(f"Memory Energy: {mem_energy: .3f} W.s", end="; ")
-    print(f"Total Energy: {gpu_energy + cpu_energy + mem_energy: .3f} W.s")
-    print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .3f} GiB")
-    print(f"Max GPU Memory Usage: {max_gpu_mem: .3f} GiB")
+    total_energy = gpu_energy + cpu_energy + mem_energy
+    carbon = get_realtime_carbon(total_energy)  # in g
+
+    print(f"Time Elapsed: {time_elapsed:.2f} s") 
+    print(f"Throughput: {num_instances / time_elapsed: .2f} instances/s")
+    print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .2f} GiB")
+    print(f"Max GPU Memory Usage: {max_gpu_mem: .2f} GiB")
+    print(f"GPU Energy: {gpu_energy:.3e} Wh", end="; ")
+    print(f"CPU Energy: {cpu_energy: .3e} Wh", end="; ")
+    print(f"Memory Energy: {mem_energy: .3e} Wh", end="; ")
+    print(f"Total Energy: {total_energy: .3e} Wh", end="; ")
+    print(f"CO2 emission: {carbon: .3e} grams.")
     
