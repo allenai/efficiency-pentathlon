@@ -67,4 +67,4 @@ RUN git clone https://github.com/RRZE-HPC/likwid.git \
 # COPY profile_gpu.py ./
 
 # RUN conda activate ${ENV_NAME}
-# ENTRYPOINT ["python", "workspace/profile_cpu.py"]
+ENTRYPOINT ["python", "workspace/cpu_power.py"]
