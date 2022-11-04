@@ -10,8 +10,7 @@ static int interrupt = 0;
 static unsigned int MAX_NUM_DEVICES = 64;
 static double b_to_gib = pow(2, 30);
 static void
-signal_callback_handler(int signum)
-{
+signal_callback_handler(int signum) {
   if (signum == SIGINT || signum == SIGTERM)
     interrupt = SIGTERM;
 } /* signal_callback_handler */
@@ -143,8 +142,7 @@ EXPORT int rprof(utime_t profile_interval, utime_t timeout) {
   unsigned long long max_mem[MAX_NUM_DEVICES] = {0}; // in Bytes
 
   fprintf(power_file, "time,gpu\n");
-  while (interrupt == 0 && (sample_time - start_time) < timeout)
-  { 
+  while (interrupt == 0 && (sample_time - start_time) < timeout) { 
     sample_time = gettime();
     if (print_count%print_gap==0) {
       printf("\33[2K\r");
