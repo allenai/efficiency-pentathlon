@@ -14,7 +14,12 @@ from carbon import get_realtime_carbon
 import pathlib
 
 
+
+
+
 if __name__ == "__main__":
+    time_interval = 0.1
+    wrapup_time = 10
     cur_dir = os.getcwd()
     monitor_dir = pathlib.Path(__file__).parent.resolve()
     os.chdir(monitor_dir)
@@ -39,38 +44,54 @@ if __name__ == "__main__":
     output = container.attach(stdout=True, stream=True, logs=True, stderr=True)
     p_gpu = subprocess.Popen([f"{sys.executable}", "workspace/profile_gpu.py"], stdout=devnull, shell=False)
 
-    print("Executing:", " ".join(sys.argv[1:]))
+    def wrapup():
+        print(f"Sleep for {wrapup_time} seconds...")
+        time.sleep(wrapup_time)
+        os.chdir(monitor_dir)
+        os.kill(p_gpu.pid, signal.SIGTERM)
+        if not p_gpu.poll():
+            print("GPU monitor correctly halted")
+        container.kill("SIGTERM")
+        p_gpu.wait()
+
+        timestamp = 0
+        cpu_power, gpu_power, total_power = {}, {}, {}
+        with open(f"{LOG_DIR}/gpu_power.csv") as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                gpu_power[timestamp] = float(row['gpu'])
+                timestamp += 1
+        max_time = timestamp
+        timestamp = 0
+        with open("workspace/log/cpu_power.csv") as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                cpu_power[timestamp] = float(row['cpu']) + float(row['dram'])
+                timestamp += 1
+        max_time = min(max_time, timestamp)
+        timestamp = 0
+        with open(f"calibration_data/{sys.argv[-1]}", "w") as fout:
+            fout.write("time,power\n")
+            while timestamp < max_time:
+                assert timestamp in cpu_power and timestamp in gpu_power
+                total_power[timestamp] = cpu_power[timestamp] + gpu_power[timestamp]
+                print(f"{timestamp * time_interval : .1f}, {total_power[timestamp]: .2f}")
+                fout.write(f"{timestamp * time_interval},{total_power[timestamp]}\n")
+                timestamp += 1
+
+    def sigterm_handler(_signo, _stack_frame):
+        wrapup()
+        sys.exit(0)
+
+    signal.signal(signal.SIGTERM, sigterm_handler)
+    signal.signal(signal.SIGINT, sigterm_handler)
+
+    print("Executing:", " ".join(sys.argv[1:-1]))
     os.chdir(cur_dir)
     start_time = time.time()
+    time.sleep(5)
     os.system(" ".join(sys.argv[1:]))
     end_time = time.time()
-    os.chdir(monitor_dir)
-    os.kill(p_gpu.pid, signal.SIGTERM)
-    if not p_gpu.poll():
-        print("GPU monitor correctly halted")
-    container.kill("SIGTERM")
-    p_gpu.wait()
+    wrapup()
 
-    with open(f"{LOG_DIR}/gpu_power.csv") as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            print(float(row["gpu"]))
-    with open("workspace/log/cpu_power.csv") as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            print(float(row["cpu"]) + float(row["dram"]))
-    dsadas
-    gpu_energy = gpu_energy / 3600.0
-    cpu_energy = cpu_energy / 3600.0
-    mem_energy = mem_energy / 3600.0
-    time_elapsed = end_time - start_time
-    total_energy = gpu_energy + cpu_energy + mem_energy
-    carbon = get_realtime_carbon(total_energy)  # in grams
-
-    print(f"Time Elapsed: {time_elapsed:.2f} s") 
-    print(f"GPU Energy: {gpu_energy:.2e} Wh", end="; ")
-    print(f"CPU Energy: {cpu_energy: .2e} Wh", end="; ")
-    print(f"Memory Energy: {mem_energy: .2e} Wh", end="; ")
-    print(f"Total Energy: {total_energy: .2e} Wh", end="; ")
-    print(f"CO2 emission: {carbon: .2e} grams.")
-    
+   
