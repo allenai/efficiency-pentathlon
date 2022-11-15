@@ -28,7 +28,9 @@ if __name__ == "__main__":
     )
 
     inputs, references = get_dataset()
+    # We will start recording the time, energy, memory, etc. here.
     outputs = submission.inference(inputs)
+    # We stop the recording here.
     with open("output.csv", "w") as fout:
         fieldnames = ["id", "input", "prediction", "reference"]
         writer = csv.DictWriter(fout, fieldnames=fieldnames, delimiter="|")
