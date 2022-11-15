@@ -1,0 +1,14 @@
+name: fairseq
+channels:
+  - conda-forge
+  - nvidia
+  - pytorch
+dependencies:
+  - nvidia::cudatoolkit=11.3
+  - python=3.8
+  - pytorch::pytorch
+  - pip
+  - pip:
+    - numpy
+    - sacremoses
+    - sentencepiece
