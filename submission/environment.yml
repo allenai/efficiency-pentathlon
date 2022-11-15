@@ -1,4 +1,4 @@
-name: fairseq
+name: efficiency-benchmark-submission
 channels:
   - conda-forge
   - nvidia
@@ -10,5 +10,6 @@ dependencies:
   - pip
   - pip:
     - numpy
-    - sacremoses
+    - transformers
+    - datasets
     - sentencepiece
