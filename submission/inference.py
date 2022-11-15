@@ -7,6 +7,7 @@ from example_mbart_translation import MBartSubmission
 DEVICE = "cuda:0"
 
 
+# Feel free to change this to your favorite datasets!
 def get_dataset() -> Tuple[List[str], List[str]]:
     data = load_dataset("wmt14", "de-en")["validation"]["translation"]
     inputs, references = [], []
