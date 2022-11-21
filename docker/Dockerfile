@@ -1,11 +1,13 @@
 FROM nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04
-ENV ENV_NAME=efficiency
-# Codebase
-# COPY distill /
-
 ARG DEBIAN_FRONTEND=noninteractive
+ENV ENV_NAME=efficiency
+
 # Remove any third-party apt sources to avoid issues with expiring keys.
 RUN rm -f /etc/apt/sources.list.d/*.list
+
+ENV LC_ALL en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US.UTF-8
 
 # Install some basic utilities
 RUN apt update --fix-missing -y && \
@@ -18,53 +20,85 @@ RUN apt update --fix-missing -y && \
     sudo \
     curl \
     libx11-6 \
-    wget && \
-    apt clean && \
+    wget \
+    curl \
+    apt-transport-https \
+    bison \
+    build-essential \
+    cmake \
+    flex \
+    libedit-dev \
+    libllvm12 \
+    llvm-12-dev \
+    libclang-12-dev \
+    zlib1g-dev \
+    libelf-dev \
+    locales \
+    locales-all \
+    libelf1 \
+    python3 \
+    python3-pip \
+    && apt clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Install conda
-ENV PATH="/root/miniconda3/bin:${PATH}"
-ARG PATH="/root/miniconda3/bin:${PATH}"
-RUN wget \
-    https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-    && mkdir /root/.conda \
-    && bash Miniconda3-latest-Linux-x86_64.sh -b \
-    && rm -f Miniconda3-latest-Linux-x86_64.sh
+# ENV PATH="/root/miniconda3/bin:${PATH}"
+# ARG PATH="/root/miniconda3/bin:${PATH}"
+# RUN wget \
+#     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+#     && mkdir /root/.conda \
+#     && bash Miniconda3-latest-Linux-x86_64.sh -b \
+#     && rm -f Miniconda3-latest-Linux-x86_64.sh
 
-# Create a working directory
-RUN mkdir /app
-WORKDIR /app
+WORKDIR /home
+# ADD environment.yml /home/environment.yml
+# ADD entrypoint.sh /home/entrypoint.sh
+# RUN chmod +x entrypoint.sh
+# RUN conda env create --name ${ENV_NAME} --file /home/environment.yml
 
-COPY environment.yml /app/environment.yml
-COPY entrypoint.sh ./
-RUN chmod +x entrypoint.sh
+RUN git clone https://github.com/iovisor/bcc.git \
+  && cd bcc \
+  && mkdir build \
+  && cd build \
+  && cmake .. \
+  && make -j \
+  && make install \
+  && cmake -DPYTHON_CMD=python3 .. \
+  && cd src/python/ \
+  && make -j \
+  && make install \
+  && cd /home \
+  && rm -r bcc
 
-# SHELL ["/bin/bash", "--login"]
-# RUN eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
-RUN conda env create --name ${ENV_NAME} --file /app/environment.yml
+RUN git clone --branch v1.0 https://github.com/DataDog/sketches-py.git \
+  && cd sketches-py \
+  && python3 setup.py install \
+  && cd /home \
+  && rm -r sketches-py \
+  && rm -rf /var/lib/apt/lists/*
 
 # Install likwid to monitor CPU and DRAM energy
 # https://github.com/RRZE-HPC/likwid.git
 RUN git clone https://github.com/RRZE-HPC/likwid.git \
     && cd likwid \
-    && make && make install \
+    && make -j && make install \
     && cd .. \ 
     && git clone https://github.com/RRZE-HPC/pylikwid.git \
     && cd pylikwid \
-    && python setup.py build_ext -I /app/likwid/src/includes/ -L /app/likwid/ -R /app/likwid/ \
-    && pip install -e . \
-    && cd .. 
+    && python3 setup.py build_ext -I /app/likwid/src/includes/ -L /app/likwid/ -R /app/likwid/ \
+    && pip3 install -e . \
+    && cd /home
 
-# Install rprof to monitor GPU energy
-# COPY rprof ./rprof
-# RUN cd rprof \
-#     && pip install -e . \
-#    && rm -rf rprof
 
-# COPY profile_cpu.sh ./
-# COPY hello_world.py ./
-# COPY entrypoint.py ./
-# COPY profile_gpu.py ./
+RUN mkdir /home/deep_mon
+ADD bpf /home/deep_mon/bpf
+ADD userspace /home/deep_mon/userspace
+ADD deep_mon.py /home/deep_mon/
+ADD setup.py /home
+ADD config.yaml /home
 
+RUN pip3 install --editable . 
+RUN pip3 install --upgrade numpy pyyaml docker
+ENV PYTHONUNBUFFERED="on"
 # RUN conda activate ${ENV_NAME}
-ENTRYPOINT ["python", "workspace/cpu_power.py"]
+# ENTRYPOINT ["python", "workspace/cpu_power.py"]

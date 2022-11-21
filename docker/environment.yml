@@ -1,6 +1,10 @@
 channels:
   - conda-forge
 dependencies:
-  - python=3.9
-  - pip=22.1.2
-  - pytorch
+  - python=3.8
+  - pip
+  - pip:
+    - numpy
+    - pyyaml
+    - docker
+  # - pytorch
