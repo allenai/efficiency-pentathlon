@@ -144,7 +144,7 @@ class BpfCollector:
     def __init__(self, topology, debug, power_measure):
         self.topology = topology
         self.debug = debug
-        self.power_measure = power_measure
+        self.power_measure = True
         bpf_code_path = os.path.dirname(os.path.abspath(__file__)) \
                         + "/../bpf/bpf_monitor.c"
         if debug is False:
@@ -360,6 +360,8 @@ class BpfCollector:
                     "core": 0,
                     "dram": 0
                     }
+        # TODO(fix)
+        core_power = package_power
 
         for key, data in self.pids.items():
 
