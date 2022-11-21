@@ -36,6 +36,7 @@
  * [ CPU_0 SELECTOR_0 | CPU_0 SELECTOR_1 | CPU_1 SELECTOR_0 | CPU_1 SELECTOR_1 ]
  */
 #define NUM_SLOTS NUM_SOCKETS * SELECTOR_DIM
+#define PERFORMANCE_COUNTERS 1
 
 /**
  * pid_status is used to store information about pid X
