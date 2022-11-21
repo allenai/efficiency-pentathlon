@@ -1,0 +1,1 @@
+docker run -it --rm --privileged  -v /lib/modules:/lib/modules:ro -v /usr/src:/usr/src:ro -v /etc/localtime:/etc/localtime:ro -v /sys/kernel/debug:/sys/kernel/debug:rw -v /proc:/host/proc:ro -v ${PWD}/config.yaml:/home/config.yaml -v /var/run/docker.sock:/var/run/docker.sock --net host test /bin/bash
