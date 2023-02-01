@@ -1,16 +1,23 @@
+from typing import (
+    Union,
+    Dict,
+    Any,
+    Optional,
+    Sequence,
+    Iterable
+)
 from collections import defaultdict
 from random import Random
-from typing import Any, Dict, Iterable, Optional, Sequence, Union
 
-import torch
-from tango import JsonFormat, Step
+from tango import Step, JsonFormat
 from tango.common.sequences import SqliteSparseSequence
 from tango.format import SqliteSequenceFormat, TextFormat
+import torch
 
-from catwalk.model import Model
-from catwalk.models import MODELS
 from catwalk.task import Task
 from catwalk.tasks import TASKS
+from catwalk.model import Model
+from catwalk.models import MODELS
 
 
 @Step.register("catwalk::predict")
@@ -49,7 +56,8 @@ class PredictStep(Step):
         if limit is not None and len(instances) > limit:
             instances = instances[:limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, limit)
         instances = instances[len(results):]
-        for result in model.predict(task, instances, **kwargs):
+        model.prepare(task, instances)
+        for result in model.predict(task, **kwargs):
             results.append(result)
         return results
 

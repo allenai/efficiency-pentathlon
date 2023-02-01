@@ -55,6 +55,9 @@ def recursive_tolist(args: _TorchmetricsResult) -> _CatwalkResult:
 class Model(Registrable, DetHashWithVersion, ABC):
     VERSION = "002lst"
 
+    def prepare(self, task: Task, instances: Sequence[Dict[str, Any]], **kwargs):
+        raise NotImplementedError()
+
     def predict(self, task: Task, instances: Sequence[Dict[str, Any]], **kwargs) -> Iterator[Dict[str, Any]]:
         raise NotImplementedError()
 
