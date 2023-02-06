@@ -27,12 +27,16 @@ if __name__ == "__main__":
             cpu_stops.append(pylikwid.stoppower(cpu, cpu_domainid))
             dram_stops.append(pylikwid.stoppower(cpu, dram_domainid))
         time_elapsed = time.time() - start
-        results = {"time": time_elapsed}
+        results = {
+            "time": time_elapsed,
+            "cpu_energy": 0.0,
+            "dram_energy": 0.0
+        }
         for i in range(len(cpus)):
             cpu_energy = pylikwid.getpower(cpu_starts[i], cpu_stops[i], cpu_domainid)
             dram_energy = pylikwid.getpower(dram_starts[i], dram_stops[i], dram_domainid)
-            results[f"cpu_{i}"] = cpu_energy
-            results[f"dram_{i}"] = dram_energy
+            results[f"cpu_energy"] += cpu_energy
+            results[f"dram_energy"] += dram_energy
         print(results)
         sys.exit(0)
 
