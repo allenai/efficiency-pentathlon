@@ -1,3 +1,13 @@
+import os
+import pathlib
+import multiprocessing
+import subprocess
+import docker
+import time
+import signal
+import sys
+import csv
+import json
 from typing import (
     Union,
     Dict,
@@ -8,7 +18,6 @@ from typing import (
 )
 from collections import defaultdict
 from random import Random
-
 from tango import Step, JsonFormat
 from tango.common.sequences import SqliteSparseSequence
 from tango.format import SqliteSequenceFormat, TextFormat
@@ -18,9 +27,11 @@ from catwalk.task import Task
 from catwalk.tasks import TASKS
 from catwalk.model import Model
 from catwalk.models import MODELS
+from catwalk.carbon import get_realtime_carbon  # (TODO)
 
 
-@Step.register("catwalk::predict")
+LOG_DIR = "workspace/log"  # TODO
+
 class PredictStep(Step):
     VERSION = "001"
     SKIP_ID_ARGUMENTS = {"batch_size"}
@@ -34,6 +45,71 @@ class PredictStep(Step):
         if kwargs["split"] is None:
             kwargs["split"] = kwargs["task"].default_split
         return kwargs
+
+    def start_profiling(
+        self,
+    ):
+        client = docker.from_env()
+        self._container = client.containers.run(
+            "test:latest",
+            "python3 workspace/profile_cpu.py",
+            name="test",
+            privileged=True,
+            tty=True,
+            remove=True,
+            volumes={
+                f"{os.getcwd()}/workspace": {"bind": "/home/workspace", "mode": "rw"}
+            },
+            detach=True,
+            stdout=True,
+            stderr=True
+        )
+        self._container.attach(stdout=True, stream=True, logs=True, stderr=True)
+        self._p_gpu = subprocess.Popen(
+            [f"{sys.executable}", "workspace/profile_gpu.py"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
+            shell=False
+        )
+        self._start_time = time.time()
+
+    def end_profiling(self):
+        time_elapsed = time.time() - self._start_time
+        # os.chdir(self._monitor_dir)
+        os.kill(self._p_gpu.pid, signal.SIGTERM)
+        if not self._p_gpu.poll():
+            print("GPU monitor correctly halted")
+        self._container.kill(signal.SIGINT)
+        cpu_results = json.loads(self._container
+                                .logs()
+                                .strip()
+                                .decode('UTF-8')
+                                .replace("\'", "\""))
+        self._p_gpu.wait()
+        self._container.stop()
+
+        gpu_energy, max_gpu_mem = 0, 0
+        with open(f"{LOG_DIR}/gpu.csv") as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                gpu_energy = gpu_energy + float(row["energy"])
+                max_gpu_mem = max_gpu_mem + float(row["max_mem"])
+        gpu_energy = gpu_energy / 3600.0
+        cpu_energy = cpu_results["cpu_energy"] / 3600.0  # Wh
+        mem_energy = cpu_results["dram_energy"] / 3600.0  # Wh
+        # total_memory = subprocess.getoutput("cat /proc/meminfo | grep MemTotal")  # in KiB
+        # total_memory = float(total_memory.split()[1]) / 2 ** 20
+
+        total_energy = gpu_energy + cpu_energy + mem_energy
+        carbon = get_realtime_carbon(total_energy)  # in g
+        print(f"Time Elapsed: {time_elapsed:.2f} s")
+        # print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .2f} GiB")
+        print(f"Max GPU Memory Usage: {max_gpu_mem: .2f} GiB")
+        print(f"GPU Energy: {gpu_energy:.2e} Wh")
+        print(f"CPU Energy: {cpu_energy: .2e} Wh")
+        print(f"Memory Energy: {mem_energy: .2e} Wh")
+        print(f"Total Energy: {total_energy: .2e} Wh")
+        print(f"CO2 emission: {carbon: .2e} grams.")
 
     def run(
         self,
@@ -57,12 +133,14 @@ class PredictStep(Step):
             instances = instances[:limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, limit)
         instances = instances[len(results):]
         model.prepare(task, instances)
+
+        self.start_profiling()
         for result in model.predict(task, **kwargs):
             results.append(result)
+        self.end_profiling()
         return results
 
 
-@Step.register("catwalk::calculate_metrics")
 class CalculateMetricsStep(Step):
     VERSION = "001"
     FORMAT = JsonFormat
@@ -87,7 +165,7 @@ class CalculateMetricsStep(Step):
 
         return model.calculate_metrics(task, predictions)
 
-@Step.register("catwalk::tabulate_metrics")
+
 class TabulateMetricsStep(Step):
     VERSION = "001"
     FORMAT = TextFormat
@@ -102,7 +180,7 @@ class TabulateMetricsStep(Step):
                         flattend_metrics[task_name][f"{metric_name}.{nested_metric_name}"] = nested_metric_value.item() if isinstance(nested_metric_value, torch.Tensor) else nested_metric_value
                 else:
                     flattend_metrics[task_name][metric_name] = metric_value
-            
+
         if format == "text":
             for task_name, task_metrics in flattend_metrics.items():
                 for metric_name, metric_value in task_metrics.items():
@@ -111,4 +189,3 @@ class TabulateMetricsStep(Step):
             raise NotImplementedError()
         else:
             raise AttributeError("At the moment, only the 'text' format is supported.")
-        

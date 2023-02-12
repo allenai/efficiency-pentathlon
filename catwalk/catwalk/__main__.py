@@ -58,11 +58,13 @@ def main(args: argparse.Namespace):
             split=args.split,
             batch_size=args.batch_size,
             limit=limit,
-            **kwargs)
+            **kwargs
+        )
         metrics = CalculateMetricsStep(
             model=args.model,
             task=task,
-            predictions=predictions)
+            predictions=predictions
+        )
         metric_task_dict[task] = metrics
 
     table_step = TabulateMetricsStep(metrics=metric_task_dict)
