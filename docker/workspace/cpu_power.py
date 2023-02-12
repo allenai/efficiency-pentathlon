@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     fout = open(f"{os.getcwd()}/workspace/log/cpu_power.csv", "w")
     fout.write("time,cpu,dram\n")
-    try: 
+    try:
         while True:
             for j in range(len(cpus)):
                 cpu = cpus[j]
@@ -45,7 +45,6 @@ if __name__ == "__main__":
                 cpu = cpus[j]
                 cpu_stops[j] = pylikwid.stoppower(cpu, cpu_domainid)
                 dram_stops[j] = pylikwid.stoppower(cpu, dram_domainid)
-            
             for j in range(len(cpus)):
                 cpu_energy = pylikwid.getpower(
                     cpu_starts[j], cpu_stops[j], cpu_domainid)

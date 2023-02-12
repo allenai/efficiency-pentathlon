@@ -85,7 +85,7 @@ RUN git clone https://github.com/RRZE-HPC/likwid.git \
     && cd .. \ 
     && git clone https://github.com/RRZE-HPC/pylikwid.git \
     && cd pylikwid \
-    && python3 setup.py build_ext -I /app/likwid/src/includes/ -L /app/likwid/ -R /app/likwid/ \
+    && python3 setup.py build_ext -I /home/likwid/src/includes/ -L /home/likwid/ -R /home/likwid/ \
     && pip3 install -e . \
     && cd /home
 
@@ -96,9 +96,10 @@ ADD userspace /home/deep_mon/userspace
 ADD deep_mon.py /home/deep_mon/
 ADD setup.py /home
 ADD config.yaml /home
+ADD cpu.py /home
 
 RUN pip3 install --editable . 
 RUN pip3 install --upgrade numpy pyyaml docker
 ENV PYTHONUNBUFFERED="on"
 # RUN conda activate ${ENV_NAME}
-# ENTRYPOINT ["python", "workspace/cpu_power.py"]
+# ENTRYPOINT ["python3", "workspace/cpu_power.py"]

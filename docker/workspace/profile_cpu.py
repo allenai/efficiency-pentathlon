@@ -6,6 +6,8 @@ import sys
 import signal
 
 
+TIME_INTERVAL = 0.1
+
 if __name__ == "__main__":
     init_start = time.time()
     pylikwid.inittopology()
@@ -35,8 +37,8 @@ if __name__ == "__main__":
         for i in range(len(cpus)):
             cpu_energy = pylikwid.getpower(cpu_starts[i], cpu_stops[i], cpu_domainid)
             dram_energy = pylikwid.getpower(dram_starts[i], dram_stops[i], dram_domainid)
-            results[f"cpu_energy"] += cpu_energy
-            results[f"dram_energy"] += dram_energy
+            results[f"cpu_energy"] += cpu_energy  # Ws
+            results[f"dram_energy"] += dram_energy  # Ws
         print(results)
         sys.exit(0)
 

@@ -14,9 +14,6 @@ from carbon import get_realtime_carbon
 import pathlib
 
 
-
-
-
 if __name__ == "__main__":
     time_interval = 0.1
     wrapup_time = 10
@@ -31,13 +28,13 @@ if __name__ == "__main__":
     devnull = open("/dev/null", "w")
     container = client.containers.run(
         "test:latest",
-        "python workspace/cpu_power.py",
+        "python3 workspace/cpu_power.py",
         name="test",
         privileged=True,
         tty=True,
         remove=True,
         volumes={
-            f"{os.getcwd()}/workspace": {"bind": "/app/workspace", "mode": "rw"}
+            f"{os.getcwd()}/workspace": {"bind": "/home/workspace", "mode": "rw"}
         },
         detach=True
     )
@@ -86,12 +83,10 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, sigterm_handler)
     signal.signal(signal.SIGINT, sigterm_handler)
 
-    print("Executing:", " ".join(sys.argv[1:-1]))
+    print("Executing:", " ".join(sys.argv[1:]))
     os.chdir(cur_dir)
     start_time = time.time()
     time.sleep(5)
     os.system(" ".join(sys.argv[1:]))
     end_time = time.time()
     wrapup()
-
-   

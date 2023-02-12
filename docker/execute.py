@@ -1,19 +1,20 @@
 #!/usr/bin/env python
-import time
-import sys
-import os
-import subprocess
-import signal
-import docker
-import time
 import csv
+import json
 import multiprocessing
-from utils import get_num_instances
-from utils import LOG_DIR
-from carbon import get_realtime_carbon
+import os
 import pathlib
+import signal
+import subprocess
+import sys
+import time
+from carbon import get_realtime_carbon
+from utils import LOG_DIR
+import docker
+import rprof
 
-
+def profile_gpu():
+    rprof.start_profiling(100, 99999)
 if __name__ == "__main__":
     cur_dir = os.getcwd()
     monitor_dir = pathlib.Path(__file__).parent.resolve()
@@ -26,19 +27,20 @@ if __name__ == "__main__":
     devnull = open("/dev/null", "w")
     container = client.containers.run(
         "test:latest",
-        "python workspace/profile_cpu.py",
+        "python3 workspace/profile_cpu.py",
         name="test",
         privileged=True,
         tty=True,
         remove=True,
         volumes={
-            f"{os.getcwd()}/workspace": {"bind": "/app/workspace", "mode": "rw"}
+            f"{os.getcwd()}/workspace": {"bind": "/home/workspace", "mode": "rw"}
         },
-        detach=True
+        detach=True,
+        stdout=True,
+        stderr=True
     )
     output = container.attach(stdout=True, stream=True, logs=True, stderr=True)
     p_gpu = subprocess.Popen([f"{sys.executable}", "workspace/profile_gpu.py"], stdout=devnull, shell=False)
-    p_docker = subprocess.Popen([f"sh", "docker_monitor.sh"], stdout=devnull, shell=False)
 
     print("Executing:", " ".join(sys.argv[1:]))
     os.chdir(cur_dir)
@@ -49,53 +51,37 @@ if __name__ == "__main__":
     os.kill(p_gpu.pid, signal.SIGTERM)
     if not p_gpu.poll():
         print("GPU monitor correctly halted")
-    os.kill(p_docker.pid, signal.SIGTERM)
-    if not p_docker.poll():
-        print("Docker monitor correctly halted")
-    container.kill("SIGTERM")
+    container.kill(signal.SIGINT)
+    cpu_results = json.loads(container
+                             .logs()
+                             .strip()
+                             .decode('UTF-8')
+                             .replace("\'", "\""))
     p_gpu.wait()
-    p_docker.wait()
+    out, err = p_gpu.communicate()
+    container.stop()
+    print(out, err)
+    dsa
 
     gpu_energy, max_gpu_mem = 0, 0
-    cpu_energy, mem_energy = 0, 0
     with open(f"{LOG_DIR}/gpu.csv") as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             gpu_energy = gpu_energy + float(row["energy"])
             max_gpu_mem = max_gpu_mem + float(row["max_mem"])
-    with open("workspace/log/cpu.csv") as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            cpu_energy = cpu_energy + float(row["cpu_energy"])
-            mem_energy = mem_energy + float(row["dram_energy"])
-    with open(f"{LOG_DIR}/docker.csv") as csvfile:
-        reader = csv.DictReader(csvfile)
-        cpu_util, mem_util, max_mem_util = 0, 0, 0
-        num_rows = 1e-6
-        for row in reader:
-            num_rows += 1
-            cpu_util = cpu_util + float(row["cpu_util"].strip("%")) / 100
-            mem_util = mem_util + float(row["mem_util"].strip("%")) / 100
-            max_mem_util = max(max_mem_util, mem_util)
-        cpu_util = cpu_util / (num_rows) / num_cpus
-        mem_util = mem_util / (num_rows)
     gpu_energy = gpu_energy / 3600.0
-    cpu_energy = cpu_energy * cpu_util / 3600.0
-    mem_energy = mem_energy * mem_util / 3600.0
-    total_memory = subprocess.getoutput("cat /proc/meminfo | grep MemTotal")  # in KiB
-    total_memory = float(total_memory.split()[1]) / 2 ** 20
-    num_instances = get_num_instances("iwslt14ende")
+    cpu_energy = cpu_results["cpu_energy"] / 3600.0  # Wh
+    mem_energy = cpu_results["dram_energy"] / 3600.0  # Wh
+    # total_memory = subprocess.getoutput("cat /proc/meminfo | grep MemTotal")  # in KiB
+    # total_memory = float(total_memory.split()[1]) / 2 ** 20
     time_elapsed = end_time - start_time
     total_energy = gpu_energy + cpu_energy + mem_energy
     carbon = get_realtime_carbon(total_energy)  # in g
-
-    print(f"Time Elapsed: {time_elapsed:.2f} s") 
-    print(f"Throughput: {num_instances / time_elapsed: .2f} instances/s")
-    print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .2f} GiB")
+    print(f"Time Elapsed: {time_elapsed:.2f} s")
+    # print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .2f} GiB")
     print(f"Max GPU Memory Usage: {max_gpu_mem: .2f} GiB")
-    print(f"GPU Energy: {gpu_energy:.2e} Wh", end="; ")
-    print(f"CPU Energy: {cpu_energy: .2e} Wh", end="; ")
-    print(f"Memory Energy: {mem_energy: .2e} Wh", end="; ")
-    print(f"Total Energy: {total_energy: .2e} Wh", end="; ")
+    print(f"GPU Energy: {gpu_energy:.2e} Wh")
+    print(f"CPU Energy: {cpu_energy: .2e} Wh")
+    print(f"Memory Energy: {mem_energy: .2e} Wh")
+    print(f"Total Energy: {total_energy: .2e} Wh")
     print(f"CO2 emission: {carbon: .2e} grams.")
-    
