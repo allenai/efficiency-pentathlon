@@ -60,8 +60,6 @@ if __name__ == "__main__":
     p_gpu.wait()
     out, err = p_gpu.communicate()
     container.stop()
-    print(out, err)
-    dsa
 
     gpu_energy, max_gpu_mem = 0, 0
     with open(f"{LOG_DIR}/gpu.csv") as csvfile:
