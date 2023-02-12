@@ -64,7 +64,7 @@ class PredictStep(Step):
             stdout=True,
             stderr=True
         )
-        self._container.attach(stdout=True, stream=True, logs=True, stderr=True)
+        # self._container.attach(stdout=True, stream=True, logs=True, stderr=True)
         self._p_gpu = subprocess.Popen(
             [f"{sys.executable}", "workspace/profile_gpu.py"],
             stdout=subprocess.DEVNULL,
