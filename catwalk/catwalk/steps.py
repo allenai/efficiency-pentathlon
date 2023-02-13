@@ -31,7 +31,7 @@ from catwalk.models import MODELS
 from catwalk.carbon import get_realtime_carbon  # (TODO)
 
 
-LOG_DIR = "workspace/log"  # TODO
+LOG_DIR = "log"  # TODO
 
 class PredictStep(Step):
     VERSION = "001"
@@ -53,20 +53,20 @@ class PredictStep(Step):
         client = docker.from_env()
         self._container = client.containers.run(
             "test:latest",
-            "python3 workspace/profile_cpu.py",
+            "python3 profile_cpu.py",
             name="test",
             privileged=True,
             tty=True,
             remove=True,
-            volumes={
-                f"{os.getcwd()}/workspace": {"bind": "/home/workspace", "mode": "rw"}
-            },
+            # volumes={
+            #     f"{os.getcwd()}/workspace": {"bind": "/home/workspace", "mode": "rw"}
+            # },
             detach=True,
             stdout=True,
             stderr=True
         )
         self._p_gpu = subprocess.Popen(
-            [f"{sys.executable}", "workspace/profile_gpu.py"],
+            [f"{sys.executable}", "profile_gpu.py"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.STDOUT,
             shell=False
@@ -102,7 +102,7 @@ class PredictStep(Step):
         return {
             "time": time_elapsed,
             "max_gpu_mem": max_gpu_mem,
-            "gpu_energy": gpu_energy,
+            "gpu_energy": gpu_energy,  # Wh
             "cpu_energy": cpu_energy,  # Wh
             "dram_energy": dram_energy,  # Wh
             "total_energy": total_energy,
