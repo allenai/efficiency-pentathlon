@@ -45,9 +45,9 @@ class PredictStep(Step):
     ):
         client = docker.from_env()
         self._container = client.containers.run(
-            "test:latest",
+            "cpu_profiler:latest",
             "python3 profile_cpu.py",
-            name="test",
+            name="cpu_profiler",
             privileged=True,
             tty=True,
             remove=True,
