@@ -6,11 +6,11 @@ from tango.common import Tqdm
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from catwalk.model import UnsupportedTaskError
-from catwalk.models.submission import Submission
+from catwalk.models.template import SubmissionTemplate
 from catwalk.task import InstanceFormat, Task
 
 
-class BertExample(Submission):
+class BertExample(SubmissionTemplate):
 
     def _load_model(self, device):
         ### TODO(participants): load models and necessary tools. ###
