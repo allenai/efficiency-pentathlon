@@ -1,6 +1,4 @@
 import os
-import pathlib
-import multiprocessing
 import subprocess
 import docker
 import time
@@ -14,8 +12,7 @@ from typing import (
     Any,
     Optional,
     Sequence,
-    Iterable,
-    Tuple
+    Iterable
 )
 from collections import defaultdict
 from random import Random
@@ -28,10 +25,11 @@ from catwalk.task import Task
 from catwalk.tasks import TASKS
 from catwalk.model import Model
 from catwalk.models import MODELS
-from catwalk.carbon import get_realtime_carbon  # (TODO)
+from catwalk.efficiency.carbon import get_realtime_carbon  # (TODO)
+import pathlib
 
 
-LOG_DIR = "log"  # TODO
+EFFICIENCY_DIR = f"{pathlib.Path(__file__).parent.resolve()}/efficiency"  # TODO
 
 class PredictStep(Step):
     VERSION = "001"
@@ -58,16 +56,13 @@ class PredictStep(Step):
             privileged=True,
             tty=True,
             remove=True,
-            # volumes={
-            #     f"{os.getcwd()}/workspace": {"bind": "/home/workspace", "mode": "rw"}
-            # },
             detach=True,
             stdout=True,
             stderr=True
         )
         self._p_gpu = subprocess.Popen(
-            [f"{sys.executable}", "profile_gpu.py"],
-            stdout=subprocess.DEVNULL,
+            [f"{sys.executable}", f"{EFFICIENCY_DIR}/profile_gpu.py"],
+            stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             shell=False
         )
@@ -86,13 +81,18 @@ class PredictStep(Step):
                                 .replace("\'", "\""))
         self._p_gpu.wait()
         self._container.stop()
+        gpu_results = (self._p_gpu
+                       .communicate()[0]
+                       .strip()
+                       .decode('UTF-8')
+                       .replace("\'", "\""))
+        reader = csv.DictReader(gpu_results.split("\n"), delimiter=",")
+        gpu_results = [r for r in reader]
 
         gpu_energy, max_gpu_mem = 0, 0
-        with open(f"{LOG_DIR}/gpu.csv") as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                gpu_energy = gpu_energy + float(row["energy"])
-                max_gpu_mem = max_gpu_mem + float(row["max_mem"])
+        for g in gpu_results:
+            gpu_energy += float(g["energy"])
+            max_gpu_mem += float(g["max_mem"])
         gpu_energy = gpu_energy / 3600.0
         cpu_energy = cpu_results["cpu_energy"] / 3600.0  # Wh
         dram_energy = cpu_results["dram_energy"] / 3600.0  # Wh
