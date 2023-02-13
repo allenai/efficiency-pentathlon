@@ -14,7 +14,8 @@ from typing import (
     Any,
     Optional,
     Sequence,
-    Iterable
+    Iterable,
+    Tuple
 )
 from collections import defaultdict
 from random import Random
@@ -64,7 +65,6 @@ class PredictStep(Step):
             stdout=True,
             stderr=True
         )
-        # self._container.attach(stdout=True, stream=True, logs=True, stderr=True)
         self._p_gpu = subprocess.Popen(
             [f"{sys.executable}", "workspace/profile_gpu.py"],
             stdout=subprocess.DEVNULL,
@@ -75,7 +75,6 @@ class PredictStep(Step):
 
     def end_profiling(self):
         time_elapsed = time.time() - self._start_time
-        # os.chdir(self._monitor_dir)
         os.kill(self._p_gpu.pid, signal.SIGTERM)
         if not self._p_gpu.poll():
             print("GPU monitor correctly halted")
@@ -96,20 +95,32 @@ class PredictStep(Step):
                 max_gpu_mem = max_gpu_mem + float(row["max_mem"])
         gpu_energy = gpu_energy / 3600.0
         cpu_energy = cpu_results["cpu_energy"] / 3600.0  # Wh
-        mem_energy = cpu_results["dram_energy"] / 3600.0  # Wh
-        # total_memory = subprocess.getoutput("cat /proc/meminfo | grep MemTotal")  # in KiB
-        # total_memory = float(total_memory.split()[1]) / 2 ** 20
+        dram_energy = cpu_results["dram_energy"] / 3600.0  # Wh
 
-        total_energy = gpu_energy + cpu_energy + mem_energy
+        total_energy = gpu_energy + cpu_energy + dram_energy
         carbon = get_realtime_carbon(total_energy)  # in g
-        print(f"Time Elapsed: {time_elapsed:.2f} s")
+        return {
+            "time": time_elapsed,
+            "max_gpu_mem": max_gpu_mem,
+            "gpu_energy": gpu_energy,
+            "cpu_energy": cpu_energy,  # Wh
+            "dram_energy": dram_energy,  # Wh
+            "total_energy": total_energy,
+            "carbon": carbon
+        }
+
+    def tabulate_efficiency_metrics(
+        self,
+        efficiency_metrics: Dict[str, Any]
+    ):
+        print(f"Time Elapsed: {efficiency_metrics['time']:.2f} s")
         # print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .2f} GiB")
-        print(f"Max GPU Memory Usage: {max_gpu_mem: .2f} GiB")
-        print(f"GPU Energy: {gpu_energy:.2e} Wh")
-        print(f"CPU Energy: {cpu_energy: .2e} Wh")
-        print(f"Memory Energy: {mem_energy: .2e} Wh")
-        print(f"Total Energy: {total_energy: .2e} Wh")
-        print(f"CO2 emission: {carbon: .2e} grams.")
+        print(f"Max GPU Memory Usage: {efficiency_metrics['max_gpu_mem']: .2f} GiB")
+        print(f"GPU Energy: {efficiency_metrics['gpu_energy']:.2e} Wh")
+        print(f"CPU Energy: {efficiency_metrics['cpu_energy']: .2e} Wh")
+        print(f"Memory Energy: {efficiency_metrics['dram_energy']: .2e} Wh")
+        print(f"Total Energy: {efficiency_metrics['total_energy']: .2e} Wh")
+        print(f"CO2 emission: {efficiency_metrics['carbon']: .2e} grams.")
 
     def run(
         self,
@@ -137,7 +148,8 @@ class PredictStep(Step):
         self.start_profiling()
         for result in model.predict(task, **kwargs):
             results.append(result)
-        self.end_profiling()
+        efficiency_metrics = self.end_profiling()
+        self.tabulate_efficiency_metrics(efficiency_metrics)
         return results
 
 
