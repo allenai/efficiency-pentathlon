@@ -1,5 +1,7 @@
 from typing import Dict
 from catwalk.model import Model
-from catwalk.models.efficiency_benchmark import BenchmarkModel
+from catwalk.models.bert_example import BertExample
+from catwalk.models.submission import Submission
 
-MODELS: Dict[str, Model] = {"efficiency-benchmark": BenchmarkModel("path")}
+MODELS: Dict[str, Model] = {"submission": Submission()}
+MODELS: Dict[str, Model] = {"bert-example": BertExample()}
