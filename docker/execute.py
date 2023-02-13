@@ -58,7 +58,6 @@ if __name__ == "__main__":
                              .decode('UTF-8')
                              .replace("\'", "\""))
     p_gpu.wait()
-    out, err = p_gpu.communicate()
     container.stop()
 
     gpu_energy, max_gpu_mem = 0, 0

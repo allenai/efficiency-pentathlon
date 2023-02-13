@@ -1,0 +1,8 @@
+*.pyc
+**/__pycache__/
+*.egg-info/
+*.so
+**/log/
+**/build/
+**/dist/
+**/calibration_data/

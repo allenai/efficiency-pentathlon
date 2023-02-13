@@ -32,7 +32,6 @@ RUN git clone https://github.com/iovisor/bcc.git \
   && make \
   && make install \
   && cd /
-  # && rm -r bcc
 
 RUN git clone --branch v1.0 https://github.com/DataDog/sketches-py.git \
   && cd sketches-py \
