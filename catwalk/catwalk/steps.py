@@ -1,35 +1,30 @@
-import os
-import subprocess
-import docker
-import time
-import signal
-import sys
 import csv
 import json
-from typing import (
-    Union,
-    Dict,
-    Any,
-    Optional,
-    Sequence,
-    Iterable
-)
+import os
+import pathlib
+import signal
+import subprocess
+import sys
+import time
 from collections import defaultdict
 from random import Random
-from tango import Step, JsonFormat
+from typing import Any, Dict, Iterable, Optional, Sequence, Union
+
+import torch
+from tango import JsonFormat, Step
 from tango.common.sequences import SqliteSparseSequence
 from tango.format import SqliteSequenceFormat, TextFormat
-import torch
 
-from catwalk.task import Task
-from catwalk.tasks import TASKS
+import docker
+from catwalk.efficiency.carbon import get_realtime_carbon  # (TODO)
 from catwalk.model import Model
 from catwalk.models import MODELS
-from catwalk.efficiency.carbon import get_realtime_carbon  # (TODO)
-import pathlib
+from catwalk.task import Task
+from catwalk.tasks import TASKS
 
 
 EFFICIENCY_DIR = f"{pathlib.Path(__file__).parent.resolve()}/efficiency"  # TODO
+
 
 class PredictStep(Step):
     VERSION = "001"
@@ -71,8 +66,8 @@ class PredictStep(Step):
     def end_profiling(self):
         time_elapsed = time.time() - self._start_time
         os.kill(self._p_gpu.pid, signal.SIGTERM)
-        if not self._p_gpu.poll():
-            print("GPU monitor correctly halted")
+        # if not self._p_gpu.poll():
+        #     print("GPU monitor correctly halted")
         self._container.kill(signal.SIGINT)
         cpu_results = json.loads(self._container
                                 .logs()

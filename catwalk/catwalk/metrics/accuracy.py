@@ -26,7 +26,7 @@ class AccuracyMetric(BaseAggregator):
         self.total_count += 1
 
     def compute(self) -> torch.Tensor:
-        return torch.tensor(self.correct_count / self.total_count, dtype=torch.float)
+        return (self.correct_count / self.total_count).clone().detach()
 
 
 class RelativeAccuracyImprovementMetric(AccuracyMetric):
