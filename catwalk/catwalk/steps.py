@@ -43,18 +43,18 @@ class PredictStep(Step):
     def start_profiling(
         self,
     ):
-        client = docker.from_env()
-        self._container = client.containers.run(
-            "cpu_profiler:latest",
-            "python3 profile_cpu.py",
-            name="cpu_profiler",
-            privileged=True,
-            tty=True,
-            remove=True,
-            detach=True,
-            stdout=True,
-            stderr=True
-        )
+        # client = docker.from_env()
+        # self._container = client.containers.run(
+        #     "cpu_profiler:latest",
+        #     "python3 profile_cpu.py",
+        #     name="cpu_profiler",
+        #     privileged=True,
+        #     tty=True,
+        #     remove=True,
+        #     detach=True,
+        #     stdout=True,
+        #     stderr=True
+        # )
         self._p_gpu = subprocess.Popen(
             [f"{sys.executable}", f"{EFFICIENCY_DIR}/profile_gpu.py"],
             stdout=subprocess.PIPE,
@@ -68,14 +68,14 @@ class PredictStep(Step):
         os.kill(self._p_gpu.pid, signal.SIGTERM)
         # if not self._p_gpu.poll():
         #     print("GPU monitor correctly halted")
-        self._container.kill(signal.SIGINT)
-        cpu_results = json.loads(self._container
-                                .logs()
-                                .strip()
-                                .decode('UTF-8')
-                                .replace("\'", "\""))
+        # self._container.kill(signal.SIGINT)
+        # cpu_results = json.loads(self._container
+        #                         .logs()
+        #                         .strip()
+        #                         .decode('UTF-8')
+        #                         .replace("\'", "\""))
         self._p_gpu.wait()
-        self._container.stop()
+        # self._container.stop()
         gpu_results = (self._p_gpu
                        .communicate()[0]
                        .strip()
@@ -89,17 +89,17 @@ class PredictStep(Step):
             gpu_energy += float(g["energy"])
             max_gpu_mem += float(g["max_mem"])
         gpu_energy = gpu_energy / 3600.0
-        cpu_energy = cpu_results["cpu_energy"] / 3600.0  # Wh
-        dram_energy = cpu_results["dram_energy"] / 3600.0  # Wh
+        # cpu_energy = cpu_results["cpu_energy"] / 3600.0  # Wh
+        # dram_energy = cpu_results["dram_energy"] / 3600.0  # Wh
 
-        total_energy = gpu_energy + cpu_energy + dram_energy
+        total_energy = gpu_energy  #  + cpu_energy + dram_energy
         carbon = get_realtime_carbon(total_energy)  # in g
         return {
             "time": time_elapsed,
             "max_gpu_mem": max_gpu_mem,
             "gpu_energy": gpu_energy,  # Wh
-            "cpu_energy": cpu_energy,  # Wh
-            "dram_energy": dram_energy,  # Wh
+            # "cpu_energy": cpu_energy,  # Wh
+            # "dram_energy": dram_energy,  # Wh
             "total_energy": total_energy,
             "carbon": carbon
         }
@@ -111,9 +111,9 @@ class PredictStep(Step):
         print(f"Time Elapsed: {efficiency_metrics['time']:.2f} s")
         # print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .2f} GiB")
         print(f"Max GPU Memory Usage: {efficiency_metrics['max_gpu_mem']: .2f} GiB")
-        print(f"GPU Energy: {efficiency_metrics['gpu_energy']:.2e} Wh")
-        print(f"CPU Energy: {efficiency_metrics['cpu_energy']: .2e} Wh")
-        print(f"Memory Energy: {efficiency_metrics['dram_energy']: .2e} Wh")
+        # print(f"GPU Energy: {efficiency_metrics['gpu_energy']:.2e} Wh")
+        # print(f"CPU Energy: {efficiency_metrics['cpu_energy']: .2e} Wh")
+        # print(f"Memory Energy: {efficiency_metrics['dram_energy']: .2e} Wh")
         print(f"Total Energy: {efficiency_metrics['total_energy']: .2e} Wh")
         print(f"CO2 emission: {efficiency_metrics['carbon']: .2e} grams.")
 

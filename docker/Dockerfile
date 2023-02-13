@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04
+FROM ubuntu:20.04
 ARG DEBIAN_FRONTEND=noninteractive
 ENV ENV_NAME=efficiency
 
@@ -103,4 +103,4 @@ RUN git clone https://github.com/RRZE-HPC/likwid.git \
 ENV PYTHONUNBUFFERED="on"
 # RUN conda activate ${ENV_NAME}
 ADD profile_cpu.py /home
-ENTRYPOINT ["python3", "profile_cpu.py"]
+# ENTRYPOINT ["python3", "profile_cpu.py"]
