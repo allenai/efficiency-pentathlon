@@ -56,26 +56,26 @@ WORKDIR /home
 # RUN chmod +x entrypoint.sh
 # RUN conda env create --name ${ENV_NAME} --file /home/environment.yml
 
-RUN git clone https://github.com/iovisor/bcc.git \
-  && cd bcc \
-  && mkdir build \
-  && cd build \
-  && cmake .. \
-  && make -j \
-  && make install \
-  && cmake -DPYTHON_CMD=python3 .. \
-  && cd src/python/ \
-  && make -j \
-  && make install \
-  && cd /home \
-  && rm -r bcc
+# RUN git clone https://github.com/iovisor/bcc.git \
+#   && cd bcc \
+#   && mkdir build \
+#   && cd build \
+#   && cmake .. \
+#   && make -j \
+#   && make install \
+#   && cmake -DPYTHON_CMD=python3 .. \
+#   && cd src/python/ \
+#   && make -j \
+#   && make install \
+#   && cd /home \
+#   && rm -r bcc
 
-RUN git clone --branch v1.0 https://github.com/DataDog/sketches-py.git \
-  && cd sketches-py \
-  && python3 setup.py install \
-  && cd /home \
-  && rm -r sketches-py \
-  && rm -rf /var/lib/apt/lists/*
+# RUN git clone --branch v1.0 https://github.com/DataDog/sketches-py.git \
+#   && cd sketches-py \
+#   && python3 setup.py install \
+#   && cd /home \
+#   && rm -r sketches-py \
+#   && rm -rf /var/lib/apt/lists/*
 
 # Install likwid to monitor CPU and DRAM energy
 # https://github.com/RRZE-HPC/likwid.git
@@ -90,16 +90,17 @@ RUN git clone https://github.com/RRZE-HPC/likwid.git \
     && cd /home
 
 
-RUN mkdir /home/deep_mon
-ADD bpf /home/deep_mon/bpf
-ADD userspace /home/deep_mon/userspace
-ADD deep_mon.py /home/deep_mon/
-ADD setup.py /home
-ADD config.yaml /home
-ADD cpu.py /home
+# RUN mkdir /home/deep_mon
+# ADD bpf /home/deep_mon/bpf
+# ADD userspace /home/deep_mon/userspace
+# ADD deep_mon.py /home/deep_mon/
+# ADD setup.py /home
+# ADD config.yaml /home
+# ADD cpu.py /home
 
-RUN pip3 install --editable . 
-RUN pip3 install --upgrade numpy pyyaml docker
+# RUN pip3 install --editable . 
+# RUN pip3 install --upgrade numpy pyyaml docker
 ENV PYTHONUNBUFFERED="on"
 # RUN conda activate ${ENV_NAME}
-# ENTRYPOINT ["python3", "workspace/cpu_power.py"]
+ADD profile_cpu.py /home
+ENTRYPOINT ["python3", "profile_cpu.py"]
