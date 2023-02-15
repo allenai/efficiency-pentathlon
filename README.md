@@ -22,8 +22,8 @@ sst, qqp, qnli, mrpc, mnli, mnli_mismatched, cola, rte, superglue::rte
 ``` bash
 python -m catwalk --model submission --task [task] --split [split]
 ```
-- `catwalk/catwalk/models/bert_example.py` provides an example of an BERT submission using HuggingFace's implementation. 
+- `catwalk/catwalk/models/bert_example.py` provides an example of an BERT submission using HuggingFace's implementation.
 - Please record how much effort and time you spend converting your codebase into submission, the challenging/annoying things during the process, and how we can make this process easier. 
 
 ## Notes
-CPU profiler is temporarily disabled due to a recent change in Beaker access. 
+CPU profiler is temporarily disabled due to a recent change in Beaker access.

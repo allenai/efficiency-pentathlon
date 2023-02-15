@@ -132,7 +132,6 @@ class PredictStep(Step):
             task = TASKS[task]
         if split is None:
             split = task.default_split
-
         results = SqliteSparseSequence(self.work_dir_for_run / "result.sqlite")
         instances = task.get_split(split)
         if limit is not None and len(instances) > limit:

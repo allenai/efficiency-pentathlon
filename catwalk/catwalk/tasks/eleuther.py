@@ -29,7 +29,6 @@ class EleutherTask(Task, WithPromptsourceMixin):
         promptsource_task_spec: Optional[Tuple[str, str]] = None,
     ):
         Task.__init__(self, version_override=version_override)
-
         self.eleuther_task: Optional[EAITask]
         if isinstance(eleuther_task, str):
             # Eleuther tasks eagerly download their data when they are created. We don't want that, so we have to
@@ -68,6 +67,17 @@ class EleutherTask(Task, WithPromptsourceMixin):
         if self.eleuther_task is None:
             self.eleuther_task = self.eleuther_task_fn()
         return self.eleuther_task
+
+    def id2label(self, id: int, split: str = "test",) -> str:
+        if split == "train":  # TODO
+            ds = self.inner_task.training_docs()
+        elif split == "test":
+            ds = self.inner_task.test_docs()
+        elif split == "validation":
+            ds = self.inner_task.validation_docs()
+        else:
+            raise ValueError(f"Unkown split: {split}.")
+        return ds.features["label"].int2str(id)
 
     def has_split(self, split: str) -> bool:
         return split in self.inner_task.dataset

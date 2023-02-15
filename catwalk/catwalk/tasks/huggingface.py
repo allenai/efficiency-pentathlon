@@ -106,7 +106,6 @@ def hfqa_conversion(
             context=get_from_dict(instance, context_field),
             question=get_from_dict(instance, question_field).strip(),
             answers=get_from_dict(instance, answers_field))
-        
     return convert
 
 
