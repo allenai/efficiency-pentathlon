@@ -68,16 +68,11 @@ class EleutherTask(Task, WithPromptsourceMixin):
             self.eleuther_task = self.eleuther_task_fn()
         return self.eleuther_task
 
-    def id2label(self, id: int, split: str = "test",) -> str:
-        if split == "train":  # TODO
-            ds = self.inner_task.training_docs()
-        elif split == "test":
-            ds = self.inner_task.test_docs()
-        elif split == "validation":
-            ds = self.inner_task.validation_docs()
-        else:
-            raise ValueError(f"Unkown split: {split}.")
-        return ds.features["label"].int2str(id)
+    @property
+    def id2label(self) -> List[str]:
+        split = list(self.inner_task.dataset.keys())[0]
+        int2str = self.inner_task.dataset[split].features["label"]._int2str
+        return {i: int2str[i] for i in range(len(int2str))}
 
     def has_split(self, split: str) -> bool:
         return split in self.inner_task.dataset
@@ -278,7 +273,6 @@ class EleutherTaskWithRenamedSplits(EleutherTask):
         # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack
         # to make them act like sequences.
         return MappedSequence(lambda x: x, result)
-
 
 @Task.register("eleuther::classification_with_renamed_splits")
 class EleutherClassificationTaskWithRenamedSplits(EleutherTaskWithRenamedSplits, WithAnswerOptionsMixin):
