@@ -18,10 +18,8 @@ class AccuracyMetric(BaseAggregator):
         self.add_state("correct_count", default=torch.tensor(0, dtype=torch.int), dist_reduce_fx="sum")
         self.add_state("total_count", default=torch.tensor(0, dtype=torch.int), dist_reduce_fx="sum")
 
-    def update(self, logits: Union[List[float], torch.Tensor], label: Union[int, torch.Tensor]) -> None:  # type: ignore
-        if isinstance(logits, List):
-            logits = torch.tensor(logits)
-        if logits.argmax() == label:
+    def update(self, prediction: Union[int, str], label: Union[int, str]) -> None:  # type: ignore
+        if prediction == label:
             self.correct_count += 1
         self.total_count += 1
 

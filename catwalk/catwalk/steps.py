@@ -138,7 +138,6 @@ class PredictStep(Step):
             instances = instances[:limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, limit)
         instances = instances[len(results):]
         model.prepare(task, instances)
-
         self.start_profiling()
         for result in model.predict(task, **kwargs):
             results.append(result)

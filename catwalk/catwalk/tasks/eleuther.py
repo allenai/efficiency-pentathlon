@@ -29,7 +29,8 @@ class EleutherTask(Task, WithPromptsourceMixin):
         promptsource_task_spec: Optional[Tuple[str, str]] = None,
     ):
         Task.__init__(self, version_override=version_override)
-        self.eleuther_task: Optional[EAITask]
+        self.eleuther_task: Optional[EAITask] = None
+        self.id2label_dict: Dict[int, str] = None
         if isinstance(eleuther_task, str):
             # Eleuther tasks eagerly download their data when they are created. We don't want that, so we have to
             # make this lazy.
@@ -68,11 +69,12 @@ class EleutherTask(Task, WithPromptsourceMixin):
             self.eleuther_task = self.eleuther_task_fn()
         return self.eleuther_task
 
-    @property
-    def id2label(self) -> List[str]:
-        split = list(self.inner_task.dataset.keys())[0]
-        int2str = self.inner_task.dataset[split].features["label"]._int2str
-        return {i: int2str[i] for i in range(len(int2str))}
+    def id2label(self, id):
+        if self.id2label_dict is None:
+            split = list(self.inner_task.dataset.keys())[0]
+            int2str = self.inner_task.dataset[split].features["label"]._int2str
+            self.id2label_dict = {i: int2str[i] for i in range(len(int2str))}
+        return self.id2label_dict[id]
 
     def has_split(self, split: str) -> bool:
         return split in self.inner_task.dataset

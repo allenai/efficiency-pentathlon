@@ -46,8 +46,9 @@ class BertExample(SubmissionTemplate):
                     tensors = {k: v.to(self._model.device) for k, v in tensors.items()}
                     results = self._model(return_dict=True, **tensors)
                     for instance, logits in zip(batch, results.logits.detach().cpu()):
+                        prediction = task.id2label(logits.argmax().item())
                         yield {
                             "label": instance.label,
-                            "logits": logits,
-                            "acc": (logits, instance.label),
+                            "prediction": task.id2label(logits.argmax().item()),
+                            "acc": (prediction, instance.label),
                         }
