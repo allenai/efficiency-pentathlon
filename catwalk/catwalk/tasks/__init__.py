@@ -3,7 +3,7 @@ from typing import Dict, Optional
 import datasets
 
 from catwalk.task import InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
-    classification_metrics, BINARY_CLASSIFICATION_METRICS, mc_metrics, PERPLEXITY_METRICS
+    classification_metrics, BINARY_CLASSIFICATION_METRICS, mc_metrics, PERPLEXITY_METRICS, MT_METRICS
 from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, EleutherTaskWithRenamedSplits, \
     EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits
 from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion, hfclassification_conversion
@@ -12,8 +12,18 @@ from catwalk.tasks.raft import RaftTask
 from catwalk.tasks.metaicl import MetaICLTask
 from catwalk.tasks.mrqa import MrqaTask
 from catwalk.tasks.t5 import t5_prompt_conversion
+from catwalk.tasks.conditional_generation import ConditionalGenerationTask
+from catwalk.tasks.conditional_generation import MachineTranslationTask
+from catwalk.tasks.conditional_generation import conditional_generation_conversion
 
 TASKS: Dict[str, Task] = {
+    "wmt14-de-en": MachineTranslationTask("wmt14", "de-en").add_instance_conversion(
+        InstanceFormat.CONDITIONAL_GENERATION,
+        conditional_generation_conversion(
+            source_field="de",
+            target_field="en"
+        )
+    ).add_metrics(MT_METRICS),  # TODO
     "wikitext": EleutherTask("wikitext").add_metrics(PERPLEXITY_METRICS),
     "piqa": EleutherTask("piqa", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,

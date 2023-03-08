@@ -12,12 +12,17 @@ from tango.common import Registrable, det_hash
 import catwalk.metrics
 from catwalk.metrics.entropy import EntropyMetric
 from catwalk.metrics.perplexity import PerplexityMetric
+from catwalk.metrics.bleu import BLEUMetric
 
 
 PERPLEXITY_METRICS = {
     "word_perplexity": PerplexityMetric,
     "byte_perplexity": PerplexityMetric,
-    "bits_per_byte": EntropyMetric,
+    "bits_per_byte": EntropyMetric
+}
+
+MT_METRICS = {
+    "bleu": BLEUMetric
 }
 
 QA_METRICS = {
@@ -57,14 +62,15 @@ BINARY_CLASSIFICATION_METRICS = classification_metrics(2)
 class InstanceFormat(Enum):
     HF_DICT = 1
     HF_MC = 2
-    HF_QA = 8
-    HF_CLASSIFICATION = 10
     ELEUTHER_DOC = 3
     ELEUTHER_CONTEXT = 4
     ELEUTHER_REQUESTS = 5
     T5_PROMPT = 6
     RANK_CLASSIFICATION = 7
+    HF_QA = 8
     PROMPTSOURCE = 9
+    HF_CLASSIFICATION = 10
+    CONDITIONAL_GENERATION = 11
 
 
 @dataclass
