@@ -112,6 +112,8 @@ TASKS: Dict[str, Task] = {
     ).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(
+            task_name="rte",
+            label_map={0: "entailment", 1: "not_entailment"},
             premise_field="sentence1",
             hypothesis_field="sentence2"
         )
@@ -126,25 +128,40 @@ TASKS: Dict[str, Task] = {
     ).add_metrics(ENTAILMENT_METRICS),
     "cola": EleutherClassificationTask("cola", answer_options=["no", "yes"]).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
-        hfclassification_conversion(premise_field="sentence", hypothesis_field=None, id_field='idx')
+        hfclassification_conversion(
+            task_name="cola",
+            label_map={0: "unacceptable", 1: "acceptable"},
+            premise_field="sentence",
+            hypothesis_field=None,
+            id_field='idx'
+        )
     ),
     "mnli": EleutherClassificationTaskWithRenamedSplits(
         "mnli",
         answer_options=["True", "Neither", "False"]
     ).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
-        hfclassification_conversion(id_field='idx')
+        hfclassification_conversion(
+            task_name="mnli",
+            label_map={0: "entailment", 1: "neutral", 2: "contradiction"},
+            id_field='idx'
+        )
     ),
     "mnli_mismatched": EleutherClassificationTask(
         "mnli_mismatched",
         answer_options=["True", "Neither", "False"]
     ).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
-        hfclassification_conversion(id_field='idx')
+        hfclassification_conversion(
+            task_name="mnli",
+            label_map={0: "entailment", 1: "neutral", 2: "contradiction"},
+            id_field='idx')
     ),
     "mrpc": EleutherClassificationTask("mrpc", answer_options=["no", "yes"]).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(
+            task_name="mrpc",
+            label_map={0: "not_equivalent", 1: "equivalent"},
             premise_field="sentence1",
             hypothesis_field="sentence2",
             id_field='idx'
@@ -152,11 +169,19 @@ TASKS: Dict[str, Task] = {
     ),
     "qnli": EleutherClassificationTask("qnli", answer_options=["yes", "no"]).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
-        hfclassification_conversion(premise_field="question", hypothesis_field="sentence", id_field='idx')
+        hfclassification_conversion(
+            task_name="qnli",
+            label_map={0: "entailment", 1: "not_entailment"},
+            premise_field="question",
+            hypothesis_field="sentence",
+            id_field='idx'
+        )
     ),
     "qqp": EleutherClassificationTask("qqp", answer_options=["no", "yes"]).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(
+            task_name="qqp",
+            label_map={0: "not_duplicate", 1: "duplicate"},
             premise_field="question1",
             hypothesis_field="question2",
             id_field='idx'
@@ -165,6 +190,8 @@ TASKS: Dict[str, Task] = {
     "sst": EleutherClassificationTask("sst", answer_options=["negative", "positive"]).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(
+            task_name="sst",
+            label_map={0: "negative", 1: "positive"},
             premise_field="sentence",
             hypothesis_field=None,
             id_field='idx'

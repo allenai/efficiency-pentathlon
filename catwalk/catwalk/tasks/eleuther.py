@@ -102,7 +102,7 @@ class EleutherTask(Task, WithPromptsourceMixin):
     def instance_to_eleuther_context(self, instance: Dict[str, Any], *, num_fewshot: int = 0) -> str:
         return self.inner_task.fewshot_context(self.instance_as_eleuther_doc(instance), num_fewshot, rnd=random)
 
-    def instance_as_eleuther_requests(self, instance: Dict[str, Any], *, num_fewshot: int = 0, task: Optional[Task] = None, use_str_label: Optional[bool] = False):
+    def instance_as_eleuther_requests(self, instance: Dict[str, Any], *, num_fewshot: int = 0):
         context = self.instance_to_eleuther_context(instance, num_fewshot=num_fewshot)
         return self.inner_task.construct_requests(self.instance_as_eleuther_doc(instance), context)
 

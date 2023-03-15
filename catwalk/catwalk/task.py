@@ -178,7 +178,7 @@ class Task(Registrable, ABC):
         return self
 
     def add_instance_conversion(self, format: InstanceFormat, conversion: InstanceConversion):
-        self.instance_conversions[format] =  partial(conversion, task=self, use_str_label=True)
+        self.instance_conversions[format] =  conversion
         return self
 
 

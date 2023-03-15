@@ -195,32 +195,33 @@ def hfmc_conversion(
 
 @dataclass
 class HFClassificationInstance:
+    task_name: str
     id: Optional[str]
-    text: Union[str, Tuple[str, str]]
-    label: Optional[Any]
+    text: Union[str, Dict[str, str]]
+    label: str
 
 
 def hfclassification_convert(
     instance: Dict[str, Any],
     *,
+    task_name: str,
+    label_map: Dict[int, str],
     premise_field: str = "premise",
     hypothesis_field: Optional[str] = "hypothesis",
     label_field: str = "label",
-    id_field: Optional[str] = None,
-    task: Optional[Task] = None,
-    use_str_label: Optional[bool] = False
+    id_field: Optional[str] = None
 ) -> HFClassificationInstance:
-    premise = get_from_dict(instance, premise_field)
+    text = {premise_field: get_from_dict(instance, premise_field)}
+    if hypothesis_field is not None:
+        text[hypothesis_field] = get_from_dict(instance, hypothesis_field)
     label_id = int(get_from_dict(instance, label_field))
-    if use_str_label:
-        assert task is not None
-        label = task.id2label(label_id)
-    else:
-        label = label_id
+    label = label_map[label_id]
     return HFClassificationInstance(
+        task_name=task_name,
         id=str(get_from_dict(instance, id_field)) if id_field else None,
-        text=premise if hypothesis_field is None else (premise, get_from_dict(instance, hypothesis_field)),
-        label=label if label_id >= 0 else None)
+        text=text,
+        label=label
+    )
 
 
 def hfclassification_conversion(
