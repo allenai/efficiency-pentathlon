@@ -83,7 +83,6 @@ class T5(SubmissionTemplate):
                     outputs = self._model.generate(inputs, max_length=10)
                     outputs = self._tokenizer.batch_decode(outputs, skip_special_tokens=True)
                     for instance, output in zip(batch, outputs):
-                        print(instance.label, output)
                         yield {
                             "label": instance.label,
                             "prediction": output.strip(),
