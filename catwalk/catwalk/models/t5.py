@@ -32,20 +32,26 @@ class T5(SubmissionTemplate):
                 + "and your commonsense knowledge. " \
                 + f"Answer 'entailment' if the Hypothesis can be inferred from the Premise; " \
                 + f"Answer 'neutral' if the Hypothesis disagrees with the Premise; " \
-                + f"Answer 'contradiction' if the Hypothesis can neither be inferred from the Premise or disagrees with the Premise.\n"
+                + f"Answer 'contradiction' if the Hypothesis can neither be inferred from the Premise or disagrees with the Premise.\n",
+            "qqp": "You're given a pair of questions. Your job is to determine whether they are duplicate " \
+                + f"Answer 'duplicate' if they bear the same meaning; " \
+                + f"Answer 'not_duplicate' if they have different meanings.\n"
+
         }
 
         if "flan" in self._pretrained_model_name_or_path:
             self._convert_fns = {
                 "rte": lambda text: f"{self._instructions['rte']}Text: {text['sentence1']}\nHypothesis: {text['sentence2']}\n",
                 "mnli": lambda text: f"{self._instructions['nli']}Premise: {text['premise']}\nHypothesis: {text['hypothesis']}\n",
-                "snli": lambda text: f"{self._instructions['nli']}Premise: {text['premise']}\nHypothesis: {text['hypothesis']}\n"
+                "snli": lambda text: f"{self._instructions['nli']}Premise: {text['premise']}\nHypothesis: {text['hypothesis']}\n",
+                "qqp": lambda text: f"{self._instructions['qqp']}Question1: {text['question1']}\nQuestion2: {text['question2']}\n"
             }
         else:
             self._convert_fns = {
-                "rte": lambda text: f"rte sentence1: {text['sentence1']} sentence2: {text['sentence2']}",
-                "mnli": lambda text: f"mnli hypothesis: {text['hypothesis']} premise: {text['premise']}",
-                "snli": lambda text: f"snli hypothesis: {text['hypothesis']} premise: {text['premise']}"
+                "rte": lambda text: f"rte sentence1: {text['sentence1']} sentence2: {text['sentence2']} ",
+                "mnli": lambda text: f"mnli hypothesis: {text['hypothesis']} premise: {text['premise']} ",
+                "snli": lambda text: f"snli hypothesis: {text['hypothesis']} premise: {text['premise']} ",
+                "qqp": lambda text: f"qqp question1: {text['question1']} question2: {text['question2']} "
             }
 
     def predict(  # type: ignore
@@ -80,6 +86,6 @@ class T5(SubmissionTemplate):
                         print(instance.label, output)
                         yield {
                             "label": instance.label,
-                            "prediction": output,
+                            "prediction": output.strip(),
                             "acc": (output, instance.label),
                         }
