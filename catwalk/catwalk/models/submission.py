@@ -1,13 +1,10 @@
 import warnings
-from typing import Any, Dict, Iterator
+from typing import Any, Dict, Iterator, Sequence
 
 import more_itertools
 import torch
 from tango.common import Tqdm
 
-from catwalk.model import UnsupportedTaskError
-from catwalk.task import InstanceFormat, Task, WithAnswerOptionsMixin
-from catwalk.tasks.huggingface import HFClassificationInstance
 from catwalk.models.template import SubmissionTemplate
 
 
@@ -21,14 +18,10 @@ class Submission(SubmissionTemplate):
 
     def predict(  # type: ignore
         self,
-        task: Task,
         *,
+        instances: Sequence[Dict[str, Any]],
         batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:
-        if not task.has_instance_conversion(InstanceFormat.HF_CLASSIFICATION):
-            raise UnsupportedTaskError(self, task)
-        instances = self._eval_instances
-        self._model.eval()
 
         with Tqdm.tqdm(instances, desc="Processing instances") as instances:
             with torch.inference_mode():

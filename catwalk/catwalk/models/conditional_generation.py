@@ -25,7 +25,7 @@ class ConditionalGenerationModel(Model):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         self.src_lang = "de"
         self.tgt_lang = "en"
-    
+
     @classmethod
     def _convert_instances(self, instances: Sequence[Dict[str, Any]], instance_format, task) -> MappedSequence:
         return MappedSequence(task.instance_conversions[instance_format], instances)
@@ -35,6 +35,8 @@ class ConditionalGenerationModel(Model):
         task: Task,
         instances: Sequence[Dict[str, Any]],
     ):
+        assert False
+        self._task = task
         device = resolve_device()
         self._model = MBartForConditionalGeneration.from_pretrained(
             "facebook/mbart-large-50",
@@ -50,7 +52,6 @@ class ConditionalGenerationModel(Model):
 
     def predict(
         self,
-        task: Task,
         *,
         batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:
@@ -62,8 +63,8 @@ class ConditionalGenerationModel(Model):
                 for batch in more_itertools.chunked(instances, batch_size):
                     input_ids = self._tokenizer(
                         [instance.source for instance in batch], 
-                        return_tensors="pt", 
-                        padding=True, 
+                        return_tensors="pt",
+                        padding=True,
                         truncation=True
                     )["input_ids"]
                     input_ids = input_ids.to(self._model.device)

@@ -34,6 +34,8 @@ class GPTModel(Model):
         task: Task,
         instances: Sequence[Dict[str, Any]],
     ):
+        assert False
+        self._tasl = task
         # TODO: max_length
         device = resolve_device()
         self._model = GPT2LMHeadModel.from_pretrained('gpt2', return_dict=True).eval().to(device)
@@ -118,7 +120,6 @@ class GPTModel(Model):
 
     def predict(
         self,
-        task: Task,
         *,
         batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:

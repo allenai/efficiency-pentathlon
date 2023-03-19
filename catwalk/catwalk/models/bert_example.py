@@ -1,13 +1,11 @@
-from typing import Any, Dict, Iterator
+from typing import Any, Dict, Iterator, Sequence
 
 import more_itertools
 import torch
 from tango.common import Tqdm
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-from catwalk.model import UnsupportedTaskError
 from catwalk.models.template import SubmissionTemplate
-from catwalk.task import InstanceFormat, Task
 
 
 class BertExample(SubmissionTemplate):
@@ -22,15 +20,10 @@ class BertExample(SubmissionTemplate):
 
     def predict(  # type: ignore
         self,
-        task: Task,
         *,
+        instances: Sequence[Dict[str, Any]],
         batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:
-        if not task.has_instance_conversion(InstanceFormat.HF_CLASSIFICATION):
-            raise UnsupportedTaskError(self, task)
-        instances = self._eval_instances
-        self._model.eval()
-
         with Tqdm.tqdm(instances, desc="Processing instances") as instances:
             with torch.inference_mode():
                 for batch in more_itertools.chunked(instances, batch_size):
@@ -46,9 +39,9 @@ class BertExample(SubmissionTemplate):
                     tensors = {k: v.to(self._model.device) for k, v in tensors.items()}
                     results = self._model(return_dict=True, **tensors)
                     for instance, logits in zip(batch, results.logits.detach().cpu()):
-                        prediction = task.id2label(logits.argmax().item())
+                        prediction = self._task.id2label(logits.argmax().item())
                         yield {
                             "label": instance.label,
-                            "prediction": task.id2label(logits.argmax().item()),
+                            "prediction": self._task.id2label(logits.argmax().item()),
                             "acc": (prediction, instance.label),
                         }

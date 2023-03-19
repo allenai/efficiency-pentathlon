@@ -1,25 +1,26 @@
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, Dict, Iterator, Optional, Sequence
 
 import more_itertools
 import torch
+import numpy as np
 from tango.common import Tqdm
 from transformers import T5ForConditionalGeneration, T5Tokenizer
 from tango.integrations.torch.util import resolve_device
-from catwalk.model import UnsupportedTaskError
 from catwalk.models.template import SubmissionTemplate
-from catwalk.task import InstanceFormat, Task
+from codecarbon import track_emissions
 
 
 class T5(SubmissionTemplate):
     def __init__(self, pretrained_model_name_or_path: str):
+        pretrained_model_name_or_path = "models/mnli_t5/mnli-t5-small/"
         self._pretrained_model_name_or_path = pretrained_model_name_or_path
+        SubmissionTemplate.__init__(self)
 
     def _load_model(self, pretrained_model_name_or_path: str):
         device = resolve_device()
         ### TODO(participants): load models and necessary tools. ###
         self._tokenizer = T5Tokenizer.from_pretrained(self._pretrained_model_name_or_path)
-        self._model = T5ForConditionalGeneration.from_pretrained(self._pretrained_model_name_or_path).to(device)
-
+        self._model = T5ForConditionalGeneration.from_pretrained(self._pretrained_model_name_or_path).half().to(device)
 
         self._instructions: Optional[Dict[str, str]] = {
             "rte": "You're given a pair of sentences: a Text and a Hypothesis. " \
@@ -31,8 +32,8 @@ class T5(SubmissionTemplate):
                 + "Your job is to determine the relation between them based on your inference from the statement " \
                 + "and your commonsense knowledge. " \
                 + f"Answer 'entailment' if the Hypothesis can be inferred from the Premise; " \
-                + f"Answer 'neutral' if the Hypothesis disagrees with the Premise; " \
-                + f"Answer 'contradiction' if the Hypothesis can neither be inferred from the Premise or disagrees with the Premise.\n",
+                + f"Answer 'contradiction' if the Hypothesis disagrees with the Premise; " \
+                + f"Answer 'neutral' if the Hypothesis can neither be inferred from the Premise or disagrees with the Premise.\n",
             "qqp": "You're given a pair of questions. Your job is to determine whether they are duplicate " \
                 + f"Answer 'duplicate' if they bear the same meaning; " \
                 + f"Answer 'not_duplicate' if they have different meanings.\n"
@@ -54,17 +55,13 @@ class T5(SubmissionTemplate):
                 "qqp": lambda text: f"qqp question1: {text['question1']} question2: {text['question2']} "
             }
 
+    # @track_emissions
     def predict(  # type: ignore
         self,
-        task: Task,
         *,
+        instances: Sequence[Dict[str, Any]],
         batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:
-        if not task.has_instance_conversion(InstanceFormat.HF_CLASSIFICATION):
-            raise UnsupportedTaskError(self, task)
-        instances = self._eval_instances
-        self._model.eval()
-
         convert_fn = self._convert_fns[instances[0].task_name]
         with Tqdm.tqdm(instances, desc="Processing instances") as instances:
             with torch.inference_mode():
