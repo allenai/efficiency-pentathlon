@@ -58,6 +58,7 @@ def main(args: argparse.Namespace):
             split=args.split,
             batch_size=args.batch_size,
             limit=limit,
+            cache_results=False,
             **kwargs
         )
         metrics = CalculateMetricsStep(
