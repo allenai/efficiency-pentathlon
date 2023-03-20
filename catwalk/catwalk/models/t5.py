@@ -16,7 +16,7 @@ class T5(SubmissionTemplate):
         self._pretrained_model_name_or_path = pretrained_model_name_or_path
         SubmissionTemplate.__init__(self)
 
-    def _load_model(self, pretrained_model_name_or_path: str):
+    def _load_model(self):
         device = resolve_device()
         ### TODO(participants): load models and necessary tools. ###
         self._tokenizer = T5Tokenizer.from_pretrained(self._pretrained_model_name_or_path)

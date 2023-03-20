@@ -19,7 +19,7 @@ class SubmissionTemplate(Model):
     def __init__(self):
         self._num_latency_instances = 100
 
-    def _load_model(self, device):
+    def _load_model(self):
         ### TODO(participants): load models and necessary tools. ###
         # self._tokenizer = XXX
         # self._model = XXX
@@ -32,8 +32,7 @@ class SubmissionTemplate(Model):
     ) -> Tuple[Sequence[Dict[str, Any]], Sequence[Dict[str, Any]]]:
         assert isinstance(task, WithAnswerOptionsMixin)
         self._task = task
-        device = resolve_device()
-        self._load_model(device)
+        self._load_model()
         eval_instances = cast(
             Sequence[HFClassificationInstance],
             self._convert_instances(instances, InstanceFormat.HF_CLASSIFICATION, task))
