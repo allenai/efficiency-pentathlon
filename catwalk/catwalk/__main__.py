@@ -46,21 +46,16 @@ def main(args: argparse.Namespace):
 
     metric_task_dict = {}
     for task in tasks:
-        prediction_step = PredictStep()
-        predictions = prediction_step.run(
+        prediction_step = PredictStep(
             model=args.model,
             task=task,
             split=args.split,
             batch_size=args.batch_size,
-            limit=limit,
-            **kwargs
+            limit=limit
         )
-        metric_step = CalculateMetricsStep()
-        metrics = metric_step.run(
-            model=args.model,
-            task=task,
-            predictions=predictions
-        )
+        predictions = prediction_step.run(**kwargs)
+        metric_step = CalculateMetricsStep(model=args.model, task=task)
+        metrics = metric_step.run(predictions=predictions)
         metric_task_dict[task] = metrics
 
     table_step = TabulateMetricsStep()

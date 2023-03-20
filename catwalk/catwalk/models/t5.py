@@ -13,16 +13,16 @@ from codecarbon import track_emissions
 class T5(SubmissionTemplate):
     def __init__(self, pretrained_model_name_or_path: str):
         # pretrained_model_name_or_path = "models/mnli_t5/mnli-t5-small/"
-        self._pretrained_model_name_or_path = pretrained_model_name_or_path
+        self.pretrained_model_name_or_path = pretrained_model_name_or_path
         SubmissionTemplate.__init__(self)
 
-    def _load_model(self):
+    def load_model(self):
         device = resolve_device()
         ### TODO(participants): load models and necessary tools. ###
-        self._tokenizer = T5Tokenizer.from_pretrained(self._pretrained_model_name_or_path)
-        self._model = T5ForConditionalGeneration.from_pretrained(self._pretrained_model_name_or_path).half().to(device)
+        self.tokenizer = T5Tokenizer.from_pretrained(self.pretrained_model_name_or_path)
+        self.model = T5ForConditionalGeneration.from_pretrained(self.pretrained_model_name_or_path).half().to(device)
 
-        self._instructions: Optional[Dict[str, str]] = {
+        self.instructions: Optional[Dict[str, str]] = {
             "rte": "You're given a pair of sentences: a Text and a Hypothesis. " \
                 + "Your job is to determine the relation between them based on your inference from the statement " \
                 + "and your commonsense knowledge. " \
@@ -40,12 +40,12 @@ class T5(SubmissionTemplate):
 
         }
 
-        if "flan" in self._pretrained_model_name_or_path:
+        if "flan" in self.pretrained_model_name_or_path:
             self._convert_fns = {
-                "rte": lambda text: f"{self._instructions['rte']}Text: {text['sentence1']}\nHypothesis: {text['sentence2']}\n",
-                "mnli": lambda text: f"{self._instructions['nli']}Premise: {text['premise']}\nHypothesis: {text['hypothesis']}\n",
-                "snli": lambda text: f"{self._instructions['nli']}Premise: {text['premise']}\nHypothesis: {text['hypothesis']}\n",
-                "qqp": lambda text: f"{self._instructions['qqp']}Question1: {text['question1']}\nQuestion2: {text['question2']}\n"
+                "rte": lambda text: f"{self.instructions['rte']}Text: {text['sentence1']}\nHypothesis: {text['sentence2']}\n",
+                "mnli": lambda text: f"{self.instructions['nli']}Premise: {text['premise']}\nHypothesis: {text['hypothesis']}\n",
+                "snli": lambda text: f"{self.instructions['nli']}Premise: {text['premise']}\nHypothesis: {text['hypothesis']}\n",
+                "qqp": lambda text: f"{self.instructions['qqp']}Question1: {text['question1']}\nQuestion2: {text['question2']}\n"
             }
         else:
             self._convert_fns = {
@@ -69,16 +69,16 @@ class T5(SubmissionTemplate):
 
                     # TODO(participants):  predicts for a minibatch
                     inputs = [convert_fn(instance.text) for instance in batch]
-                    inputs = self._tokenizer.batch_encode_plus(
+                    inputs = self.tokenizer.batch_encode_plus(
                         inputs,
                         padding=True,
                         truncation="only_first",
                         return_tensors="pt",
                         pad_to_multiple_of=8,
                     ).input_ids
-                    inputs = inputs.to(self._model.device)
-                    outputs = self._model.generate(inputs, max_length=10)
-                    outputs = self._tokenizer.batch_decode(outputs, skip_special_tokens=True)
+                    inputs = inputs.to(self.model.device)
+                    outputs = self.model.generate(inputs, max_length=10)
+                    outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
                     for instance, output in zip(batch, outputs):
                         yield {
                             "label": instance.label,

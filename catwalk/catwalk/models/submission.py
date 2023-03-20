@@ -12,8 +12,8 @@ class Submission(SubmissionTemplate):
 
     def _load_model(self, device):
         ### TODO(participants): load models and necessary tools. ###
-        # self._tokenizer = XXX
-        # self._model = XXX
+        # self.tokenizer = XXX
+        # self.model = XXX
         raise NotImplementedError()
 
     def predict(  # type: ignore

@@ -36,15 +36,15 @@ class ConditionalGenerationModel(Model):
         instances: Sequence[Dict[str, Any]],
     ):
         assert False
-        self._task = task
+        self.task = task
         device = resolve_device()
-        self._model = MBartForConditionalGeneration.from_pretrained(
+        self.model = MBartForConditionalGeneration.from_pretrained(
             "facebook/mbart-large-50",
             forced_bos_token_id=0
         ).to(device)
-        self._tokenizer = MBartTokenizer.from_pretrained("facebook/mbart-large-50")
+        self.tokenizer = MBartTokenizer.from_pretrained("facebook/mbart-large-50")
 
-        self._eval_instances = self._convert_instances(
+        self.eval_instances = self._convert_instances(
             [instance["translation"] for instance in instances], 
             InstanceFormat.CONDITIONAL_GENERATION, 
             task
@@ -55,23 +55,23 @@ class ConditionalGenerationModel(Model):
         *,
         batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:
-        instances = self._eval_instances
-        self._model.eval()
+        instances = self.eval_instances
+        self.model.eval()
 
         with Tqdm.tqdm(instances, desc="Processing instances") as instances:
             with torch.inference_mode():
                 for batch in more_itertools.chunked(instances, batch_size):
-                    input_ids = self._tokenizer(
+                    input_ids = self.tokenizer(
                         [instance.source for instance in batch], 
                         return_tensors="pt",
                         padding=True,
                         truncation=True
                     )["input_ids"]
-                    input_ids = input_ids.to(self._model.device)
-                    # {k: v.to(self._model.device) for k, v in input_ids.items()}
+                    input_ids = input_ids.to(self.model.device)
+                    # {k: v.to(self.model.device) for k, v in input_ids.items()}
 
-                    outputs = self._model.generate(input_ids)
-                    outputs = self._tokenizer.batch_decode(outputs, skip_special_tokens=True)
+                    outputs = self.model.generate(input_ids)
+                    outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
                     for output in outputs:
                         yield {
                             "output": output

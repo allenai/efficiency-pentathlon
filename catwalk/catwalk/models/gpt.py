@@ -35,26 +35,26 @@ class GPTModel(Model):
         instances: Sequence[Dict[str, Any]],
     ):
         assert False
-        self._tasl = task
+        self.tasl = task
         # TODO: max_length
         device = resolve_device()
-        self._model = GPT2LMHeadModel.from_pretrained('gpt2', return_dict=True).eval().to(device)
-        self._tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+        self.model = GPT2LMHeadModel.from_pretrained('gpt2', return_dict=True).eval().to(device)
+        self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 
         # TODO: This should be specified by us, such that all models use the same context size and are comparable.
-        self._max_length = self._tokenizer.model_max_length
+        self.max_length = self.tokenizer.model_max_length
         def make_model_instances(
             texts: Iterator[str],
             overlap: int = 1
         ) -> Iterator[ModelInstance]:
             for text in texts:
-                token_ids = [self._tokenizer.eos_token_id] + self._tokenizer.encode(text)
+                token_ids = [self.tokenizer.eos_token_id] + self.tokenizer.encode(text)
                 # The next line puts the entire text into GPU memory. In principle this is a problem, because it
                 # might OOM when the text is long. In practice, that doesn't happen.
                 token_ids = torch.tensor(token_ids, dtype=torch.long, device=device)
                 window_start = 0
                 while True:
-                    window_end = window_start + self._max_length
+                    window_end = window_start + self.max_length
                     if window_end > len(token_ids) - 1:
                         break
                     yield ModelInstance(
@@ -62,13 +62,13 @@ class GPTModel(Model):
                         1 if window_start == 0 else overlap,
                         token_ids[window_start:window_end],
                         token_ids[window_start+1:window_end+1])
-                    window_start += self._max_length
+                    window_start += self.max_length
                     window_start -= overlap
                 window_end = len(token_ids) - 1
                 if window_start == 0:
                     last_batch_context_tokens = 1
                 else:
-                    new_window_start = window_end - self._max_length
+                    new_window_start = window_end - self.max_length
                     last_batch_context_tokens = window_start - new_window_start + overlap
                     window_start = new_window_start
                     del new_window_start
@@ -130,7 +130,7 @@ class GPTModel(Model):
                     inputs = pad_sequence(
                         [mi.input_ids for mi in batch], batch_first=True)
                     # print(inputs)
-                    outputs = self._model(inputs)
+                    outputs = self.model(inputs)
                     outputs = log_softmax(outputs.logits, dim=-1)
                     for mi, output in zip(batch, outputs):
                         # gets rid of padding
@@ -142,7 +142,7 @@ class GPTModel(Model):
                         batch_results.append((mi.text, logprobs))
                 yield from batch_results
 
-        model_predictions = make_model_predictions(self._eval_instances)
+        model_predictions = make_model_predictions(self.eval_instances)
         grouped_predictions = self.group_model_predictions(model_predictions)
 
         from spacy.lang.en import English

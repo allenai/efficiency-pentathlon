@@ -17,9 +17,9 @@ from catwalk.tasks.huggingface import HFClassificationInstance
 class SubmissionTemplate(Model):
 
     def __init__(self):
-        self._num_latency_instances = 100
+        self.num_latency_instances = 100
 
-    def _load_model(self):
+    def load_model(self):
         ### TODO(participants): load models and necessary tools. ###
         # self._tokenizer = XXX
         # self._model = XXX
@@ -31,16 +31,16 @@ class SubmissionTemplate(Model):
         instances: Sequence[Dict[str, Any]],
     ) -> Tuple[Sequence[Dict[str, Any]], Sequence[Dict[str, Any]]]:
         assert isinstance(task, WithAnswerOptionsMixin)
-        self._task = task
-        self._load_model()
+        self.task = task
+        self.load_model()
         eval_instances = cast(
             Sequence[HFClassificationInstance],
             self._convert_instances(instances, InstanceFormat.HF_CLASSIFICATION, task))
         indices = list(range(len(instances)))
         np.random.shuffle(indices)
-        indices = indices[:self._num_latency_instances]
+        indices = indices[:self.num_latency_instances]
         latency_instances = np.take(eval_instances, indices)
-        self._model.eval()
+        self.model.eval()
         return eval_instances, latency_instances
 
     def predict(  # type: ignore

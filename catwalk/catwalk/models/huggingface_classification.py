@@ -13,15 +13,15 @@ class HuggingfaceClassification(SubmissionTemplate):
 
     def __init__(self, pretrained_model_name_or_path: str):
         # pretrained_model_name_or_path = "models/mnli_t5/mnli-t5-small/"
-        self._pretrained_model_name_or_path = pretrained_model_name_or_path
+        self.pretrained_model_name_or_path = pretrained_model_name_or_path
         SubmissionTemplate.__init__(self)
 
     def _load_model(self):
         device = resolve_device()
         ### TODO(participants): load models and necessary tools. ###
-        self._tokenizer = AutoTokenizer.from_pretrained(self._pretrained_model_name_or_path)
-        self._model = AutoModelForSequenceClassification.from_pretrained(
-            self._pretrained_model_name_or_path,
+        self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            self.pretrained_model_name_or_path,
             forced_bos_token_id=0
         ).to(device)
         self._convert_fn = lambda text: " ".join(text[k] for k in text.keys())
@@ -37,7 +37,7 @@ class HuggingfaceClassification(SubmissionTemplate):
                 for batch in more_itertools.chunked(instances, batch_size):
 
                     # TODO(participants):  predicts for a minibatch
-                    tensors = self._tokenizer.batch_encode_plus(
+                    tensors = self.tokenizer.batch_encode_plus(
                         [self._convert_fn(instance.text) for instance in batch],
                         padding=True,
                         # truncation="only_first",
@@ -45,10 +45,10 @@ class HuggingfaceClassification(SubmissionTemplate):
                         #pad_to_multiple_of=8,
                         truncation=False,
                     )
-                    tensors = {k: v.to(self._model.device) for k, v in tensors.items()}
-                    results = self._model(return_dict=True, **tensors)
+                    tensors = {k: v.to(self.model.device) for k, v in tensors.items()}
+                    results = self.model(return_dict=True, **tensors)
                     for instance, logits in zip(batch, results.logits.detach().cpu()):
-                        prediction = self._task.id2label(logits.argmax().item())
+                        prediction = self.task.id2label(logits.argmax().item())
                         yield {
                             "label": instance.label,
                             "prediction": prediction,

@@ -24,8 +24,25 @@ EFFICIENCY_DIR = f"{pathlib.Path(__file__).parent.resolve()}/efficiency"  # TODO
 
 
 class PredictStep():
-    def __init__(self):
-        pass
+    def __init__(
+        self,
+        *,
+        model: Union[str, Model],
+        task: Union[str, Task],
+        split: Optional[str] = None,
+        limit: Optional[int] = None,
+        random_subsample_seed: Optional[int] = None,
+        **kwargs
+    ):
+        self.model = MODELS[model] if isinstance(model, str) else model
+        self.task = TASKS[task] if isinstance(task, str) else task
+        self.split = split if split is not None else task.default_split
+        self.limit = limit
+        self.random_subsample_seed = random_subsample_seed
+        instances = self.task.get_split(self.split)
+        if limit is not None and len(instances) > limit:
+            instances = instances[:limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, limit)
+        self.eval_instances, self.latency_instances = self.model.prepare(self.task, instances)
 
     def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(kwargs["model"], str):
@@ -103,8 +120,7 @@ class PredictStep():
 
     def tabulate_efficiency_metrics(
         self,
-        efficiency_metrics: Dict[str, Any],
-        file_name: str
+        efficiency_metrics: Dict[str, Any]
     ):
         print(f"Time Elapsed: {efficiency_metrics['time']:.2f} s")
         # print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .2f} GiB")
@@ -118,60 +134,40 @@ class PredictStep():
         print(f"Throughput: {efficiency_metrics['throughput']: .2f} instances / s.")
         print(f"Latency: {efficiency_metrics['latency'] * 1000: .2f} ms.")
 
-        csv_columns = efficiency_metrics.keys()
-        csv_file = f"{os.getcwd()}/{file_name}.csv"
-        try:
-            with open(csv_file, 'w') as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
-                writer.writeheader()
-                writer.writerow(efficiency_metrics)
-        except IOError:
-            print(f"Failed log to file {csv_file}")
-
     def run(
         self,
-        model: Union[str, Model],
-        task: Union[str, Task],
-        split: Optional[str] = None,
-        limit: Optional[int] = None,
-        random_subsample_seed: Optional[int] = None,
         **kwargs
     ) -> Sequence[Any]:
-        if isinstance(model, str):
-            model = MODELS[model]
-        if isinstance(task, str):
-            task = TASKS[task]
-        if split is None:
-            split = task.default_split
         results = []
-        instances = task.get_split(split)
-        if limit is not None and len(instances) > limit:
-            instances = instances[:limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, limit)
-        instances = instances[len(results):]
-        eval_instances, latency_instances = model.prepare(task, instances)
         self.start_profiling()
         try:
-            for result in model.predict(instances=eval_instances, **kwargs):
+            for result in self.model.predict(instances=self.eval_instances, **kwargs):
                 results.append(result)
-            efficiency_metrics = self.end_profiling(num_instances=len(eval_instances))
+            efficiency_metrics = self.end_profiling(num_instances=len(self.eval_instances))
         except:
-            self.end_profiling(num_instances=len(eval_instances))
+            self.end_profiling(num_instances=len(self.eval_instances))
 
         ### Latency ###
         start_time = time.time()
-        for result in model.predict(instances=latency_instances, batch_size=1):
+        for result in self.model.predict(instances=self.latency_instances, batch_size=1):
             pass
         elapsed_time = time.time() - start_time
-        efficiency_metrics["latency"] = elapsed_time / len(latency_instances)
-        efficiency_metrics["num_params"] = model._model.num_parameters()
-        self.tabulate_efficiency_metrics(efficiency_metrics, file_name=model._pretrained_model_name_or_path)
+        efficiency_metrics["latency"] = elapsed_time / len(self.latency_instances)
+        efficiency_metrics["num_params"] = self.model.model.num_parameters()
+        self.tabulate_efficiency_metrics(efficiency_metrics)
         return results
 
 
 class CalculateMetricsStep():
 
-    def __init__(self):
-        pass
+    def __init__(
+        self,
+        *,
+        model: Union[str, Model],
+        task: Union[str, Task]
+    ):
+        self.model = MODELS[model] if isinstance(model, str) else model
+        self.task = TASKS[task] if isinstance(task, str) else task
 
     def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(kwargs["model"], str):
@@ -182,16 +178,9 @@ class CalculateMetricsStep():
 
     def run(
         self,
-        model: Union[str, Model],
-        task: Union[str, Task],
         predictions: Sequence[Any]
     ) -> Dict[str, float]:
-        if isinstance(model, str):
-            model = MODELS[model]
-        if isinstance(task, str):
-            task = TASKS[task]
-
-        return model.calculate_metrics(task, predictions)
+        return self.model.calculate_metrics(self.task, predictions)
 
 
 class TabulateMetricsStep():
