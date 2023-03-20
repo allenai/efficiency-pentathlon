@@ -8,12 +8,10 @@ import sys
 import time
 from collections import defaultdict
 from random import Random
-from typing import Any, Dict, Iterable, Optional, Sequence, Union, Tuple
+from typing import Any, Dict, Iterable, Optional, Sequence, Union
 
 import torch
-from tango import JsonFormat, Step
-from tango.common.sequences import SqliteSparseSequence
-from tango.format import SqliteSequenceFormat, TextFormat
+from codecarbon import track_emissions
 
 import docker
 from catwalk.efficiency.carbon import get_realtime_carbon  # (TODO)
@@ -21,16 +19,13 @@ from catwalk.model import Model
 from catwalk.models import MODELS
 from catwalk.task import Task
 from catwalk.tasks import TASKS
-from codecarbon import track_emissions
-
 
 EFFICIENCY_DIR = f"{pathlib.Path(__file__).parent.resolve()}/efficiency"  # TODO
 
 
-class PredictStep(Step):
-    VERSION = "001"
-    SKIP_ID_ARGUMENTS = {"batch_size"}
-    FORMAT = SqliteSequenceFormat
+class PredictStep():
+    def __init__(self):
+        pass
 
     def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(kwargs["model"], str):
@@ -148,7 +143,7 @@ class PredictStep(Step):
             task = TASKS[task]
         if split is None:
             split = task.default_split
-        results = SqliteSparseSequence(self.work_dir_for_run / "result.sqlite")
+        results = []
         instances = task.get_split(split)
         if limit is not None and len(instances) > limit:
             instances = instances[:limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, limit)
@@ -173,9 +168,10 @@ class PredictStep(Step):
         return results
 
 
-class CalculateMetricsStep(Step):
-    VERSION = "001"
-    FORMAT = JsonFormat
+class CalculateMetricsStep():
+
+    def __init__(self):
+        pass
 
     def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(kwargs["model"], str):
@@ -198,9 +194,10 @@ class CalculateMetricsStep(Step):
         return model.calculate_metrics(task, predictions)
 
 
-class TabulateMetricsStep(Step):
-    VERSION = "001"
-    FORMAT = TextFormat
+class TabulateMetricsStep():
+
+    def __init__(self):
+        pass
 
     def run(self, metrics: Dict[str, Dict[str, float]], format: str = "text") -> Iterable[str]:
         flattend_metrics: Dict[str, Dict[str, float]] = defaultdict(dict)

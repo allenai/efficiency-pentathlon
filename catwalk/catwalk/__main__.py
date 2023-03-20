@@ -1,6 +1,5 @@
 import argparse
 
-from tango import Workspace
 from tango.common.logging import initialize_logging
 
 from catwalk.steps import TabulateMetricsStep
@@ -27,11 +26,6 @@ _parser.add_argument(
 def main(args: argparse.Namespace):
     initialize_logging(log_level="WARNING")
 
-    if args.workspace is None:
-        workspace = None
-    else:
-        workspace = Workspace.from_url(args.workspace)
-
     limit = args.limit if hasattr(args, "limit") else None
 
     from catwalk.steps import CalculateMetricsStep
@@ -52,24 +46,25 @@ def main(args: argparse.Namespace):
 
     metric_task_dict = {}
     for task in tasks:
-        predictions = PredictStep(
+        prediction_step = PredictStep()
+        predictions = prediction_step.run(
             model=args.model,
             task=task,
             split=args.split,
             batch_size=args.batch_size,
             limit=limit,
-            cache_results=False,
             **kwargs
         )
-        metrics = CalculateMetricsStep(
+        metric_step = CalculateMetricsStep()
+        metrics = metric_step.run(
             model=args.model,
             task=task,
             predictions=predictions
         )
         metric_task_dict[task] = metrics
 
-    table_step = TabulateMetricsStep(metrics=metric_task_dict)
-    table_step_result = table_step.result(workspace)
+    table_step = TabulateMetricsStep()
+    table_step_result = table_step.run(metrics=metric_task_dict)
     print("\n".join(table_step_result))
 
 
