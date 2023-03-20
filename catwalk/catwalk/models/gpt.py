@@ -77,7 +77,6 @@ class GPTModel(Model):
                     last_batch_context_tokens,
                     token_ids[window_start:window_end],
                     token_ids[window_start+1:window_end+1])
-        
         # def make_model_instances(
         #     texts: Iterator[str],
         #     overlap: int = 1

@@ -34,18 +34,13 @@ class SubmissionTemplate(Model):
         self._task = task
         device = resolve_device()
         self._load_model(device)
-        instances = cast(
+        eval_instances = cast(
             Sequence[HFClassificationInstance],
             self._convert_instances(instances, InstanceFormat.HF_CLASSIFICATION, task))
         indices = list(range(len(instances)))
         np.random.shuffle(indices)
-        instances = np.take(instances, indices)
-        latency_instances, eval_instances = instances[:self._num_latency_instances], instances[self._num_latency_instances:]
-        model_num_labels = self._model.config.num_labels
-        if model_num_labels == 1:
-            model_num_labels = 2
-        if model_num_labels != len(task.answer_options):
-            warnings.warn(f"Model has {model_num_labels} labels, but task has {len(task.answer_options)} possible answers.")
+        indices = indices[:self._num_latency_instances]
+        latency_instances = np.take(eval_instances, indices)
         self._model.eval()
         return eval_instances, latency_instances
 

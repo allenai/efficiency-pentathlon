@@ -21,6 +21,7 @@ from catwalk.model import Model
 from catwalk.models import MODELS
 from catwalk.task import Task
 from catwalk.tasks import TASKS
+from codecarbon import track_emissions
 
 
 EFFICIENCY_DIR = f"{pathlib.Path(__file__).parent.resolve()}/efficiency"  # TODO
@@ -43,18 +44,18 @@ class PredictStep(Step):
     def start_profiling(
         self,
     ):
-        # client = docker.from_env()
-        # self._container = client.containers.run(
-        #     "cpu_profiler:latest",
-        #     "python3 profile_cpu.py",
-        #     name="cpu_profiler",
-        #     privileged=True,
-        #     tty=True,
-        #     remove=True,
-        #     detach=True,
-        #     stdout=True,
-        #     stderr=True
-        # )
+        client = docker.from_env()
+        self._container = client.containers.run(
+            "cpu_profiler:latest",
+            "python3 profile_cpu.py",
+            name="cpu_profiler",
+            privileged=True,
+            tty=True,
+            remove=True,
+            detach=True,
+            stdout=True,
+            stderr=True
+        )
         self._p_gpu = subprocess.Popen(
             [f"{sys.executable}", f"{EFFICIENCY_DIR}/profile_gpu.py"],
             stdout=subprocess.PIPE,
@@ -63,19 +64,19 @@ class PredictStep(Step):
         )
         self._start_time = time.time()
 
-    def end_profiling(self):
+    def end_profiling(self, num_instances: int):
         time_elapsed = time.time() - self._start_time
         os.kill(self._p_gpu.pid, signal.SIGTERM)
-        # if not self._p_gpu.poll():
-        #     print("GPU monitor correctly halted")
-        # self._container.kill(signal.SIGINT)
-        # cpu_results = json.loads(self._container
-        #                         .logs()
-        #                         .strip()
-        #                         .decode('UTF-8')
-        #                         .replace("\'", "\""))
+        if not self._p_gpu.poll():
+            print("GPU monitor correctly halted")
+        self._container.kill(signal.SIGINT)
+        cpu_results = json.loads(self._container
+                                .logs()
+                                .strip()
+                                .decode('UTF-8')
+                                .replace("\'", "\""))
         self._p_gpu.wait()
-        # self._container.stop()
+        self._container.stop()
         gpu_results = (self._p_gpu
                        .communicate()[0]
                        .strip()
@@ -89,8 +90,8 @@ class PredictStep(Step):
             gpu_energy += float(g["energy"])
             max_gpu_mem += float(g["max_mem"])
         gpu_energy = gpu_energy / 3600.0
-        # cpu_energy = cpu_results["cpu_energy"] / 3600.0  # Wh
-        # dram_energy = cpu_results["dram_energy"] / 3600.0  # Wh
+        cpu_energy = cpu_results["cpu_energy"] / 3600.0  # Wh
+        dram_energy = cpu_results["dram_energy"] / 3600.0  # Wh
 
         total_energy = gpu_energy  #  + cpu_energy + dram_energy
         carbon = get_realtime_carbon(total_energy)  # in g
@@ -98,10 +99,11 @@ class PredictStep(Step):
             "time": time_elapsed,
             "max_gpu_mem": max_gpu_mem,
             "gpu_energy": gpu_energy,  # Wh
-            # "cpu_energy": cpu_energy,  # Wh
-            # "dram_energy": dram_energy,  # Wh
+            "cpu_energy": cpu_energy,  # Wh
+            "dram_energy": dram_energy,  # Wh
             "total_energy": total_energy,
-            "carbon": carbon
+            "carbon": carbon,
+            "throughput": num_instances / time_elapsed
         }
 
     def tabulate_efficiency_metrics(
@@ -111,11 +113,13 @@ class PredictStep(Step):
         print(f"Time Elapsed: {efficiency_metrics['time']:.2f} s")
         # print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .2f} GiB")
         print(f"Max GPU Memory Usage: {efficiency_metrics['max_gpu_mem']: .2f} GiB")
-        # print(f"GPU Energy: {efficiency_metrics['gpu_energy']:.2e} Wh")
-        # print(f"CPU Energy: {efficiency_metrics['cpu_energy']: .2e} Wh")
-        # print(f"Memory Energy: {efficiency_metrics['dram_energy']: .2e} Wh")
+        print(f"GPU Energy: {efficiency_metrics['gpu_energy']:.2e} Wh")
+        print(f"CPU Energy: {efficiency_metrics['cpu_energy']: .2e} Wh")
+        print(f"Memory Energy: {efficiency_metrics['dram_energy']: .2e} Wh")
         print(f"Total Energy: {efficiency_metrics['total_energy']: .2e} Wh")
         print(f"CO2 emission: {efficiency_metrics['carbon']: .2e} grams.")
+        print(f"Throughput: {efficiency_metrics['throughput']: .2f} instances / s.")
+        print(f"Latency: {efficiency_metrics['latency'] * 1000: .2f} ms.")
 
     def run(
         self,
@@ -137,11 +141,18 @@ class PredictStep(Step):
         if limit is not None and len(instances) > limit:
             instances = instances[:limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, limit)
         instances = instances[len(results):]
-        model.prepare(task, instances)
+        eval_instances, latency_instances = model.prepare(task, instances)
         self.start_profiling()
-        for result in model.predict(task, **kwargs):
+        for result in model.predict(instances=eval_instances, **kwargs):
             results.append(result)
-        efficiency_metrics = self.end_profiling()
+        efficiency_metrics = self.end_profiling(num_instances=len(eval_instances))
+
+        ### Latency ###
+        start_time = time.time()
+        for result in model.predict(instances=latency_instances, batch_size=1):
+            results.append(result)
+        elapsed_time = time.time() - start_time
+        efficiency_metrics["latency"] = elapsed_time / len(latency_instances)
         self.tabulate_efficiency_metrics(efficiency_metrics)
         return results
 

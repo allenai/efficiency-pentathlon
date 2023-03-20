@@ -12,7 +12,7 @@ from codecarbon import track_emissions
 
 class T5(SubmissionTemplate):
     def __init__(self, pretrained_model_name_or_path: str):
-        pretrained_model_name_or_path = "models/mnli_t5/mnli-t5-small/"
+        # pretrained_model_name_or_path = "models/mnli_t5/mnli-t5-small/"
         self._pretrained_model_name_or_path = pretrained_model_name_or_path
         SubmissionTemplate.__init__(self)
 
