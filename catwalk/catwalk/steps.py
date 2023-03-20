@@ -8,7 +8,7 @@ import sys
 import time
 from collections import defaultdict
 from random import Random
-from typing import Any, Dict, Iterable, Optional, Sequence, Union
+from typing import Any, Dict, Iterable, Optional, Sequence, Union, Tuple
 
 import torch
 from tango import JsonFormat, Step
@@ -108,18 +108,30 @@ class PredictStep(Step):
 
     def tabulate_efficiency_metrics(
         self,
-        efficiency_metrics: Dict[str, Any]
+        efficiency_metrics: Dict[str, Any],
+        file_name: str
     ):
         print(f"Time Elapsed: {efficiency_metrics['time']:.2f} s")
         # print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .2f} GiB")
+        print(f"Number of Parameters: {efficiency_metrics['num_params'] / 1e6: .2f} M")
         print(f"Max GPU Memory Usage: {efficiency_metrics['max_gpu_mem']: .2f} GiB")
-        print(f"GPU Energy: {efficiency_metrics['gpu_energy']:.2e} Wh")
-        print(f"CPU Energy: {efficiency_metrics['cpu_energy']: .2e} Wh")
-        print(f"Memory Energy: {efficiency_metrics['dram_energy']: .2e} Wh")
+        # print(f"GPU Energy: {efficiency_metrics['gpu_energy']:.2e} Wh")
+        # print(f"CPU Energy: {efficiency_metrics['cpu_energy']: .2e} Wh")
+        # print(f"Memory Energy: {efficiency_metrics['dram_energy']: .2e} Wh")
         print(f"Total Energy: {efficiency_metrics['total_energy']: .2e} Wh")
         print(f"CO2 emission: {efficiency_metrics['carbon']: .2e} grams.")
         print(f"Throughput: {efficiency_metrics['throughput']: .2f} instances / s.")
         print(f"Latency: {efficiency_metrics['latency'] * 1000: .2f} ms.")
+
+        csv_columns = efficiency_metrics.keys()
+        csv_file = f"{os.getcwd()}/{file_name}.csv"
+        try:
+            with open(csv_file, 'w') as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
+                writer.writeheader()
+                writer.writerow(efficiency_metrics)
+        except IOError:
+            print(f"Failed log to file {csv_file}")
 
     def run(
         self,
@@ -143,17 +155,21 @@ class PredictStep(Step):
         instances = instances[len(results):]
         eval_instances, latency_instances = model.prepare(task, instances)
         self.start_profiling()
-        for result in model.predict(instances=eval_instances, **kwargs):
-            results.append(result)
-        efficiency_metrics = self.end_profiling(num_instances=len(eval_instances))
+        try:
+            for result in model.predict(instances=eval_instances, **kwargs):
+                results.append(result)
+            efficiency_metrics = self.end_profiling(num_instances=len(eval_instances))
+        except:
+            self.end_profiling(num_instances=len(eval_instances))
 
         ### Latency ###
         start_time = time.time()
         for result in model.predict(instances=latency_instances, batch_size=1):
-            results.append(result)
+            pass
         elapsed_time = time.time() - start_time
         efficiency_metrics["latency"] = elapsed_time / len(latency_instances)
-        self.tabulate_efficiency_metrics(efficiency_metrics)
+        efficiency_metrics["num_params"] = model._model.num_parameters()
+        self.tabulate_efficiency_metrics(efficiency_metrics, file_name=model._pretrained_model_name_or_path)
         return results
 
 
