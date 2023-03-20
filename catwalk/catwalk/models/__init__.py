@@ -9,6 +9,7 @@ from catwalk.models.conditional_generation import ConditionalGenerationModel
 
 MODELS: Dict[str, Model] = {
     # "bert-example": BertExample(),
+    "submission": Submission(),
     "models/mnli-bert-base": HuggingfaceClassification("models/mnli-bert-base"),
     "models/mnli-bert-large": HuggingfaceClassification("models/mnli-bert-large"),
     "models/mnli-deberta-small": HuggingfaceClassification("models/mnli-deberta-small"),
@@ -16,7 +17,6 @@ MODELS: Dict[str, Model] = {
     "models/mnli-deberta-large": HuggingfaceClassification("models/mnli-deberta-large"),
     "models/mnli-roberta-base": HuggingfaceClassification("models/mnli-roberta-base"),
     "models/mnli-roberta-large": HuggingfaceClassification("models/mnli-roberta-large"),
-    "submission": Submission(),
     "gpt2": GPTModel("gpt2"),
     "conditional_generation": ConditionalGenerationModel("mbart"),
     "t5-small": T5("t5-small"),
