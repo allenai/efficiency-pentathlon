@@ -16,7 +16,7 @@ class HuggingfaceClassification(SubmissionTemplate):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         SubmissionTemplate.__init__(self)
 
-    def _load_model(self):
+    def load_model(self):
         device = resolve_device()
         ### TODO(participants): load models and necessary tools. ###
         self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)

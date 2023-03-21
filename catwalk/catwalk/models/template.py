@@ -1,15 +1,10 @@
-import warnings
 from typing import Any, Dict, Iterator, Sequence, cast, Tuple
 
-import more_itertools
-import torch
-import time
 import numpy as np
-from tango.common import Tqdm
 from tango.common.sequences import MappedSequence
 from tango.integrations.torch.util import resolve_device
 
-from catwalk.model import Model, UnsupportedTaskError
+from catwalk.model import Model
 from catwalk.task import InstanceFormat, Task, WithAnswerOptionsMixin
 from catwalk.tasks.huggingface import HFClassificationInstance
 
@@ -21,8 +16,8 @@ class SubmissionTemplate(Model):
 
     def load_model(self):
         ### TODO(participants): load models and necessary tools. ###
-        # self._tokenizer = XXX
-        # self._model = XXX
+        # self.tokenizer = XXX
+        # self.model = XXX
         raise NotImplementedError()
 
     def prepare(

@@ -1,4 +1,3 @@
-import warnings
 from typing import Any, Dict, Iterator, Sequence
 
 import more_itertools
@@ -10,7 +9,7 @@ from catwalk.models.template import SubmissionTemplate
 
 class Submission(SubmissionTemplate):
 
-    def _load_model(self, device):
+    def load_model(self):
         ### TODO(participants): load models and necessary tools. ###
         # self.tokenizer = XXX
         # self.model = XXX

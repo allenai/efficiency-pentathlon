@@ -2,7 +2,6 @@ from typing import Any, Dict, Iterator, Optional, Sequence
 
 import more_itertools
 import torch
-import numpy as np
 from tango.common import Tqdm
 from transformers import T5ForConditionalGeneration, T5Tokenizer
 from tango.integrations.torch.util import resolve_device
@@ -12,7 +11,6 @@ from codecarbon import track_emissions
 
 class T5(SubmissionTemplate):
     def __init__(self, pretrained_model_name_or_path: str):
-        # pretrained_model_name_or_path = "models/mnli_t5/mnli-t5-small/"
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         SubmissionTemplate.__init__(self)
 

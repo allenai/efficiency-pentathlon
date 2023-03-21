@@ -1,7 +1,6 @@
 import inspect
 from abc import ABC
-from copy import deepcopy
-from typing import Sequence, Dict, Any, Iterator, Tuple, List, Optional, Union
+from typing import Sequence, Dict, Any, Iterator, Tuple, List, Union
 
 import torch
 from tango.common import Registrable, Tqdm
