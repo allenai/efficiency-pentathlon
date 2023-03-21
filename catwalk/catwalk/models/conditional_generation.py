@@ -9,6 +9,7 @@ from tango.integrations.torch.util import resolve_device
 from transformers import MBartTokenizer, MBartForConditionalGeneration
 from catwalk.model import Model
 from catwalk.task import InstanceFormat, Task
+from catwalk.models.template import SubmissionTemplate
 
 from torch import log_softmax
 from torch.nn.utils.rnn import pad_sequence
@@ -20,11 +21,11 @@ class ModelInstance:
     target: str
 
 
-class ConditionalGenerationModel(Model):
+class ConditionalGenerationModel(SubmissionTemplate):
     def __init__(self, pretrained_model_name_or_path: str):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
-        self.src_lang = "de"
-        self.tgt_lang = "en"
+        # self.src_lang = "de"
+        # self.tgt_lang = "en"
 
     @classmethod
     def _convert_instances(self, instances: Sequence[Dict[str, Any]], instance_format, task) -> MappedSequence:
@@ -35,7 +36,6 @@ class ConditionalGenerationModel(Model):
         task: Task,
         instances: Sequence[Dict[str, Any]],
     ):
-        assert False
         self.task = task
         device = resolve_device()
         self.model = MBartForConditionalGeneration.from_pretrained(

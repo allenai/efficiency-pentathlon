@@ -28,9 +28,8 @@ class SubmissionTemplate(Model):
         assert isinstance(task, WithAnswerOptionsMixin)
         self.task = task
         self.load_model()
-        eval_instances = cast(
-            Sequence[HFClassificationInstance],
-            self._convert_instances(instances, InstanceFormat.HF_CLASSIFICATION, task))
+        eval_instances = self._convert_instances(
+            instances, InstanceFormat.HF_CLASSIFICATION, task)
         indices = list(range(len(instances)))
         np.random.shuffle(indices)
         indices = indices[:self.num_latency_instances]
