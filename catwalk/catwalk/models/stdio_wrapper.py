@@ -1,33 +1,10 @@
-from typing import Any, Dict, Iterator, Sequence, List
+import subprocess
+import os
 
-import more_itertools
-import torch
-from tango.common import Tqdm
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from tango.integrations.torch.util import resolve_device
+from typing import Any, Dict, Iterator, Sequence, List
 
 from catwalk.models.template import SubmissionTemplate
 
-import subprocess
-import os
-
-
-"""
-import subprocess
-import os
-
-p = subprocess.Popen(["python", "submission/example_stdio_submission_sst.py"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-os.set_blocking(p.stdout.fileno(), False)
-
-#p = subprocess.Popen(["python", "submission/example_stdio_submission_sst.py"], stdin=subprocess.PIPE)
-
-
-p.stdin.write("movie good.\n".encode("utf-8"))
-p.stdin.flush()
-
-p.stdout.flush()
-p.stdout.readline()
-"""
 
 # This is a hack to work around pytorch specific hard coded assumptions.
 class MockModel:
