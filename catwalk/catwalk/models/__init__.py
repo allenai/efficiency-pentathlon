@@ -5,6 +5,7 @@ from catwalk.models.submission import Submission
 from catwalk.models.gpt import GPTModel
 from catwalk.models.t5 import T5
 from catwalk.models.conditional_generation import ConditionalGenerationModel
+from catwalk.models.stdio_wrapper import StdioWrapper
 
 
 MODELS: Dict[str, Model] = {
@@ -34,5 +35,6 @@ MODELS: Dict[str, Model] = {
     "flan-t5-xxl": T5("google/flan-t5-xxl"),
     "longformer-base": HuggingfaceClassification("allenai/longformer-base-4096"),
     "longformer-large": HuggingfaceClassification("allenai/longformer-large-4096"),
-    "distilbert-base": HuggingfaceClassification("distilbert-base-uncased")
+    "distilbert-base": HuggingfaceClassification("distilbert-base-uncased"),
+    "stdio_good_sentiment_classifier": StdioWrapper(["python", "submission/example_stdio_submission_sst.py"]),
 }
