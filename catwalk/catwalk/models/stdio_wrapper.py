@@ -33,18 +33,29 @@ class StdioWrapper(SubmissionTemplate):
 
     def load_model(self):
         self._convert_fn = lambda text: " ".join(text[k] for k in text.keys())
-        # start the subprocess
         self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        # The next line sets stdout to non-blocking. After setting, self._process.stdout.readline() returns
-        # '' if there is nothing in the pipe. Otherwise, self._process.stdout.readline blocks until something
-        # is available.  This is necessary as we want to always check stdout and yield the output as soon
-        # as it's available, but not block additional input to stdin.  Setting this also removes the
-        # need for async or threaded code, which reduces complexity of this wrapper significantly.
-        os.set_blocking(self._process.stdout.fileno(), False)
 
 
-    def _exhaust_and_yield_stdout(self):
-        while True:
+    def _exhaust_and_yield_stdout(self, block_until_read_num_instances: int = None):
+        """
+        Read everything from the stdout pipe.
+        This function uses stdout.readline() to read one prediction at a time.
+        stdout.readline() is either blocking or non-blocking (in this case returns "" if nothing is available),
+        and the behavior is determined by calling os.set_blocking(self._process.stdout.fileno(), False/True).
+        To avoid complicated async/threaded code, we instead toggle the blocking behavior as needed.
+        During non-blocking operation we empty the pipe, but don't wait for additional predictions.
+        During blocking, we block reads until a certain number of predicitons is read (used to ensure we receive predictions for all instances).
+
+        block_until_read_num_instances: if None then non-blocking. Otherwise, block until this many predictions are read.
+        """
+        if block_until_read_num_instances is None:
+            os.set_blocking(self._process.stdout.fileno(), False)
+            block_until_read_num_instances = 1000000000
+        else:
+            os.set_blocking(self._process.stdout.fileno(), True)
+
+        num_read = 0
+        while True and num_read < block_until_read_num_instances:
             # output is bytes, decode to str
             # Also necessary to remove the \n from the end of the label.
             prediction = self._process.stdout.readline().decode("utf-8").rstrip()
@@ -54,6 +65,7 @@ class StdioWrapper(SubmissionTemplate):
             else:
                 self._yielded_label_index += 1
                 instance_label = self._instance_labels[self._yielded_label_index]
+                num_read += 1
                 yield {
                     "label": instance_label,
                     "prediction": prediction,
@@ -68,13 +80,21 @@ class StdioWrapper(SubmissionTemplate):
         batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:
 
+        num_predictions_yielded = 0
+
         for instance in instances:
             instance_text = self._convert_fn(instance.text)
             self._process.stdin.write(f"{instance_text}\n".encode("utf-8"))
             self._process.stdin.flush()
             self._instance_labels.append(instance.label)
 
-            # Check for anything in stdout. If it's present, then yield it in the generator.
-            for msg in self._exhaust_and_yield_stdout():
+            # Check for anything in stdout but don't block sending additional predictions.
+            for msg in self._exhaust_and_yield_stdout(None):
+                num_predictions_yielded += 1
                 yield msg
+
+        # Now read from stdout until we have hit the required number.
+        num_predictions_to_read = len(instances) - num_predictions_yielded
+        for msg in self._exhaust_and_yield_stdout(num_predictions_to_read):
+            yield msg
 
