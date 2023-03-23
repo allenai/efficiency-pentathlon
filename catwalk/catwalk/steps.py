@@ -56,18 +56,21 @@ class PredictStep():
     def start_profiling(
         self,
     ):
-        client = docker.from_env()
-        self._container = client.containers.run(
-            "cpu_profiler:latest",
-            "python3 profile_cpu.py",
-            name="cpu_profiler",
-            privileged=True,
-            tty=True,
-            remove=True,
-            detach=True,
-            stdout=True,
-            stderr=True
-        )
+        try:
+            client = docker.from_env()
+            self._container = client.containers.run(
+                "cpu_profiler:latest",
+                "python3 profile_cpu.py",
+                name="cpu_profiler",
+                privileged=True,
+                tty=True,
+                remove=True,
+                detach=True,
+                stdout=True,
+                stderr=True
+            )
+        except:
+            self._container = None
         self._p_gpu = subprocess.Popen(
             [f"{sys.executable}", f"{EFFICIENCY_DIR}/profile_gpu.py"],
             stdout=subprocess.PIPE,
@@ -81,14 +84,22 @@ class PredictStep():
         os.kill(self._p_gpu.pid, signal.SIGTERM)
         if not self._p_gpu.poll():
             print("GPU monitor correctly halted")
-        self._container.kill(signal.SIGINT)
-        cpu_results = json.loads(self._container
-                                .logs()
-                                .strip()
-                                .decode('UTF-8')
-                                .replace("\'", "\""))
+
+        if self._container is not None:
+            self._container.kill(signal.SIGINT)
+            cpu_results = json.loads(self._container
+                                    .logs()
+                                    .strip()
+                                    .decode('UTF-8')
+                                    .replace("\'", "\""))
+            cpu_energy = cpu_results["cpu_energy"] / 3600.0  # Wh
+            dram_energy = cpu_results["dram_energy"] / 3600.0  # Wh
+            self._container.stop()
+        else:
+            cpu_energy = -999.0
+            dram_energy = -999.0
+
         self._p_gpu.wait()
-        self._container.stop()
         gpu_results = (self._p_gpu
                        .communicate()[0]
                        .strip()
@@ -98,12 +109,13 @@ class PredictStep():
         gpu_results = [r for r in reader]
 
         gpu_energy, max_gpu_mem = 0, 0
-        for g in gpu_results:
-            gpu_energy += float(g["energy"])
-            max_gpu_mem += float(g["max_mem"])
-        gpu_energy = gpu_energy / 3600.0
-        cpu_energy = cpu_results["cpu_energy"] / 3600.0  # Wh
-        dram_energy = cpu_results["dram_energy"] / 3600.0  # Wh
+        try:
+            for g in gpu_results:
+                gpu_energy += float(g["energy"])
+                max_gpu_mem += float(g["max_mem"])
+            gpu_energy = gpu_energy / 3600.0
+        except KeyError:
+            gpu_energy, max_gpu_mem = -999.0, -999.0
 
         total_energy = gpu_energy  #  + cpu_energy + dram_energy
         carbon = get_realtime_carbon(total_energy)  # in g
