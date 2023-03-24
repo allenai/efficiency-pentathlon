@@ -6,7 +6,8 @@ Example usage:
     cat data.txt | python stdio_submission.py
 """
 
-import sys
+from utils import stdio_predictor_wrapper
+from typing import Any, Dict, Iterator, Sequence
 
 class GoodBinarySentimentClassifier:
     """
@@ -15,31 +16,18 @@ class GoodBinarySentimentClassifier:
     def __init__(self):
         self.positive_words = ["good", "great"]
 
-    def predict(self, x: str) -> str:
-        label = "negative"
+    def predict(
+        self,
+        inputs: Sequence[Dict[str, Any]]
+    ) -> Iterator[str]:
 
-        for positive_word in self.positive_words:
-            if positive_word in x:
-                label = "positive"
-                break
-
-        return label
-
-
-def stdio_predictor_wrapper(predictor):
-    """
-    Wrap a predictor in a loop that reads from stdin and writes to stdout.
-    The predictor implements `predict` function that takes a single string and returns the label.
-
-    Assumes each input instance ends with "\n".
-    """
-    for line in sys.stdin:
-        label = predictor.predict(line)
-        # Writes are \n deliminated, so adding \n is essential to separate this write from the next loop iteration.
-        sys.stdout.write(f"{label}\n")
-        # Writes to stdout are buffered. The flush ensures the output is immediately sent through the pipe
-        # instead of buffered.
-        sys.stdout.flush()
+        for input in inputs:
+            label = "negative"
+            for positive_word in self.positive_words:
+                if positive_word in input:
+                    label = "positive"
+                    break
+            yield label
 
 
 if __name__ == "__main__":

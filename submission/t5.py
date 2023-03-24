@@ -1,5 +1,5 @@
 import argparse
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, Iterator, Optional, Sequence
 
 import torch
 from transformers import T5ForConditionalGeneration, T5Tokenizer
@@ -39,7 +39,6 @@ class T5():
                 + f"Answer 'not_duplicate' if they have different meanings.\n"
 
         }
-        # {"sentence1": "111", "sentence2": 222}
         if "flan" in self.pretrained_model_name_or_path:
             self.convert_fns = {
                 "rte": lambda text: f"{self.instructions['rte']}Text: {text['sentence1']}\nHypothesis: {text['sentence2']}\n",
@@ -58,7 +57,7 @@ class T5():
     def predict(  # type: ignore
         self,
         inputs: Sequence[Dict[str, Any]]
-    ) -> Sequence[str]:
+    ) -> Iterator[str]:
         convert_fn = self.convert_fns[self.task]
         inputs = [convert_fn(input) for input in inputs]
         with torch.inference_mode():
@@ -72,9 +71,9 @@ class T5():
             inputs = inputs.to(self.model.device)
             outputs = self.model.generate(inputs, max_length=10)
             outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
-            return outputs
-            # for output in outputs:
-            #     yield output.strip()
+            # return outputs
+            for output in outputs:
+                yield output.strip()
 
 
 if __name__ == "__main__":
@@ -88,3 +87,6 @@ if __name__ == "__main__":
         task=args.task
     )
     stdio_predictor_wrapper(classifier)
+
+    # {"sentence1": "111", "sentence2": 222}
+    # [{"sentence1": "111", "sentence2": 222}, {"sentence1": "111", "sentence2": 222}, {"sentence1": "111", "sentence2": 222}]

@@ -2,9 +2,10 @@ import subprocess
 import os
 
 from typing import Any, Dict, Iterator, Sequence, List
-
+import more_itertools
 from catwalk.models.template import SubmissionTemplate
-
+from tqdm import tqdm
+import json
 
 # This is a hack to work around pytorch specific hard coded assumptions.
 class MockModel:
@@ -26,15 +27,9 @@ class StdioWrapper(SubmissionTemplate):
         """
         SubmissionTemplate.__init__(self)
         self._cmd = binary_cmd
-        self._instance_labels = []
-        self._yielded_label_index = -1
         self.model = MockModel()
-
-
-    def load_model(self):
         self._convert_fn = lambda text: " ".join(text[k] for k in text.keys())
         self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-
 
     def _exhaust_and_yield_stdout(self, block_until_read_num_instances: int = None):
         """
@@ -58,43 +53,36 @@ class StdioWrapper(SubmissionTemplate):
         while True and num_read < block_until_read_num_instances:
             # output is bytes, decode to str
             # Also necessary to remove the \n from the end of the label.
-            prediction = self._process.stdout.readline().decode("utf-8").rstrip()
-            if prediction == "":
+            predictions = self._process.stdout.readline().decode("utf-8").rstrip()
+            if predictions == "":
                 # Nothing in stdout
                 break
             else:
-                self._yielded_label_index += 1
-                instance_label = self._instance_labels[self._yielded_label_index]
+                yield predictions
                 num_read += 1
-                yield {
-                    "label": instance_label,
-                    "prediction": prediction,
-                    "acc": (prediction, instance_label),
-                }
-
 
     def predict(  # type: ignore
         self,
         *,
         instances: Sequence[Dict[str, Any]],
         batch_size: int = 32
-    ) -> Iterator[Dict[str, Any]]:
+    ) -> Iterator[str]:
 
-        num_predictions_yielded = 0
+        num_batches_yielded = 0
+        batches = list(more_itertools.chunked(instances, batch_size))
+        num_batches = len(batches)
+        with tqdm(instances, desc="Processing instances") as instances:
 
-        for instance in instances:
-            instance_text = self._convert_fn(instance.text)
-            self._process.stdin.write(f"{instance_text}\n".encode("utf-8"))
-            self._process.stdin.flush()
-            self._instance_labels.append(instance.label)
+            for batch in batches:
+                self._process.stdin.write(f"{json.dumps(batch)}\n".encode("utf-8"))
+                self._process.stdin.flush()
 
-            # Check for anything in stdout but don't block sending additional predictions.
-            for msg in self._exhaust_and_yield_stdout(None):
-                num_predictions_yielded += 1
+                # Check for anything in stdout but don't block sending additional predictions.
+                for msg in self._exhaust_and_yield_stdout(None):
+                    num_batches_yielded += 1
+                    yield msg
+
+            # Now read from stdout until we have hit the required number.
+            num_batches_to_read = num_batches - num_batches_yielded
+            for msg in self._exhaust_and_yield_stdout(num_batches_to_read):
                 yield msg
-
-        # Now read from stdout until we have hit the required number.
-        num_predictions_to_read = len(instances) - num_predictions_yielded
-        for msg in self._exhaust_and_yield_stdout(num_predictions_to_read):
-            yield msg
-

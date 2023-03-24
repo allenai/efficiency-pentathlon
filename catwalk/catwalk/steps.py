@@ -6,9 +6,11 @@ import signal
 import subprocess
 import sys
 import time
+import numpy as np
 from collections import defaultdict
 from random import Random
-from typing import Any, Dict, Iterable, Optional, Sequence, Union
+from typing import Any, Dict, Iterable, Optional, Sequence, Tuple, Union
+from tango.common.sequences import MappedSequence
 
 import torch
 from codecarbon import track_emissions
@@ -20,7 +22,9 @@ from catwalk.models import MODELS
 from catwalk.task import Task
 from catwalk.tasks import TASKS
 
+
 EFFICIENCY_DIR = f"{pathlib.Path(__file__).parent.resolve()}/efficiency"  # TODO
+NUM_LATENCY_INSTANCES = 100
 
 
 class PredictStep():
@@ -34,15 +38,34 @@ class PredictStep():
         random_subsample_seed: Optional[int] = None,
         **kwargs
     ):
-        self.model = MODELS[model] if isinstance(model, str) else model
         self.task = TASKS[task] if isinstance(task, str) else task
         self.split = split if split is not None else task.default_split
         self.limit = limit
         self.random_subsample_seed = random_subsample_seed
+        self.model = MODELS[model] if isinstance(model, str) else model
+        self._eval_instances, self._targets = self._get_instances()
+        num_latency_instances = min(NUM_LATENCY_INSTANCES, len(self._eval_instances))
+        self._latency_instances = Random(random_subsample_seed).sample(
+                self._eval_instances, num_latency_instances)
+
+    def _get_instances(self) -> Tuple[Sequence[Dict[str, Any]], Sequence[str]]:
         instances = self.task.get_split(self.split)
-        if limit is not None and len(instances) > limit:
-            instances = instances[:limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, limit)
-        self.eval_instances, self.latency_instances = self.model.prepare(self.task, instances)
+        instances = self._convert_instances(
+            instances, self.model.instance_format, self.task)
+
+        random_subsample_seed = 0 if self.random_subsample_seed is None else self.random_subsample_seed
+        if self.limit is not None and len(instances) > self.limit:
+            instances = instances[:self.limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, self.limit)
+        return [i.text for i in instances], [i.label for i in instances]
+
+    @classmethod
+    def _convert_instances(
+        self,
+        instances: Sequence[Dict[str, Any]],
+        instance_format,
+        task
+    ) -> MappedSequence:
+        return MappedSequence(task.instance_conversions[instance_format], instances)
 
     def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(kwargs["model"], str):
@@ -150,24 +173,41 @@ class PredictStep():
         self,
         **kwargs
     ) -> Sequence[Any]:
-        results = []
+        output_batches = []
         self.start_profiling()
         try:
-            for result in self.model.predict(instances=self.eval_instances, **kwargs):
-                results.append(result)
-            efficiency_metrics = self.end_profiling(num_instances=len(self.eval_instances))
+            for output_batch in self.model.predict(instances=self._eval_instances, **kwargs):
+                output_batches.append(output_batch)
+            efficiency_metrics = self.end_profiling(num_instances=len(self._eval_instances))
         except:
-            self.end_profiling(num_instances=len(self.eval_instances))
-
+            self.end_profiling(num_instances=len(self._eval_instances))
         ### Latency ###
         start_time = time.time()
-        for result in self.model.predict(instances=self.latency_instances, batch_size=1):
+        for output_batch in self.model.predict(instances=self._latency_instances, batch_size=1):
             pass
         elapsed_time = time.time() - start_time
-        efficiency_metrics["latency"] = elapsed_time / len(self.latency_instances)
+        efficiency_metrics["latency"] = elapsed_time / len(self._latency_instances)
         efficiency_metrics["num_params"] = self.model.model.num_parameters()
         self.tabulate_efficiency_metrics(efficiency_metrics)
+        results = self.process(output_batches)
         return results
+
+    def process(
+        self,
+        output_batches: Iterable[str]
+    ) -> Iterable[Dict[str, Any]]:
+        yielded_label_index = -1
+        for output_batch in output_batches:
+            output_batch = json.loads(output_batch.rstrip())
+            for output in output_batch:
+                yielded_label_index += 1
+                prediction = output["output"]
+                target = self._targets[yielded_label_index]
+                yield {
+                    "target": target,
+                    "prediction": prediction,
+                    "acc": (prediction, target),
+                }
 
 
 class CalculateMetricsStep():

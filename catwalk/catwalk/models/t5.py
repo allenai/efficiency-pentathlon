@@ -3,6 +3,7 @@ from typing import Any, Dict, Iterator, Optional, Sequence
 import more_itertools
 import torch
 from tango.common import Tqdm
+from tqdm import tqdm
 from transformers import T5ForConditionalGeneration, T5Tokenizer
 from tango.integrations.torch.util import resolve_device
 from catwalk.models.template import SubmissionTemplate
@@ -61,7 +62,7 @@ class T5(SubmissionTemplate):
         batch_size: int = 32
     ) -> Iterator[Dict[str, Any]]:
         convert_fn = self._convert_fns[instances[0].task_name]
-        with Tqdm.tqdm(instances, desc="Processing instances") as instances:
+        with tqdm(instances, desc="Processing instances") as instances:
             with torch.inference_mode():
                 for batch in more_itertools.chunked(instances, batch_size):
 
