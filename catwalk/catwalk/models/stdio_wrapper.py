@@ -62,18 +62,16 @@ class StdioWrapper(SubmissionTemplate):
         num_batches_yielded = 0
         batches = list(more_itertools.chunked(instances, batch_size))
         num_batches = len(batches)
-        with tqdm(instances, desc="Processing instances") as instances:
+        for batch in batches:
+            self._process.stdin.write(f"{json.dumps(batch)}\n".encode("utf-8"))
+            self._process.stdin.flush()
 
-            for batch in batches:
-                self._process.stdin.write(f"{json.dumps(batch)}\n".encode("utf-8"))
-                self._process.stdin.flush()
-
-                # Check for anything in stdout but don't block sending additional predictions.
-                for msg in self._exhaust_and_yield_stdout(None):
-                    num_batches_yielded += 1
-                    yield msg
-
-            # Now read from stdout until we have hit the required number.
-            num_batches_to_read = num_batches - num_batches_yielded
-            for msg in self._exhaust_and_yield_stdout(num_batches_to_read):
+            # Check for anything in stdout but don't block sending additional predictions.
+            for msg in self._exhaust_and_yield_stdout(None):
+                num_batches_yielded += 1
                 yield msg
+
+        # Now read from stdout until we have hit the required number.
+        num_batches_to_read = num_batches - num_batches_yielded
+        for msg in self._exhaust_and_yield_stdout(num_batches_to_read):
+            yield msg

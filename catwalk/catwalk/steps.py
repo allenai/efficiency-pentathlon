@@ -81,21 +81,21 @@ class PredictStep():
     def start_profiling(
         self,
     ):
-        try:
-            client = docker.from_env()
-            self._container = client.containers.run(
-                "cpu_profiler:latest",
-                "python3 profile_cpu.py",
-                name="cpu_profiler",
-                privileged=True,
-                tty=True,
-                remove=True,
-                detach=True,
-                stdout=True,
-                stderr=True
-            )
-        except:
-            self._container = None
+        # try:
+        #     client = docker.from_env()
+        #     self._container = client.containers.run(
+        #         "cpu_profiler:latest",
+        #         "python3 profile_cpu.py",
+        #         name="cpu_profiler",
+        #         privileged=True,
+        #         tty=True,
+        #         remove=True,
+        #         detach=True,
+        #         stdout=True,
+        #         stderr=True
+        #     )
+        # except:
+        self._container = None
         self._p_gpu = subprocess.Popen(
             [f"{sys.executable}", f"{EFFICIENCY_DIR}/profile_gpu.py"],
             stdout=subprocess.PIPE,
@@ -203,6 +203,7 @@ class PredictStep():
     ) -> Iterable[Dict[str, Any]]:
         yielded_label_index = -1
         for output_batch in output_batches:
+            print(output_batch)
             output_batch = json.loads(output_batch.rstrip())
             for output in output_batch:
                 yielded_label_index += 1
