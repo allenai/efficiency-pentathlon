@@ -17,6 +17,13 @@ from catwalk.tasks.conditional_generation import MachineTranslationTask
 from catwalk.tasks.conditional_generation import conditional_generation_conversion
 
 TASKS: Dict[str, Task] = {
+    "wmt16-en-ro": MachineTranslationTask("wmt16", "ro-en").add_instance_conversion(
+        InstanceFormat.CONDITIONAL_GENERATION,
+        conditional_generation_conversion(
+            source_field="en",
+            target_field="ro"
+        )
+    ).add_metrics(MT_METRICS),  # TODO
     "wmt14-de-en": MachineTranslationTask("wmt14", "de-en").add_instance_conversion(
         InstanceFormat.CONDITIONAL_GENERATION,
         conditional_generation_conversion(

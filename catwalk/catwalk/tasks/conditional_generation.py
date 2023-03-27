@@ -1,13 +1,10 @@
 import functools
 from dataclasses import dataclass
-import random
-from typing import Optional, Sequence, Dict, Any, List, Union, Mapping, Tuple
-
+from typing import Optional, Sequence, Dict, Any
 import datasets
 from tango.common.sequences import MappedSequence
 
-from catwalk.task import Task, InstanceFormat, InstanceConversion
-from catwalk.tasks.promptsource import WithPromptsourceMixin
+from catwalk.task import Task, InstanceConversion
 from catwalk.tasks.huggingface import get_from_dict
 
 
@@ -60,10 +57,9 @@ def conditional_generation_convert(
     *,
     source_field: str,
     target_field: str,
-    id_field: Optional[str] = None,
-    task: Optional[Task] = None,
-    use_str_label: Optional[bool] = True
+    id_field: Optional[str] = None
 ) -> ConditionalGenerationInstance:
+    instance = instance["translation"]
     source = get_from_dict(instance, source_field)
     target = get_from_dict(instance, target_field)
     return ConditionalGenerationInstance(

@@ -1,14 +1,12 @@
-import subprocess
-import os
-
 from typing import Any, Dict, Iterator, Sequence, List
 import more_itertools
 from catwalk.models.template import SubmissionTemplate
 from tqdm import tqdm
 import json
+import docker
 
 
-class StdioWrapper(SubmissionTemplate):
+class StdioDocker(SubmissionTemplate):
     """
     A model that wraps a binary that reads from stdin and writes to stdout.
     """
@@ -19,8 +17,25 @@ class StdioWrapper(SubmissionTemplate):
         """
         SubmissionTemplate.__init__(self)
         self._cmd = binary_cmd
-        self._convert_fn = lambda text: " ".join(text[k] for k in text.keys())
-        self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        client = docker.DockerClient()
+        self._container = client.containers.run(
+            "transformers:latest",
+            "python3 entrypoint.py",
+            name="transformers",
+            auto_remove=True,
+            stdin_open=True,
+            detach=True,
+            device_requests=[
+                docker.types.DeviceRequest(
+                    device_ids=["0"],
+                    capabilities=[["gpu"]]
+                )
+            ]
+        )
+        self._socket = self._container.attach_socket(
+            params={"stdin": 1, "stdout": 1, "stderr": 1, "stream":1}
+        )
+
 
     def _exhaust_and_yield_stdout(self, block_until_read_num_instances: int = None):
         """
@@ -35,16 +50,25 @@ class StdioWrapper(SubmissionTemplate):
         block_until_read_num_instances: if None then non-blocking. Otherwise, block until this many predictions are read.
         """
         if block_until_read_num_instances is None:
-            os.set_blocking(self._process.stdout.fileno(), False)
+            self._socket._sock.setblocking(False)
+            # os.set_blocking(self._process.stdout.fileno(), False)
             block_until_read_num_instances = 1000000000
         else:
-            os.set_blocking(self._process.stdout.fileno(), True)
+            self._socket._sock.setblocking(True)
+            # os.set_blocking(self._process.stdout.fileno(), True)
 
         num_read = 0
         while True and num_read < block_until_read_num_instances:
             # output is bytes, decode to str
             # Also necessary to remove the \n from the end of the label.
-            predictions = self._process.stdout.readline().decode("utf-8").rstrip()
+            try:
+                predictions = self._socket._sock.recv(1000000000)
+
+                # The first 8 byes are headers
+                # TODO: find more principled solutions
+                predictions = predictions[8:].decode("utf-8").rstrip()
+            except:
+                predictions = ""
             if predictions == "":
                 # Nothing in stdout
                 break
@@ -65,8 +89,8 @@ class StdioWrapper(SubmissionTemplate):
         with tqdm(instances, desc="Processing instances") as instances:
 
             for batch in batches:
-                self._process.stdin.write(f"{json.dumps(batch)}\n".encode("utf-8"))
-                self._process.stdin.flush()
+                self._socket._sock.send(f"{json.dumps(batch)}\n".encode("utf-8"))
+                self._socket.flush()
 
                 # Check for anything in stdout but don't block sending additional predictions.
                 for msg in self._exhaust_and_yield_stdout(None):

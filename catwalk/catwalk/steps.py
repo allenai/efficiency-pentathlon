@@ -6,7 +6,6 @@ import signal
 import subprocess
 import sys
 import time
-import numpy as np
 from collections import defaultdict
 from random import Random
 from typing import Any, Dict, Iterable, Optional, Sequence, Tuple, Union
@@ -21,6 +20,7 @@ from catwalk.model import Model
 from catwalk.models import MODELS
 from catwalk.task import Task
 from catwalk.tasks import TASKS
+from catwalk.tasks import InstanceFormat
 
 
 EFFICIENCY_DIR = f"{pathlib.Path(__file__).parent.resolve()}/efficiency"  # TODO
@@ -50,13 +50,15 @@ class PredictStep():
 
     def _get_instances(self) -> Tuple[Sequence[Dict[str, Any]], Sequence[str]]:
         instances = self.task.get_split(self.split)
+        # TODO
         instances = self._convert_instances(
-            instances, self.model.instance_format, self.task)
+            instances, InstanceFormat.CONDITIONAL_GENERATION, self.task)
 
         random_subsample_seed = 0 if self.random_subsample_seed is None else self.random_subsample_seed
         if self.limit is not None and len(instances) > self.limit:
             instances = instances[:self.limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, self.limit)
-        return [i.text for i in instances], [i.label for i in instances]
+        # TODO
+        return [i.source for i in instances], [i.target for i in instances]
 
     @classmethod
     def _convert_instances(
@@ -110,13 +112,13 @@ class PredictStep():
 
         if self._container is not None:
             self._container.kill(signal.SIGINT)
-            cpu_results = json.loads(self._container
-                                    .logs()
-                                    .strip()
-                                    .decode('UTF-8')
-                                    .replace("\'", "\""))
-            cpu_energy = cpu_results["cpu_energy"] / 3600.0  # Wh
-            dram_energy = cpu_results["dram_energy"] / 3600.0  # Wh
+            cpu_results = self._container.logs().strip().decode("UTF-8")
+            if cpu_results == "":
+                cpu_energy = dram_energy = -999.0
+            else:
+                cpu_results = json.loads(cpu_results.replace("\'", "\""))
+                cpu_energy = cpu_results["cpu_energy"] / 3600.0  # Wh
+                dram_energy = cpu_results["dram_energy"] / 3600.0  # Wh
             self._container.stop()
         else:
             cpu_energy = -999.0
@@ -159,7 +161,7 @@ class PredictStep():
     ):
         print(f"Time Elapsed: {efficiency_metrics['time']:.2f} s")
         # print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .2f} GiB")
-        print(f"Number of Parameters: {efficiency_metrics['num_params'] / 1e6: .2f} M")
+        # print(f"Number of Parameters: {efficiency_metrics['num_params'] / 1e6: .2f} M")
         print(f"Max GPU Memory Usage: {efficiency_metrics['max_gpu_mem']: .2f} GiB")
         # print(f"GPU Energy: {efficiency_metrics['gpu_energy']:.2e} Wh")
         # print(f"CPU Energy: {efficiency_metrics['cpu_energy']: .2e} Wh")
@@ -187,9 +189,12 @@ class PredictStep():
             pass
         elapsed_time = time.time() - start_time
         efficiency_metrics["latency"] = elapsed_time / len(self._latency_instances)
-        efficiency_metrics["num_params"] = self.model.model.num_parameters()
+        # TODO
+        # efficiency_metrics["num_params"] = self.model.model.num_parameters()
         self.tabulate_efficiency_metrics(efficiency_metrics)
         results = self.process(output_batches)
+        for r in results:
+            print(r)
         return results
 
     def process(
