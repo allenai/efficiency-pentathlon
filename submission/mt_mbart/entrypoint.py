@@ -55,6 +55,7 @@ class MBART():
 
 
 if __name__ == "__main__":
+    # We read outputs from stdout, and it is crucial to surpress unnecessary logging to stdout
     transformers.logging.set_verbosity(transformers.logging.CRITICAL)
     transformers.utils.logging.disable_progress_bar()
     classifier = MBART()
