@@ -38,5 +38,5 @@ MODELS: Dict[str, Model] = {
     "longformer-large": HuggingfaceClassification("allenai/longformer-large-4096"),
     "distilbert-base": HuggingfaceClassification("distilbert-base-uncased"),
     "stdio_mbart": StdioWrapper(["/home/haop/miniconda3/envs/efficiency-benchmark/bin/python", "submission/huggingface/entrypoint.py"]),
-    "stdio_docker": StdioDocker(["python", "submission/example_stdio_submission_sst.py"]),
+    "stdio_docker": StdioDocker(["python3 submission/mt_mbart/entrypoint.py"]),
 }

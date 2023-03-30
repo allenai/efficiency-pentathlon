@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, Sequence, List
+from typing import Any, Dict, Iterator, List
 import more_itertools
 from catwalk.models.template import SubmissionTemplate
 import json
@@ -10,16 +10,16 @@ class StdioDocker(SubmissionTemplate):
     A model that wraps a binary that reads from stdin and writes to stdout.
     """
 
-    def __init__(self, binary_cmd: List[str]):
+    def __init__(self, cmd: str):
         """
         binary_cmd: the command to start the inference binary
         """
         SubmissionTemplate.__init__(self)
-        self._cmd = binary_cmd
+        self._cmd = cmd
         client = docker.DockerClient()
         self._container = client.containers.run(
             "transformers:latest",
-            "python3 entrypoint.py",
+            self._cmd,
             name="transformers",
             auto_remove=True,
             remove=True,
