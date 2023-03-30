@@ -23,6 +23,7 @@ class StdioDocker(SubmissionTemplate):
             "python3 entrypoint.py",
             name="transformers",
             auto_remove=True,
+            remove=True,
             stdin_open=True,
             detach=True,
             device_requests=[
@@ -99,3 +100,10 @@ class StdioDocker(SubmissionTemplate):
         num_batches_to_read = num_batches - num_batches_yielded
         for msg in self._exhaust_and_yield_stdout(num_batches_to_read):
             yield msg
+
+    def stop(self):
+        try:
+            self._container.stop()
+            self._container.remove()
+        except:
+            pass
