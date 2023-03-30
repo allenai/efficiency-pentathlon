@@ -70,7 +70,7 @@ class InstanceFormat(Enum):
     HF_QA = 8
     PROMPTSOURCE = 9
     HF_CLASSIFICATION = 10
-    CONDITIONAL_GENERATION = 11
+    EFFICIENCY_BENCHMARK = 11
 
 
 @dataclass

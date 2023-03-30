@@ -44,7 +44,7 @@ class PredictStep():
         instances = self.task.get_split(self.split)
         # TODO
         instances = self._convert_instances(
-            instances, InstanceFormat.CONDITIONAL_GENERATION, self.task)
+            instances, InstanceFormat.EFFICIENCY_BENCHMARK, self.task)
 
         random_subsample_seed = 0 if self.random_subsample_seed is None else self.random_subsample_seed
         if self.limit is not None and len(instances) > self.limit:

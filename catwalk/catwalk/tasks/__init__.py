@@ -12,22 +12,21 @@ from catwalk.tasks.raft import RaftTask
 from catwalk.tasks.metaicl import MetaICLTask
 from catwalk.tasks.mrqa import MrqaTask
 from catwalk.tasks.t5 import t5_prompt_conversion
-from catwalk.tasks.conditional_generation import ConditionalGenerationTask
-from catwalk.tasks.conditional_generation import MachineTranslationTask
-from catwalk.tasks.conditional_generation import conditional_generation_conversion
+from catwalk.tasks.efficiency_benchmark import EfficiencyBenchmarkTranslationTask
+from catwalk.tasks.efficiency_benchmark import efficiency_benchmark_mt_conversion
 
 TASKS: Dict[str, Task] = {
-    "wmt16-en-ro": MachineTranslationTask("wmt16", "ro-en").add_instance_conversion(
-        InstanceFormat.CONDITIONAL_GENERATION,
-        conditional_generation_conversion(
-            source_field="en",
+    "wmt16-en-ro": EfficiencyBenchmarkTranslationTask("wmt16", "ro-en").add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_mt_conversion(
+            input_field="en",
             target_field="ro"
         )
     ).add_metrics(MT_METRICS),  # TODO
-    "wmt14-de-en": MachineTranslationTask("wmt14", "de-en").add_instance_conversion(
-        InstanceFormat.CONDITIONAL_GENERATION,
-        conditional_generation_conversion(
-            source_field="de",
+    "wmt14-de-en": EfficiencyBenchmarkTranslationTask("wmt14", "de-en").add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_mt_conversion(
+            input_field="de",
             target_field="en"
         )
     ).add_metrics(MT_METRICS),  # TODO

@@ -8,7 +8,7 @@ from catwalk.task import Task, InstanceConversion
 from catwalk.tasks.huggingface import get_from_dict
 
 
-class ConditionalGenerationTask(Task):
+class EfficiencyBenchmarkTask(Task):
     def __init__(
         self,
         dataset_path: str,
@@ -34,7 +34,7 @@ class ConditionalGenerationTask(Task):
         return ds
 
 
-class MachineTranslationTask(ConditionalGenerationTask):
+class EfficiencyBenchmarkTranslationTask(EfficiencyBenchmarkTask):
     def __init__(
         self,
         dataset_path: str,
@@ -42,35 +42,33 @@ class MachineTranslationTask(ConditionalGenerationTask):
         *,
         version_override: Optional[str] = None
     ):
-        ConditionalGenerationTask.__init__(self, dataset_path, dataset_name, version_override=version_override)
+        EfficiencyBenchmarkTask.__init__(self, dataset_path, dataset_name, version_override=version_override)
 
 
 @dataclass
-class ConditionalGenerationInstance:
-    id: Optional[str]
+class EfficiencyBenchmarkInstance:
     input: str
     target: str
+    id: Optional[str]
 
 
-def conditional_generation_convert(
-    instance: Dict[str, Any],
-    *,
-    source_field: str,
-    target_field: str,
-    id_field: Optional[str] = None
-) -> ConditionalGenerationInstance:
-    instance = instance["translation"]
-    input = get_from_dict(instance, source_field)
-    target = get_from_dict(instance, target_field)
-    return ConditionalGenerationInstance(
-        id=str(get_from_dict(instance, id_field)) if id_field else None,
-        input=input,
-        target=target
-    )
-
-
-def conditional_generation_conversion(
+def efficiency_benchmark_mt_conversion(
     **kwargs
 ) -> InstanceConversion:
+    def efficiency_benchmark_mt_convert(
+        instance: Dict[str, Any],
+        *,
+        input_field: str,
+        target_field: str,
+        id_field: Optional[str] = None
+    ) -> EfficiencyBenchmarkInstance:
+        instance = instance["translation"]
+        input = get_from_dict(instance, input_field)
+        target = get_from_dict(instance, target_field)
+        return EfficiencyBenchmarkInstance(
+            id=str(get_from_dict(instance, id_field)) if id_field else None,
+            input=input,
+            target=target
+        )
     # We're doing this in this stupid way because this makes the conversion function picklable.
-    return functools.partial(conditional_generation_convert, **kwargs)
+    return functools.partial(efficiency_benchmark_mt_convert, **kwargs)
