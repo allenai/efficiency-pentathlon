@@ -23,11 +23,25 @@ TASKS: Dict[str, Task] = {
             target_field="ro"
         )
     ).add_metrics(MT_METRICS),  # TODO
+    "wmt16-ro-en": EfficiencyBenchmarkTranslationTask("wmt16", "ro-en").add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_mt_conversion(
+            input_field="ro",
+            target_field="en"
+        )
+    ).add_metrics(MT_METRICS),  # TODO
     "wmt14-de-en": EfficiencyBenchmarkTranslationTask("wmt14", "de-en").add_instance_conversion(
         InstanceFormat.EFFICIENCY_BENCHMARK,
         efficiency_benchmark_mt_conversion(
             input_field="de",
             target_field="en"
+        )
+    ).add_metrics(MT_METRICS),  # TODO
+    "wmt14-en-de": EfficiencyBenchmarkTranslationTask("wmt14", "de-en").add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_mt_conversion(
+            input_field="en",
+            target_field="de"
         )
     ).add_metrics(MT_METRICS),  # TODO
     "wikitext": EleutherTask("wikitext").add_metrics(PERPLEXITY_METRICS),
