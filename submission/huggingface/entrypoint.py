@@ -1,7 +1,9 @@
-from transformers import MBartForConditionalGeneration, MBartTokenizer
-import transformers
-import sys
 import json
+import sys
+
+import torch
+import transformers
+from transformers import MBartForConditionalGeneration, MBartTokenizer
 
 
 def stdio_predictor_wrapper(predictor):
@@ -18,7 +20,7 @@ def stdio_predictor_wrapper(predictor):
         outputs = predictor.predict(inputs=inputs)
         # Writes are \n deliminated, so adding \n is essential to separate this write from the next loop iteration.
         outputs = [{"output": o} for o in outputs]
-        sys.stdout.write(f"{json.dumps(outputs)}\n")
+        sys.stdout.write(f"{json.dumps(outputs)}\n".encode("utf-8"))
         # Writes to stdout are buffered. The flush ensures the output is immediately sent through the pipe
         # instead of buffered.
         sys.stdout.flush()
@@ -26,8 +28,8 @@ def stdio_predictor_wrapper(predictor):
 
 class MBART():
     def __init__(self):
-
-        self.model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-en-ro")
+        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        self.model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-en-ro").half().to(device)
         self.tokenizer = MBartTokenizer.from_pretrained("facebook/mbart-large-en-ro", src_lang="en_XX")
 
         # TODO
@@ -47,7 +49,6 @@ class MBART():
         outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
         for output in outputs:
             yield output.strip()
-
 
 
 if __name__ == "__main__":
