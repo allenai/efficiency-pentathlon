@@ -48,7 +48,7 @@ class MachineTranslationTask(ConditionalGenerationTask):
 @dataclass
 class ConditionalGenerationInstance:
     id: Optional[str]
-    source: str
+    input: str
     target: str
 
 
@@ -60,11 +60,11 @@ def conditional_generation_convert(
     id_field: Optional[str] = None
 ) -> ConditionalGenerationInstance:
     instance = instance["translation"]
-    source = get_from_dict(instance, source_field)
+    input = get_from_dict(instance, source_field)
     target = get_from_dict(instance, target_field)
     return ConditionalGenerationInstance(
         id=str(get_from_dict(instance, id_field)) if id_field else None,
-        source=source,
+        input=input,
         target=target
     )
 

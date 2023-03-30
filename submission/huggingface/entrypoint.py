@@ -6,6 +6,7 @@ import transformers
 from transformers import MBartForConditionalGeneration, MBartTokenizer
 
 
+# We provide this
 def stdio_predictor_wrapper(predictor):
     """
     Wrap a predictor in a loop that reads from stdin and writes to stdout.
@@ -17,15 +18,17 @@ def stdio_predictor_wrapper(predictor):
         line = line.rstrip()
         inputs = json.loads(line)
         assert isinstance(inputs, list)
+        # Participants need to connect their inference code to our wrapper through the following line.
         outputs = predictor.predict(inputs=inputs)
         # Writes are \n deliminated, so adding \n is essential to separate this write from the next loop iteration.
-        outputs = [{"output": o} for o in outputs]
-        sys.stdout.write(f"{json.dumps(outputs)}\n".encode("utf-8"))
+        outputs = [o for o in outputs]
+        sys.stdout.write(f"{json.dumps(outputs)}\n")
         # Writes to stdout are buffered. The flush ensures the output is immediately sent through the pipe
         # instead of buffered.
         sys.stdout.flush()
 
 
+# Submission
 class MBART():
     def __init__(self):
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")

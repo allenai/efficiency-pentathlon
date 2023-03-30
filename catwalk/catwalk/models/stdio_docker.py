@@ -1,7 +1,6 @@
 from typing import Any, Dict, Iterator, Sequence, List
 import more_itertools
 from catwalk.models.template import SubmissionTemplate
-from tqdm import tqdm
 import json
 import docker
 
@@ -52,11 +51,9 @@ class StdioDocker(SubmissionTemplate):
         """
         if block_until_read_num_instances is None:
             self._socket._sock.setblocking(False)
-            # os.set_blocking(self._process.stdout.fileno(), False)
             block_until_read_num_instances = 1000000000
         else:
             self._socket._sock.setblocking(True)
-            # os.set_blocking(self._process.stdout.fileno(), True)
 
         num_read = 0
         while True and num_read < block_until_read_num_instances:
@@ -66,7 +63,6 @@ class StdioDocker(SubmissionTemplate):
                 predictions = self._socket._sock.recv(1000000000)
 
                 # The first 8 byes are headers
-                # TODO: find more principled solutions
                 predictions = predictions[8:].decode("utf-8").rstrip()
             except:
                 predictions = ""
@@ -80,7 +76,7 @@ class StdioDocker(SubmissionTemplate):
     def predict(  # type: ignore
         self,
         *,
-        instances: Sequence[Dict[str, Any]],
+        instances: List[Dict[str, Any]],
         batch_size: int = 32
     ) -> Iterator[str]:
 

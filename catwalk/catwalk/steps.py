@@ -1,5 +1,6 @@
 import json
 import time
+from dataclasses import dataclass
 from collections import defaultdict
 from random import Random
 from typing import Any, Dict, Iterable, Optional, Sequence, Tuple, Union
@@ -31,15 +32,15 @@ class PredictStep():
         self.limit = limit
         self.random_subsample_seed = random_subsample_seed
         self.model = MODELS[model] if isinstance(model, str) else model
-        self._eval_instances, self._targets = self._get_instances()
-        num_latency_instances = min(NUM_LATENCY_INSTANCES, len(self._eval_instances))
-        self._latency_instances = Random(random_subsample_seed).sample(
-                self._eval_instances, num_latency_instances)
+        self._eval_inputs, self._targets = self._get_instances()
+        num_latency_instances = min(NUM_LATENCY_INSTANCES, len(self._eval_inputs))
+        self._latency_inputs = Random(random_subsample_seed).sample(
+                self._eval_inputs, num_latency_instances)
         self._profiler = Profiler(
             interval=0.1,
         )
 
-    def _get_instances(self) -> Tuple[Sequence[Dict[str, Any]], Sequence[str]]:
+    def _get_instances(self) -> Tuple[Sequence[Dict[str, Any]], Sequence[Dict[str, Any]]]:
         instances = self.task.get_split(self.split)
         # TODO
         instances = self._convert_instances(
@@ -48,8 +49,9 @@ class PredictStep():
         random_subsample_seed = 0 if self.random_subsample_seed is None else self.random_subsample_seed
         if self.limit is not None and len(instances) > self.limit:
             instances = instances[:self.limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, self.limit)
-        # TODO
-        return [i.source for i in instances], [i.target for i in instances]
+
+        return [i.input for i in instances], \
+               [i.target for i in instances]
 
     @classmethod
     def _convert_instances(
@@ -90,19 +92,23 @@ class PredictStep():
         **kwargs
     ) -> Sequence[Any]:
         output_batches = []
-        self._profiler.start()
-        for output_batch in self.model.predict(instances=self._eval_instances, **kwargs):
-            output_batches.append(output_batch)
-        efficiency_metrics = self._profiler.stop()
-        efficiency_metrics["throughput"] = len(self._latency_instances) / efficiency_metrics["time"]
+        try:
+            self._profiler.start()
+            for output_batch in self.model.predict(instances=self._eval_inputs, **kwargs):
+                output_batches.append(output_batch)
+            efficiency_metrics = self._profiler.stop()
+            efficiency_metrics["throughput"] = len(self._latency_inputs) / efficiency_metrics["time"]
+        except:
+            self._profiler.stop()
+            self.model.stop()
 
         ### Latency ###
         start_time = time.time()
-        for output_batch in self.model.predict(instances=self._latency_instances, batch_size=1):
+        for output_batch in self.model.predict(instances=self._latency_inputs, batch_size=1):
             pass
         self.model.stop()
         elapsed_time = time.time() - start_time
-        efficiency_metrics["latency"] = elapsed_time / len(self._latency_instances)
+        efficiency_metrics["latency"] = elapsed_time / len(self._latency_inputs)
         # TODO
         # efficiency_metrics["num_params"] = self.model.model.num_parameters()
         self.tabulate_efficiency_metrics(efficiency_metrics)
@@ -117,16 +123,15 @@ class PredictStep():
     ) -> Iterable[Dict[str, Any]]:
         yielded_label_index = -1
         for output_batch in output_batches:
-            print(output_batch)
             output_batch = json.loads(output_batch.rstrip())
             for output in output_batch:
                 yielded_label_index += 1
-                prediction = output["output"]
+                output = output.rstrip()
                 target = self._targets[yielded_label_index]
                 yield {
                     "target": target,
-                    "prediction": prediction,
-                    "acc": (prediction, target),
+                    "output": output,
+                    "acc": (output, target),
                 }
 
 
