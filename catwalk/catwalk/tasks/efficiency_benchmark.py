@@ -1,6 +1,6 @@
 import functools
 from dataclasses import dataclass
-from typing import Optional, Sequence, Dict, Any
+from typing import Optional, Sequence, Dict, Any, Union
 import datasets
 from tango.common.sequences import MappedSequence
 
@@ -45,9 +45,20 @@ class EfficiencyBenchmarkTranslationTask(EfficiencyBenchmarkTask):
         EfficiencyBenchmarkTask.__init__(self, dataset_path, dataset_name, version_override=version_override)
 
 
+class EfficiencyBenchmarkClassificationTask(EfficiencyBenchmarkTask):
+    def __init__(
+        self,
+        dataset_path: str,
+        dataset_name: Optional[str] = None,
+        *,
+        version_override: Optional[str] = None
+    ):
+        EfficiencyBenchmarkTask.__init__(self, dataset_path, dataset_name, version_override=version_override)
+
+
 @dataclass
 class EfficiencyBenchmarkInstance:
-    input: str
+    input: Union[str, Dict[str, Any]]
     target: str
     id: Optional[str]
 
@@ -55,7 +66,7 @@ class EfficiencyBenchmarkInstance:
 def efficiency_benchmark_mt_conversion(
     **kwargs
 ) -> InstanceConversion:
-    def efficiency_benchmark_mt_convert(
+    def convert(
         instance: Dict[str, Any],
         *,
         input_field: str,
@@ -71,4 +82,36 @@ def efficiency_benchmark_mt_conversion(
             target=target
         )
     # We're doing this in this stupid way because this makes the conversion function picklable.
-    return functools.partial(efficiency_benchmark_mt_convert, **kwargs)
+    return functools.partial(convert, **kwargs)
+
+
+def efficiency_benchmark_classification_conversion(
+    **kwargs,
+) -> InstanceConversion:
+
+    def convert(
+        instance: Dict[str, Any],
+        *,
+        label_map: Dict[int, str],
+        premise_field: str = "premise",
+        hypothesis_field: Optional[str] = "hypothesis",
+        label_field: str = "label",
+        id_field: Optional[str] = None,
+        task_name: Optional[str] = None,
+    ) -> EfficiencyBenchmarkInstance:
+        input = {premise_field: get_from_dict(instance, premise_field)}
+        if hypothesis_field is not None:
+            input[hypothesis_field] = get_from_dict(instance, hypothesis_field)
+        if task_name:
+            input["task_name"] = task_name
+
+        label_id = int(get_from_dict(instance, label_field))
+        target = label_map[label_id]
+        return EfficiencyBenchmarkInstance(
+            input=input,
+            target=target,
+            id=str(get_from_dict(instance, id_field)) if id_field else None
+        )
+
+    # We're doing this in this stupid way because this makes the conversion function picklable.
+    return functools.partial(convert, **kwargs)

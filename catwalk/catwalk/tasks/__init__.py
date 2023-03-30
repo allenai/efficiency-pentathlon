@@ -14,6 +14,7 @@ from catwalk.tasks.mrqa import MrqaTask
 from catwalk.tasks.t5 import t5_prompt_conversion
 from catwalk.tasks.efficiency_benchmark import EfficiencyBenchmarkTranslationTask
 from catwalk.tasks.efficiency_benchmark import efficiency_benchmark_mt_conversion
+from catwalk.tasks.efficiency_benchmark import efficiency_benchmark_classification_conversion
 
 TASKS: Dict[str, Task] = {
     "wmt16-en-ro": EfficiencyBenchmarkTranslationTask("wmt16", "ro-en").add_instance_conversion(
@@ -137,6 +138,14 @@ TASKS: Dict[str, Task] = {
             premise_field="sentence1",
             hypothesis_field="sentence2"
         )
+    ).add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_classification_conversion(
+            task_name="rte",
+            label_map={0: "entailment", 1: "not_entailment"},
+            premise_field="sentence1",
+            hypothesis_field="sentence2"
+        )
     ),
     "superglue::rte": HFDatasetsTask("super_glue", "rte").add_instance_conversion(
         InstanceFormat.T5_PROMPT,
@@ -155,6 +164,15 @@ TASKS: Dict[str, Task] = {
             hypothesis_field=None,
             id_field='idx'
         )
+    ).add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_classification_conversion(
+            task_name="cola",
+            label_map={0: "unacceptable", 1: "acceptable"},
+            premise_field="sentence",
+            hypothesis_field=None,
+            id_field='idx'
+        )
     ),
     "mnli": EleutherClassificationTaskWithRenamedSplits(
         "mnli",
@@ -162,6 +180,13 @@ TASKS: Dict[str, Task] = {
     ).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(
+            task_name="mnli",
+            label_map={0: "entailment", 1: "neutral", 2: "contradiction"},
+            id_field='idx'
+        )
+    ).add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_classification_conversion(
             task_name="mnli",
             label_map={0: "entailment", 1: "neutral", 2: "contradiction"},
             id_field='idx'
@@ -176,10 +201,25 @@ TASKS: Dict[str, Task] = {
             task_name="mnli",
             label_map={0: "entailment", 1: "neutral", 2: "contradiction"},
             id_field='idx')
+    ).add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_classification_conversion(
+            task_name="mnli",
+            label_map={0: "entailment", 1: "neutral", 2: "contradiction"},
+            id_field='idx')
     ),
     "mrpc": EleutherClassificationTask("mrpc", answer_options=["no", "yes"]).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(
+            task_name="mrpc",
+            label_map={0: "not_equivalent", 1: "equivalent"},
+            premise_field="sentence1",
+            hypothesis_field="sentence2",
+            id_field='idx'
+        )
+    ).add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_classification_conversion(
             task_name="mrpc",
             label_map={0: "not_equivalent", 1: "equivalent"},
             premise_field="sentence1",
@@ -196,6 +236,15 @@ TASKS: Dict[str, Task] = {
             hypothesis_field="sentence",
             id_field='idx'
         )
+    ).add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_classification_conversion(
+            task_name="qnli",
+            label_map={0: "entailment", 1: "not_entailment"},
+            premise_field="question",
+            hypothesis_field="sentence",
+            id_field='idx'
+        )
     ),
     "qqp": EleutherClassificationTask("qqp", answer_options=["no", "yes"]).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
@@ -206,10 +255,28 @@ TASKS: Dict[str, Task] = {
             hypothesis_field="question2",
             id_field='idx'
         )
+    ).add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_classification_conversion(
+            task_name="qqp",
+            label_map={0: "not_duplicate", 1: "duplicate"},
+            premise_field="question1",
+            hypothesis_field="question2",
+            id_field='idx'
+        )
     ),
     "sst": EleutherClassificationTask("sst", answer_options=["negative", "positive"]).add_instance_conversion(
         InstanceFormat.HF_CLASSIFICATION,
         hfclassification_conversion(
+            task_name="sst",
+            label_map={0: "negative", 1: "positive"},
+            premise_field="sentence",
+            hypothesis_field=None,
+            id_field='idx'
+        )
+    ).add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_classification_conversion(
             task_name="sst",
             label_map={0: "negative", 1: "positive"},
             premise_field="sentence",
