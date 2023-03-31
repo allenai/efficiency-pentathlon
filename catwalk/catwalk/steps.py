@@ -92,15 +92,16 @@ class PredictStep():
         **kwargs
     ) -> Sequence[Any]:
         output_batches = []
-        try:
-            self._profiler.start()
-            for output_batch in self.model.predict(instances=self._eval_inputs, **kwargs):
-                output_batches.append(output_batch)
-            efficiency_metrics = self._profiler.stop()
-            efficiency_metrics["throughput"] = len(self._latency_inputs) / efficiency_metrics["time"]
-        except:
-            self._profiler.stop()
-            self.model.stop()
+        # try:
+        self.model.start()
+        self._profiler.start()
+        for output_batch in self.model.predict(instances=self._eval_inputs, **kwargs):
+            output_batches.append(output_batch)
+        efficiency_metrics = self._profiler.stop()
+        efficiency_metrics["throughput"] = len(self._latency_inputs) / efficiency_metrics["time"]
+        # except:
+        #     self._profiler.stop()
+        #     self.model.stop()
 
         ### Latency ###
         start_time = time.time()
@@ -113,8 +114,6 @@ class PredictStep():
         # efficiency_metrics["num_params"] = self.model.model.num_parameters()
         self.tabulate_efficiency_metrics(efficiency_metrics)
         results = self.process(output_batches)
-        for r in results:
-            print(r)
         return results
 
     def process(
