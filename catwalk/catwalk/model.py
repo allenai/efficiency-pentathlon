@@ -62,16 +62,15 @@ class Model(Registrable, DetHashWithVersion, ABC):
 
     def calculate_metrics(self, task: Task, predictions: Sequence[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
         metrics = task.make_metrics()
-        with Tqdm.tqdm(predictions, desc="Calculating metrics") as predictions_tqdm:
-            for prediction in predictions_tqdm:
-                for metric_name, metric_args in prediction.items():
-                    try:
-                        metric = metrics[metric_name]
-                    except KeyError:
-                        continue
-                    metric_args = tensor_args(metric_args)
-                    metric_args = unsqueeze_args(metric_args)
-                    metric.update(*metric_args)
+        for prediction in predictions:
+            for metric_name, metric_args in prediction.items():
+                try:
+                    metric = metrics[metric_name]
+                except KeyError:
+                    continue
+                metric_args = tensor_args(metric_args)
+                metric_args = unsqueeze_args(metric_args)
+                metric.update(*metric_args)
         return {
             metric_name: recursive_tolist(metric.compute())
             for metric_name, metric in metrics.items()
