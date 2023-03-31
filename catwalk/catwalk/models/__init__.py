@@ -42,16 +42,15 @@ from catwalk.models.stdio_docker import StdioDocker
 # }
 
 MODELS: Dict[str, Model] = {
-    "mbart": StdioDocker(["python3 submission/huggingface/entrypoint.py --model mbart"]),
-    "flan-t5-small": StdioDocker(["python3 submission/huggingface/entrypoint.py --model google/flan-t5-small"]),
-    "flan-t5-base": StdioDocker(["python3 submission/huggingface/entrypoint.py --model google/flan-t5-base"]),
-    "flan-t5-large": StdioDocker(["python3 submission/huggingface/entrypoint.py --model google/flan-t5-large"]),
-    "flan-t5-xl": StdioDocker(["python3 submission/huggingface/entrypoint.py --model google/flan-t5-xl"]),
-    "flan-t5-xxl": StdioDocker(["python3 submission/huggingface/entrypoint.py --model google/flan-t5-xxl"]),
-    "t5-small": StdioDocker(["python3 submission/huggingface/entrypoint.py --model t5-small"]),
-    "t5-base": StdioDocker(["python3 submission/huggingface/entrypoint.py --model t5-base"]),
-    "t5-large": StdioDocker(["python3 submission/huggingface/entrypoint.py --model t5-large"]),
-    "t5-3b": StdioDocker(["python3 submission/huggingface/entrypoint.py --model t5-3b"]),
-    "t5-11b": StdioDocker(["python3 submission/huggingface/entrypoint.py --model t5-11b"]),
+    "mbart": StdioDocker("python3 entrypoint.py --model mbart".split()),
+    "flan-t5-small": StdioDocker("python3 entrypoint.py --model google/flan-t5-small".split()),
+    "flan-t5-base": StdioDocker("python3 entrypoint.py --model google/flan-t5-base".split()),
+    "flan-t5-large": StdioDocker("python3 entrypoint.py --model google/flan-t5-large".split()),
+    "flan-t5-xl": StdioDocker("python3 entrypoint.py --model google/flan-t5-xl".split()),
+    "flan-t5-xxl": StdioDocker("python3 entrypoint.py --model google/flan-t5-xxl".split()),
+    "t5-small": StdioDocker("python3 entrypoint.py --model t5-small --task rte".split()),
+    "t5-base": StdioDocker("python3 entrypoint.py --model t5-base".split()),
+    "t5-large": StdioDocker("python3 entrypoint.py --model t5-large".split()),
+    "t5-3b": StdioDocker("python3 entrypoint.py --model t5-3b".split()),
+    "t5-11b": StdioDocker("python3 entrypoint.py --model t5-11b".split()),
 }
-

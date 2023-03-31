@@ -10,7 +10,7 @@ class StdioDocker(SubmissionTemplate):
     A model that wraps a binary that reads from stdin and writes to stdout.
     """
 
-    def __init__(self, cmd: str):
+    def __init__(self, cmd: List[str]):
         """
         binary_cmd: the command to start the inference binary
         """
@@ -80,8 +80,8 @@ class StdioDocker(SubmissionTemplate):
     def start(self):
         client = docker.DockerClient()
         self._container = client.containers.run(
-            "transformers:latest",
-            self._cmd,
+            image="transformers:latest",
+            command=self._cmd,
             name="transformers",
             auto_remove=True,
             remove=True,
