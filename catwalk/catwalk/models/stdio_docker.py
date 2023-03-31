@@ -16,26 +16,6 @@ class StdioDocker(SubmissionTemplate):
         """
         SubmissionTemplate.__init__(self)
         self._cmd = cmd
-        client = docker.DockerClient()
-        self._container = client.containers.run(
-            "transformers:latest",
-            self._cmd,
-            name="transformers",
-            auto_remove=True,
-            remove=True,
-            stdin_open=True,
-            detach=True,
-            device_requests=[
-                docker.types.DeviceRequest(
-                    device_ids=["0"],
-                    capabilities=[["gpu"]]
-                )
-            ]
-        )
-        self._socket = self._container.attach_socket(
-            params={"stdin": 1, "stdout": 1, "stderr": 1, "stream":1}
-        )
-
 
     def _exhaust_and_yield_stdout(self, block_until_read_num_instances: int = None):
         """
@@ -96,6 +76,27 @@ class StdioDocker(SubmissionTemplate):
         num_batches_to_read = num_batches - num_batches_yielded
         for msg in self._exhaust_and_yield_stdout(num_batches_to_read):
             yield msg
+
+    def start(self):
+        client = docker.DockerClient()
+        self._container = client.containers.run(
+            "transformers:latest",
+            self._cmd,
+            name="transformers",
+            auto_remove=True,
+            remove=True,
+            stdin_open=True,
+            detach=True,
+            device_requests=[
+                docker.types.DeviceRequest(
+                    device_ids=["0"],
+                    capabilities=[["gpu"]]
+                )
+            ]
+        )
+        self._socket = self._container.attach_socket(
+            params={"stdin": 1, "stdout": 1, "stderr": 1, "stream":1}
+        )
 
     def stop(self):
         try:
