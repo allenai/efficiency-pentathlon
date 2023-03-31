@@ -1,9 +1,8 @@
-import argparse
 from typing import Any, Dict, Iterator, Optional, Sequence
 
 import torch
 from transformers import T5ForConditionalGeneration, T5Tokenizer
-from utils import resolve_device, stdio_predictor_wrapper
+from utils import resolve_device
 
 
 class T5():
@@ -16,7 +15,8 @@ class T5():
         self.load_model()
 
     def load_model(self):
-        device = resolve_device()
+        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
         ### TODO(participants): load models and necessary tools. ###
         self.tokenizer = T5Tokenizer.from_pretrained(self.pretrained_model_name_or_path)
         self.model = T5ForConditionalGeneration.from_pretrained(
@@ -74,19 +74,3 @@ class T5():
             # return outputs
             for output in outputs:
                 yield output.strip()
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str)
-    parser.add_argument("--task", type=str)
-    args = parser.parse_args()
-
-    classifier = T5(
-        pretrained_model_name_or_path=args.model,
-        task=args.task
-    )
-    stdio_predictor_wrapper(classifier)
-
-    # {"sentence1": "111", "sentence2": 222}
-    # [{"sentence1": "111", "sentence2": 222}, {"sentence1": "111", "sentence2": 222}, {"sentence1": "111", "sentence2": 222}]
