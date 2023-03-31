@@ -2,7 +2,9 @@ from typing import Any, Dict, Iterator, Optional, Sequence
 
 import torch
 from transformers import T5ForConditionalGeneration, T5Tokenizer
-from utils import resolve_device
+import logging
+
+logging.getLogger("transformers.tokenization_utils").setLevel(logging.ERROR)
 
 
 class T5():
@@ -18,7 +20,9 @@ class T5():
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
         ### TODO(participants): load models and necessary tools. ###
-        self.tokenizer = T5Tokenizer.from_pretrained(self.pretrained_model_name_or_path)
+        self.tokenizer = T5Tokenizer.from_pretrained(
+            self.pretrained_model_name_or_path, model_max_length=512
+        )
         self.model = T5ForConditionalGeneration.from_pretrained(
             self.pretrained_model_name_or_path).half().to(device)
 

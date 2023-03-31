@@ -50,4 +50,6 @@ RUN pip3 install sentencepiece
 
 ENV PYTHONUNBUFFERED="on"
 ADD entrypoint.py /home
-ENTRYPOINT ["python3", "entrypoint.py"]
+ADD t5.py /home
+ADD mbart.py /home
+# ENTRYPOINT ["python3", "entrypoint.py"]

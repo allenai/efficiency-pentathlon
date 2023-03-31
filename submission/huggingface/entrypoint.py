@@ -3,8 +3,8 @@ import sys
 import argparse
 
 import transformers
-from .t5 import T5
-from .mbart import MBART
+from t5 import T5
+from mbart import MBART
 
 
 # We provide this
@@ -31,9 +31,8 @@ def stdio_predictor_wrapper(predictor):
 
 if __name__ == "__main__":
     # We read outputs from stdout, and it is crucial to surpress unnecessary logging to stdout
-    transformers.logging.set_verbosity(transformers.logging.CRITICAL)
-    transformers.utils.logging.disable_progress_bar()
-
+    transformers.logging.set_verbosity(transformers.logging.ERROR)
+    transformers.logging.disable_progress_bar()
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str)
     parser.add_argument("--task", type=str)
