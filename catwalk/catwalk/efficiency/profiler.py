@@ -74,7 +74,7 @@ class Profiler():
         except:
             raise RuntimeError("Failed to stop gpu scheduler.")
         self._profile_gpu()
-        self._max_used_gpu_memory / self._max_used_gpu_memory / 2 ** 30
+        self._max_used_gpu_memory = self._max_used_gpu_memory / 2 ** 30
         self._gpu_utilization /= self._gpu_utilization_count
         codecarbon_data = self._emission_tracker.final_emissions_data
         self.efficiency_metrics: Dict[str, Any] = {
