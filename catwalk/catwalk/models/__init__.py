@@ -54,5 +54,3 @@ MODELS: Dict[str, Model] = {
     "t5-3b": StdioDocker("python3 entrypoint.py --model t5-3b".split()),
     "t5-11b": StdioDocker("python3 entrypoint.py --model t5-11b".split()),
 }
-
-'["entailment", "entailment", "entailment", "not_entailment", "not_entailment", "not_entailment", "not_entailment", "entailment", "not_entailment", "entailment", "not_entailment", "entailment", "entailment", "entailment", "entailment", "entailment", "not_entailment", "not_entailment", "not_entailment", "entailment", "entailment", "not_entailment", "entailment", "not_entailment", "not_entailment", "not_entailment", "not_entailment", "entailment", "not_entailment", "entailment", "entailment", "not_entailment"]'
