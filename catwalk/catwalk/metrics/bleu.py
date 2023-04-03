@@ -1,5 +1,5 @@
-import math
-from typing import Union, Optional, Any, Dict
+from typing import Union, Any, Dict, List
+from sacrebleu.metrics import BLEU
 
 import torch
 from torchmetrics.aggregation import BaseAggregator
@@ -14,14 +14,18 @@ class BLEUMetric(BaseAggregator):
     ):
         super().__init__("sum", [], nan_strategy, **kwargs)
         self.base = base
-        # TODO
+        self._outputs: List[str] = []
+        self._targets: List[str] = []
+        self._bleu_metric = BLEU()
 
     def update(
         self,
+        output: str,
+        target: str
     ) -> None:  # type: ignore
-        # TODO
-        pass
+        self._outputs.append(output)
+        self._targets.append([target])
 
     def compute(self) -> torch.Tensor:
-        # TODO
-        pass
+        bleu = self._bleu_metric.corpus_score(self._outputs, self._targets)
+        return torch.Tensor([bleu.score])
