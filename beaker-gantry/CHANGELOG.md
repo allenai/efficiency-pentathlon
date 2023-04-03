@@ -7,6 +7,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v0.13.1](https://github.com/allenai/beaker-gantry/releases/tag/v0.13.1) - 2023-03-20
+
+### Fixed
+
+- Fixed issue where certain characters (like brackets) wouldn't be displayed in the logs output
+  when following the experiment with `--timeout -1`.
+
+## [v0.13.0](https://github.com/allenai/beaker-gantry/releases/tag/v0.13.0) - 2023-03-09
+
+### Changed
+
+- A GitHub personal access token is no-longer required for public repos.
+
+## [v0.12.0](https://github.com/allenai/beaker-gantry/releases/tag/v0.12.0) - 2023-03-08
+
+### Added
+
+- Added three options: `--replicas` (int), `--leader-selection` (flag), and `--host-networking` (flag) that give you the ability to run [distributed batch jobs](https://beaker-docs.apps.allenai.org/distributed-training.html#batch-jobs).
+
+### Changed
+
+- You can now use any image as long as it comes with `bash`. `conda` is no longer a requirement.
+
+## [v0.11.0](https://github.com/allenai/beaker-gantry/releases/tag/v0.11.0) - 2023-03-07
+
+### Added
+
+- Added the ability to override how packages/dependencies are installed via
+  the option `--install`.
+
+## [v0.10.0](https://github.com/allenai/beaker-gantry/releases/tag/v0.10.0) - 2023-03-07
+
+### Changed
+
+- You can now specify the `--cluster` option as a wildcard, e.g. `--cluster ai2/*-cirrascale`.
+
+## [v0.9.4](https://github.com/allenai/beaker-gantry/releases/tag/v0.9.4) - 2023-03-07
+
+### Fixed
+
+- Improved how `--beaker-image` option is resolved.
+
+## [v0.9.3](https://github.com/allenai/beaker-gantry/releases/tag/v0.9.3) - 2023-03-02
+
+### Fixed
+
+- Fixed issue where cirrascale NFS would be potentially be attached to non-cirrascale machines when `--clusters` is left unspecified.
+- Fixed issue where Gantry would not use a conda `environment.yaml` file by default (only found file with `.yml` extension).
+
+## [v0.9.2](https://github.com/allenai/beaker-gantry/releases/tag/v0.9.2) - 2023-03-02
+
+### Changed
+
+- Loosened version requirements on some dependencies.
+
+## [v0.9.1](https://github.com/allenai/beaker-gantry/releases/tag/v0.9.1) - 2023-02-13
+
+### Changed
+
+- Fix NFS location issue.
+
+## [v0.9.0](https://github.com/allenai/beaker-gantry/releases/tag/v0.9.0) - 2023-02-10
+
+### Changed
+
+- You can now set the priority of your jobs via `--priority`.
+- By default if you don't specify a cluster and priority, jobs will be submitted to all clusters under preemptible priority.
+
+## [v0.8.2](https://github.com/allenai/beaker-gantry/releases/tag/v0.8.2) - 2023-01-19
+
+### Added
+
+- Added `--env` and `--env-secret` options for adding environment variables to your Beaker experiments.
+
+## [v0.8.1](https://github.com/allenai/beaker-gantry/releases/tag/v0.8.1) - 2022-09-30
+
+### Fixed
+
+- Fixed an issue when using a custom Docker image where Gantry would fail if the working directory of the image was non-empty.
+
 ## [v0.8.0](https://github.com/allenai/beaker-gantry/releases/tag/v0.8.0) - 2022-09-16
 
 ### Fixed

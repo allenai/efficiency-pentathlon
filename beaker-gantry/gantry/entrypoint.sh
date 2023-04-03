@@ -3,12 +3,21 @@
 set -eo pipefail
 
 # Ensure we have all the environment variables we need.
-for env_var in "$GITHUB_TOKEN" "$GITHUB_REPO" "$GIT_REF"; do
+for env_var in "$GITHUB_REPO" "$GIT_REF"; do
     if [[ -z "$env_var" ]]; then
         echo >&2 "error: required environment variable is empty"
         exit 1
     fi
 done
+
+# Check for conda, install it if needed.
+if ! command -v conda &> /dev/null; then
+    echo "installing conda"
+    curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    chmod +x ~/miniconda.sh
+    ~/miniconda.sh -b -p /opt/conda
+    rm ~/miniconda.sh
+fi
 
 # Initialize conda for bash.
 # See https://stackoverflow.com/a/58081608/4151392
@@ -20,11 +29,13 @@ echo "
 ##############################################
 "
 
-# Install GitHub CLI.
-conda install gh --channel conda-forge
-
-# Configure git to use GitHub CLI as a credential helper so that we can clone private repos.
-gh auth setup-git
+if [[ -n "$GITHUB_TOKEN" ]]; then
+    # Install GitHub CLI.
+    conda install gh --channel conda-forge
+    
+    # Configure git to use GitHub CLI as a credential helper so that we can clone private repos.
+    gh auth setup-git
+fi
 
 echo "
 #########################################
@@ -35,8 +46,12 @@ echo "
 mkdir -p "${{ RUNTIME_DIR }}"
 cd "${{ RUNTIME_DIR }}"
 
-# Clone the repo and checkout the target commit.
-gh repo clone "$GITHUB_REPO" .
+if [[ -n "$GITHUB_TOKEN" ]]; then
+    gh repo clone "$GITHUB_REPO" .
+else
+    git clone "https://github.com/$GITHUB_REPO" .
+fi
+
 git checkout "$GIT_REF"
 
 echo "
@@ -82,16 +97,21 @@ else
     conda activate "$VENV_NAME"
 fi
 
-# Check for a 'requirements.txt' and/or 'setup.py' file.
-if [[ -f 'setup.py' ]] && [[ -f "$PIP_REQUIREMENTS_FILE" ]]; then
-    echo "[GANTRY] Installing packages from 'setup.py' and '$PIP_REQUIREMENTS_FILE'..."
-    pip install . -r "$PIP_REQUIREMENTS_FILE"
-elif [[ -f 'setup.py' ]]; then
-    echo "[GANTRY] Installing packages from 'setup.py'..."
-    pip install .
-elif [[ -f "$PIP_REQUIREMENTS_FILE" ]]; then
-    echo "[GANTRY] Installing dependencies from '$PIP_REQUIREMENTS_FILE'..."
-    pip install -r "$PIP_REQUIREMENTS_FILE"
+if [[ -z "$INSTALL_CMD" ]]; then
+    # Check for a 'requirements.txt' and/or 'setup.py' file.
+    if [[ -f 'setup.py' ]] && [[ -f "$PIP_REQUIREMENTS_FILE" ]]; then
+        echo "[GANTRY] Installing packages from 'setup.py' and '$PIP_REQUIREMENTS_FILE'..."
+        pip install . -r "$PIP_REQUIREMENTS_FILE"
+    elif [[ -f 'setup.py' ]]; then
+        echo "[GANTRY] Installing packages from 'setup.py'..."
+        pip install .
+    elif [[ -f "$PIP_REQUIREMENTS_FILE" ]]; then
+        echo "[GANTRY] Installing dependencies from '$PIP_REQUIREMENTS_FILE'..."
+        pip install -r "$PIP_REQUIREMENTS_FILE"
+    fi
+else
+    echo "[GANTRY] Installing packages with given command: $INSTALL_CMD"
+    eval "$INSTALL_CMD"
 fi
 
 PYTHONPATH="$(pwd)"
@@ -122,19 +142,6 @@ echo "
 #############################
 "
 
-echo "
-###############################################
-# Building CPU and DRAM monitor... #
-###############################################
-"
-CUR_DIR=$PWD
-cd ..
-git clone https://github.com/haopeng-nlp/efficiency-benchmark.git
-cd efficiency-benchmark/docker
-docker build -t test .
-cd $CUR_DIR
-python ../efficiency-benchmark/execute.py "$@" 2>&1 | tee "${{ RESULTS_DIR }}/.gantry/out.log"
-
 # Execute the arguments to this script as commands themselves, piping output into a log file.
 # shellcheck disable=SC2296
-# exec "$@" 2>&1 | tee "${{ RESULTS_DIR }}/.gantry/out.log"
+exec "$@" 2>&1 | tee "${{ RESULTS_DIR }}/.gantry/out.log"

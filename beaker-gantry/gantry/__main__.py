@@ -2,19 +2,27 @@ import os
 import signal
 import sys
 import time
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import Optional, Tuple
 
 import click
 import rich
-from beaker import Job, JobTimeoutError, SecretNotFound, TaskResources
+from beaker import (
+    ImageNotFound,
+    Job,
+    JobTimeoutError,
+    Priority,
+    SecretNotFound,
+    TaskResources,
+)
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
 from rich import pretty, print, prompt, traceback
 
-from .common import constants, util
-from .common.aliases import PathOrStr
-from .common.util import print_stderr
+from . import constants, util
+from .aliases import PathOrStr
 from .exceptions import *
+from .util import print_stderr
 from .version import VERSION
 
 _CLICK_GROUP_DEFAULTS = {
@@ -50,6 +58,7 @@ sys.excepthook = excepthook
 
 
 def handle_sigterm(sig, frame):
+    del sig, frame
     raise TermInterrupt
 
 
@@ -69,7 +78,7 @@ def main():
     signal.signal(signal.SIGTERM, handle_sigterm)
 
     rich.get_console().print(
-        '''
+        r'''
 [cyan b]                                             o=======[]   [/]
 [cyan b]   __ _                    _               _ |_      []   [/]
 [cyan b]  / _` |  __ _    _ _     | |_      _ _   | || |     []   [/]
@@ -113,9 +122,11 @@ def main():
     "--cluster",
     type=str,
     multiple=True,
-    default=[constants.DEFAULT_CLUSTER],
-    help="""A potential cluster to use. If this option is used multiple times,
-    the first cluster with enough free resources to run the experiment is picked.""",
+    default=None,
+    help="""A potential cluster to use. This option can be used multiple times to allow multiple clusters.
+    You also specify it as a wildcard, e.g. '--cluster ai2/*-cirrascale'.
+    If you don't specify a cluster or the priority, the priority will default to 'preemptible' and
+    the job will be able to run on any on-premise cluster.""",
     show_default=True,
 )
 @click.option(
@@ -144,12 +155,12 @@ def main():
 )
 @click.option(
     "--memory",
-    type=int,
+    type=str,
     help="""Minimum available system memory as a number with unit suffix (e.g. 2.5GiB).""",
 )
 @click.option(
     "--shared-memory",
-    type=int,
+    type=str,
     help="""Size of /dev/shm as a number with unit suffix (e.g. 2.5GiB).""",
 )
 @click.option(
@@ -184,6 +195,19 @@ def main():
     help="""The name of an existing conda environment on the image to use.""",
 )
 @click.option(
+    "--env",
+    type=str,
+    help="""Environment variables to add the Beaker experiment. Should be in the form '{NAME}={VALUE}'.""",
+    multiple=True,
+)
+@click.option(
+    "--env-secret",
+    type=str,
+    help="""Environment variables to add the Beaker experiment from Beaker secrets.
+    Should be in the form '{NAME}={SECRET_NAME}'.""",
+    multiple=True,
+)
+@click.option(
     "--nfs / --no-nfs",
     default=None,
     help=f"""Whether or not to mount the NFS drive ({constants.NFS_MOUNT}) to the experiment.
@@ -194,7 +218,8 @@ def main():
     "--show-logs/--no-logs",
     default=True,
     show_default=True,
-    help="""Whether or not to print the logs to stdout when the experiment finalizes.""",
+    help="""Whether or not to stream the logs to stdout as the experiment runs.
+    This only takes effect when --timeout is non-zero.""",
 )
 @click.option(
     "--timeout",
@@ -222,13 +247,43 @@ def main():
     type=click.Path(dir_okay=False, file_okay=True),
     help="""A path to save the generated Beaker experiment spec to.""",
 )
+@click.option(
+    "--priority",
+    type=click.Choice([str(p) for p in Priority]),
+    help="The job priority. If you don't specify at least one cluster, priority will default to 'preemptible'.",
+)
+@click.option(
+    "--install",
+    type=str,
+    help="""Override the default installation command, e.g. '--install "python setup.py install"'""",
+)
+@click.option(
+    "--replicas",
+    type=int,
+    help="""The number of task replicas to run.""",
+)
+@click.option(
+    "--leader-selection",
+    is_flag=True,
+    help="""Specifies that the first task replica should be the leader and populates each task
+    with 'BEAKER_LEADER_REPLICA_HOSTNAME' and 'BEAKER_LEADER_REPLICA_NODE_ID' environment variables.
+    This is only applicable when '--replicas INT' and '--host-networking' are used,
+    although the '--host-networking' flag can be omitted in this case since it's assumed.""",
+)
+@click.option(
+    "--host-networking",
+    is_flag=True,
+    help="""Specifies that each task replica should use the host's network.
+    When used with '--replicas INT', this allows the replicas to communicate with each
+    other using their hostnames.""",
+)
 def run(
     arg: Tuple[str, ...],
     name: Optional[str] = None,
     description: Optional[str] = None,
     task_name: str = "main",
     workspace: Optional[str] = None,
-    cluster: Tuple[str, ...] = (constants.DEFAULT_CLUSTER,),
+    cluster: Optional[Tuple[str, ...]] = None,
     beaker_image: Optional[str] = constants.DEFAULT_IMAGE,
     docker_image: Optional[str] = None,
     cpus: Optional[float] = None,
@@ -240,6 +295,8 @@ def run(
     conda: Optional[PathOrStr] = None,
     pip: Optional[PathOrStr] = None,
     venv: Optional[str] = None,
+    env: Optional[Tuple[str, ...]] = None,
+    env_secret: Optional[Tuple[str, ...]] = None,
     timeout: int = 0,
     nfs: Optional[bool] = None,
     show_logs: bool = True,
@@ -247,6 +304,11 @@ def run(
     dry_run: bool = False,
     yes: bool = False,
     save_spec: Optional[PathOrStr] = None,
+    priority: Optional[str] = None,
+    install: Optional[str] = None,
+    replicas: Optional[int] = None,
+    leader_selection: bool = False,
+    host_networking: bool = False,
 ):
     """
     Run an experiment on Beaker.
@@ -269,49 +331,87 @@ def run(
         cpu_count=cpus, gpu_count=gpus, memory=memory, shared_memory=shared_memory
     )
 
-    # Initialize Beaker client and validate workspace.
-    beaker = util.ensure_workspace(workspace=workspace, yes=yes, gh_token_secret=gh_token_secret)
-
     # Get repository account, name, and current ref.
-    github_account, github_repo, git_ref = util.ensure_repo(allow_dirty)
+    github_account, github_repo, git_ref, is_public = util.ensure_repo(allow_dirty)
+
+    # Initialize Beaker client and validate workspace.
+    beaker = util.ensure_workspace(
+        workspace=workspace, yes=yes, gh_token_secret=gh_token_secret, public_repo=is_public
+    )
+
+    if beaker_image is not None and beaker_image != constants.DEFAULT_IMAGE:
+        try:
+            beaker_image = beaker.image.get(beaker_image).full_name
+        except ImageNotFound:
+            raise ConfigurationError(f"Beaker image '{beaker_image}' not found")
 
     # Get the entrypoint dataset.
     entrypoint_dataset = util.ensure_entrypoint_dataset(beaker)
 
     # Get / set the GitHub token secret.
-    try:
-        beaker.secret.get(gh_token_secret)
-    except SecretNotFound:
-        print_stderr(
-            f"[yellow]GitHub token secret '{gh_token_secret}' not found in workspace.[/]\n"
-            f"You can create a suitable GitHub token by going to https://github.com/settings/tokens/new "
-            f"and generating a token with the '\N{ballot box with check} repo' scope."
-        )
-        gh_token = prompt.Prompt.ask(
-            "[i]Please paste your GitHub token here[/]",
-            password=True,
-        )
-        if not gh_token:
-            raise ConfigurationError("token cannot be empty!")
-        beaker.secret.write(gh_token_secret, gh_token)
-        print(
-            f"GitHub token secret uploaded to workspace as '{gh_token_secret}'.\n"
-            f"If you need to update this secret in the future, use the command:\n"
-            f"[i]$ gantry config set-gh-token[/]"
-        )
+    if not is_public:
+        try:
+            beaker.secret.get(gh_token_secret)
+        except SecretNotFound:
+            print_stderr(
+                f"[yellow]GitHub token secret '{gh_token_secret}' not found in workspace.[/]\n"
+                f"You can create a suitable GitHub token by going to https://github.com/settings/tokens/new "
+                f"and generating a token with the '\N{ballot box with check} repo' scope."
+            )
+            gh_token = prompt.Prompt.ask(
+                "[i]Please paste your GitHub token here[/]",
+                password=True,
+            )
+            if not gh_token:
+                raise ConfigurationError("token cannot be empty!")
+            beaker.secret.write(gh_token_secret, gh_token)
+            print(
+                f"GitHub token secret uploaded to workspace as '{gh_token_secret}'.\n"
+                f"If you need to update this secret in the future, use the command:\n"
+                f"[i]$ gantry config set-gh-token[/]"
+            )
 
-    gh_token_secret = util.ensure_github_token_secret(beaker, gh_token_secret)
+        gh_token_secret = util.ensure_github_token_secret(beaker, gh_token_secret)
 
     # Validate the input datasets.
     datasets_to_use = util.ensure_datasets(beaker, *dataset) if dataset else []
 
-    # Find a cluster to use.
-    cluster_to_use = util.ensure_cluster(beaker, task_resources, *cluster)
+    env_vars = []
+    for e in env or []:
+        try:
+            env_name, val = e.split("=")
+        except ValueError:
+            raise ValueError("Invalid --env option: {e}")
+        env_vars.append((env_name, val))
+
+    env_secrets = []
+    for e in env_secret or []:
+        try:
+            env_secret_name, secret = e.split("=")
+        except ValueError:
+            raise ValueError(f"Invalid --env-secret option: {e}")
+        env_secrets.append((env_secret_name, secret))
+
+    # Validate clusters.
+    if cluster:
+        cl_objects = beaker.cluster.list()
+        final_clusters = []
+        for pat in cluster:
+            matching_clusters = [cl.full_name for cl in cl_objects if fnmatch(cl.full_name, pat)]
+            if matching_clusters:
+                final_clusters.extend(matching_clusters)
+            else:
+                raise ConfigurationError(f"cluster '{pat}' did not match any Beaker clusters")
+        cluster = list(set(final_clusters))  # type: ignore
+
+    # Default to preemptible priority when no cluster has been specified.
+    if not cluster and priority is None:
+        priority = Priority.preemptible
 
     # Initialize experiment and task spec.
     spec = util.build_experiment_spec(
         task_name=task_name,
-        cluster_to_use=cluster_to_use,
+        clusters=list(cluster or []),
         task_resources=task_resources,
         arguments=list(arg),
         entrypoint_dataset=entrypoint_dataset.id,
@@ -321,11 +421,19 @@ def run(
         description=description,
         beaker_image=beaker_image,
         docker_image=docker_image,
+        gh_token_secret=gh_token_secret if not is_public else None,
         conda=conda,
         pip=pip,
         venv=venv,
         nfs=nfs,
         datasets=datasets_to_use,
+        env=env_vars,
+        env_secrets=env_secrets,
+        priority=priority,
+        install=install,
+        replicas=replicas,
+        leader_selection=leader_selection,
+        host_networking=host_networking or (bool(replicas) and leader_selection),
     )
 
     if save_spec:
@@ -345,14 +453,13 @@ def run(
         rich.get_console().rule("[b]Dry run[/]")
         print(
             f"[b]Workspace:[/] {beaker.workspace.url()}\n"
-            f"[b]Cluster:[/] {beaker.cluster.url(cluster_to_use)}\n"
             f"[b]Commit:[/] https://github.com/{github_account}/{github_repo}/commit/{git_ref}\n"
             f"[b]Experiment spec:[/]",
             spec.to_json(),
         )
         return
 
-    name: str = name or prompt.Prompt.ask(  # type: ignore[assignment,no-redef]
+    name = name or prompt.Prompt.ask(
         "[i]What would you like to call this experiment?[/]", default=util.unique_name()
     )
     if not name:
@@ -376,7 +483,7 @@ def run(
             while job is None:
                 time.sleep(1.0)
                 print(".", end="")
-                job = beaker.experiment.tasks(experiment.id)[0].latest_job
+                job = beaker.experiment.tasks(experiment.id)[0].latest_job  # type: ignore
 
             # Stream the logs.
             print()
@@ -384,7 +491,7 @@ def run(
 
             last_timestamp: Optional[str] = None
             while exit_code is None:
-                job = beaker.experiment.tasks(experiment.id)[0].latest_job
+                job = beaker.experiment.tasks(experiment.id)[0].latest_job  # type: ignore
                 assert job is not None
                 exit_code = job.status.exit_code
                 last_timestamp = util.display_logs(
@@ -401,7 +508,7 @@ def run(
             experiment = beaker.experiment.wait_for(
                 experiment, timeout=timeout if timeout > 0 else None
             )[0]
-            job = beaker.experiment.tasks(experiment)[0].latest_job
+            job = beaker.experiment.tasks(experiment)[0].latest_job  # type: ignore
             assert job is not None
             exit_code = job.status.exit_code
     except (KeyboardInterrupt, TermInterrupt, JobTimeoutError) as exc:
@@ -419,12 +526,15 @@ def run(
     assert job.execution is not None
     assert job.status.started is not None
     assert job.status.exited is not None
+    result_dataset = None
+    if job.result is not None and job.result.beaker is not None:
+        result_dataset = job.result.beaker
 
     print(
         f"[b green]\N{check mark}[/] [b cyan]{name}[/] completed successfully\n"
         f"[b]Experiment:[/] {beaker.experiment.url(experiment)}\n"
         f"[b]Runtime:[/] {util.format_timedelta(job.status.exited - job.status.started)}\n"
-        f"[b]Results:[/] {beaker.dataset.url(job.execution.result.beaker)}"
+        f"[b]Results:[/] {None if result_dataset is None else beaker.dataset.url(result_dataset)}"
     )
 
     metrics = beaker.experiment.metrics(experiment)

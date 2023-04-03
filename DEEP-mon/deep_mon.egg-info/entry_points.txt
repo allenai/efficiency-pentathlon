@@ -1,2 +1,0 @@
-[console_scripts]
-deep-mon = deep_mon.deep_mon:main

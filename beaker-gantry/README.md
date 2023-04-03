@@ -1,7 +1,6 @@
 <div align="center">
-<!-- TODO: Add logo -->
 <br>
-<img src="https://raw.githubusercontent.com/allenai/beaker-gantry/main/.github/gantry-logo-ascii.png"/>
+<img src="https://raw.githubusercontent.com/allenai/beaker-py/main/docs/source/_static/beaker-500px-transparent.png" width="200"/>
 <br>
 <h1>Beaker Gantry</h1>
 <p>Gantry streamlines running Python experiments in <a href="https://beaker.org">Beaker</a> by managing containers and boilerplate for you</p>
@@ -115,7 +114,7 @@ pip install -e .
     find and use the existing configuration file (usually located at `$HOME/.beaker/config.yml`).
     Otherwise just set the environment variable `BEAKER_TOKEN` to your Beaker [user token](https://beaker.org/user).
 
-    The first time you call `gantry run ...` you'll also be prompted to provide a [GitHub personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) with the `repo` scope. This allows Gantry to clone your private repository when it runs in Beaker. You don't have to do this just yet (Gantry will prompt you for it), but if you need to update this token later you can use the `gantry config set-gh-token` command.
+    The first time you call `gantry run ...` you'll also be prompted to provide a [GitHub personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) with the `repo` scope if your repository is not public. This allows Gantry to clone your private repository when it runs in Beaker. You don't have to do this just yet (Gantry will prompt you for it), but if you need to update this token later you can use the `gantry config set-gh-token` command.
 
 3. **Specify your Python environment.**
 
@@ -150,7 +149,7 @@ Try `gantry run --help` to see all of the available options.
 
 ### Use your own private Beaker workspace
 
-Any authorized contributors to your workspace will have access to the secrets in your workspace, and Gantry needs to store your GitHub personal access token (PAT) as a secret in the workspace.
+Any authorized contributors to your workspace will have access to the secrets in your workspace, and Gantry needs to store your GitHub personal access token (PAT) as a secret in the workspace (for non-public repos).
 That's also why it's important to [limit the scope and lifetime of your GitHub token](#limit-the-scope-and-lifetime-of-your-github-token).
 
 ### Limit the scope and lifetime of your GitHub token
@@ -178,7 +177,7 @@ It's also okay to [use a combination of conda environment and PIP requirements f
 
 You sure can! Just set the `--beaker-image` or `--docker-image` flag.
 
-Gantry can use any image that has bash and conda installed. This can be useful when you have dependencies that take a long time to download and build (like PyTorch).
+Gantry can use any image that has bash installed. This can be useful when you have dependencies that take a long time to download and build (like PyTorch).
 
 In this case it works best if you build your image with a conda environment that already has your big dependencies installed. Then when you call `gantry run`, use the `--venv` option to tell Gantry to use that environment instead of creating a new conda environment in the container. You may also want to add a `requirements.txt` file to your repository that lists all of your dependencies (including PyTorch and anything else already installed in your image's conda environment) so Gantry can make sure the environment on the image is up-to-date when it runs.
 
@@ -271,6 +270,10 @@ Just use the `--dataset` option for `gantry run`. For example:
 ```bash
 gantry run --dataset 'petew/squad-train:/input-data' -- ls /input-data
 ```
+
+### How can I run distributed batch jobs with Gantry?
+
+The three options `--replicas` (int), `--leader-selection` (flag), and `--host-networking` (flag) used together give you the ability to run distributed batch jobs. See the [Beaker docs](https://beaker-docs.apps.allenai.org/distributed-training.html#batch-jobs) for more information.
 
 ### Why "Gantry"?
 
