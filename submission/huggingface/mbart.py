@@ -11,7 +11,7 @@ from transformers import MBartForConditionalGeneration, MBartTokenizer
 class MBART():
     def __init__(self):
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-        self.model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-en-ro").half().to(device)
+        self.model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-en-ro").to(device)
         self.tokenizer = MBartTokenizer.from_pretrained("facebook/mbart-large-en-ro", src_lang="en_XX")
 
         # TODO

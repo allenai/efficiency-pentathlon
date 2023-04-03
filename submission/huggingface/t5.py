@@ -24,7 +24,7 @@ class T5():
             self.pretrained_model_name_or_path, model_max_length=512
         )
         self.model = T5ForConditionalGeneration.from_pretrained(
-            self.pretrained_model_name_or_path).half().to(device)
+            self.pretrained_model_name_or_path).to(device)
 
         self.instructions: Optional[Dict[str, str]] = {
             "rte": "You're given a pair of sentences: a Text and a Hypothesis. " \
