@@ -29,11 +29,13 @@ class StdioDocker(SubmissionTemplate):
 
         block_until_read_num_instances: if None then non-blocking. Otherwise, block until this many predictions are read.
         """
+        blocking = False
         if block_until_read_num_instances is None:
             self._socket._sock.setblocking(False)
             block_until_read_num_instances = 1000000000
         else:
             self._socket._sock.setblocking(True)
+            blocking = True
 
         num_read = 0
         while True and num_read < block_until_read_num_instances:
@@ -68,7 +70,8 @@ class StdioDocker(SubmissionTemplate):
             self._socket.flush()
 
             # Check for anything in stdout but don't block sending additional predictions.
-            for msg in self._exhaust_and_yield_stdout(None):
+            # for msg in self._exhaust_and_yield_stdout(None):
+            for msg in self._exhaust_and_yield_stdout(1):
                 num_batches_yielded += 1
                 yield msg
 
