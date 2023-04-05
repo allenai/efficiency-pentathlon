@@ -1,10 +1,5 @@
 from typing import Dict
 from catwalk.model import Model
-from catwalk.models.huggingface_classification import HuggingfaceClassification
-from catwalk.models.submission import Submission
-from catwalk.models.gpt import GPTModel
-from catwalk.models.t5 import T5
-from catwalk.models.conditional_generation import ConditionalGenerationModel
 from catwalk.models.stdio_wrapper import StdioWrapper
 from catwalk.models.stdio_docker import StdioDocker
 
@@ -43,6 +38,7 @@ from catwalk.models.stdio_docker import StdioDocker
 
 MODELS: Dict[str, Model] = {
     "mbart": StdioDocker("python3 entrypoint.py --model mbart".split()),
+    "mbart-wrapper": StdioWrapper("python3 submission/huggingface/entrypoint.py --model mbart".split()),
     "flan-t5-small": StdioDocker("python3 entrypoint.py --model google/flan-t5-small".split()),
     "flan-t5-base": StdioDocker("python3 entrypoint.py --model google/flan-t5-base".split()),
     "flan-t5-large": StdioDocker("python3 entrypoint.py --model google/flan-t5-large".split()),
