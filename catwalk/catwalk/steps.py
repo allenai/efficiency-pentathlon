@@ -30,6 +30,7 @@ class PredictStep():
         self.task = TASKS[task] if isinstance(task, str) else task
         self.split = split if split is not None else task.default_split
         self.limit = limit
+        self.limit = 64
         self.random_subsample_seed = random_subsample_seed
         self.model = MODELS[model] if isinstance(model, str) else model
         self._eval_inputs, self._targets = self._get_instances()
@@ -93,7 +94,8 @@ class PredictStep():
     ) -> Sequence[Any]:
         output_batches = []
         # try:
-        self.model.start()
+        self.model.start(dummy_input=self._eval_inputs[:1])
+
         self._profiler.start()
         for output_batch in self.model.predict(instances=self._eval_inputs, **kwargs):
             output_batches.append(output_batch)
@@ -121,17 +123,16 @@ class PredictStep():
         output_batches: Iterable[str]
     ) -> Iterable[Dict[str, Any]]:
         yielded_label_index = -1
-        for output_batch in output_batches:
-            output_batch = json.loads(output_batch.rstrip())
-            for output in output_batch:
-                yielded_label_index += 1
-                output = output.rstrip()
-                target = self._targets[yielded_label_index]
-                yield {
-                    "target": target,
-                    "output": output,
-                    "bleu": (output, target),
-                }
+        # output_batch = json.loads(output_batch.rstrip())
+        for output in output_batches:
+            yielded_label_index += 1
+            output = output.rstrip()
+            target = self._targets[yielded_label_index]
+            yield {
+                "target": target,
+                "output": output,
+                "bleu": (output, target),
+            }
 
 
 class CalculateMetricsStep():
