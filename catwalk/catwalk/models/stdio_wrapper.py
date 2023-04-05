@@ -1,28 +1,25 @@
 import subprocess
 import os
+import docker
 
 from typing import Any, Dict, Iterator, Sequence, List
 import more_itertools
-from catwalk.models.template import SubmissionTemplate
-from tqdm import tqdm
 import json
+from catwalk.model import Model
 
 
-class StdioWrapper(SubmissionTemplate):
+class StdioWrapper(Model):
     """
     A model that wraps a binary that reads from stdin and writes to stdout.
     """
 
-    def __init__(self, binary_cmd: List[str]):
+    def __init__(self, cmd: List[str]):
         """
         binary_cmd: the command to start the inference binary
         """
-        SubmissionTemplate.__init__(self)
-        self._cmd = binary_cmd
-        self._convert_fn = lambda text: " ".join(text[k] for k in text.keys())
-        self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self._cmd = cmd
 
-    def _exhaust_and_yield_stdout(self, block_until_read_num_instances: int = None):
+    def _exhaust_and_yield_stdout(self, block_until_read_num_batches: int = None):
         """
         Read everything from the stdout pipe.
         This function uses stdout.readline() to read one prediction at a time.
@@ -34,23 +31,41 @@ class StdioWrapper(SubmissionTemplate):
 
         block_until_read_num_instances: if None then non-blocking. Otherwise, block until this many predictions are read.
         """
-        if block_until_read_num_instances is None:
-            os.set_blocking(self._process.stdout.fileno(), False)
-            block_until_read_num_instances = 1000000000
-        else:
-            os.set_blocking(self._process.stdout.fileno(), True)
+        self._set_blocking(block_until_read_num_batches)
+        if block_until_read_num_batches is None:
+            block_until_read_num_batches = 1000000000
 
-        num_read = 0
-        while True and num_read < block_until_read_num_instances:
+        num_batches_yielded = 0
+        while num_batches_yielded < block_until_read_num_batches:
             # output is bytes, decode to str
             # Also necessary to remove the \n from the end of the label.
-            predictions = self._process.stdout.readline().decode("utf-8").rstrip()
-            if predictions == "":
+            try:
+                output_batch = self._read_batch()
+            except ValueError:
                 # Nothing in stdout
                 break
-            else:
-                yield predictions
-                num_read += 1
+            try:
+                output_batch = json.loads(output_batch)
+                assert isinstance(output_batch, list)
+            except:
+                # Irrelavent output in stdout
+                continue
+            yield output_batch
+            num_batches_yielded += 1
+
+    def _set_blocking(self, block_until_read_num_batches: int = None):
+        blocking = block_until_read_num_batches is not None
+        os.set_blocking(self._process.stdout.fileno(), blocking)
+
+    def _write_batch(self, batch: Sequence[Dict[str, Any]]) -> None:
+        self._process.stdin.write(f"{json.dumps(batch)}\n".encode("utf-8"))
+        self._process.stdin.flush()
+    
+    def _read_batch(self) -> str:
+        line = self._process.stdout.readline().decode("utf-8").rstrip()
+        if line == "":
+            raise ValueError
+        return line
 
     def predict(  # type: ignore
         self,
@@ -63,15 +78,84 @@ class StdioWrapper(SubmissionTemplate):
         batches = list(more_itertools.chunked(instances, batch_size))
         num_batches = len(batches)
         for batch in batches:
-            self._process.stdin.write(f"{json.dumps(batch)}\n".encode("utf-8"))
-            self._process.stdin.flush()
+            self._write_batch(batch)
 
             # Check for anything in stdout but don't block sending additional predictions.
-            for msg in self._exhaust_and_yield_stdout(None):
+            output_batches = self._exhaust_and_yield_stdout(None)
+            for output_batch in output_batches:
                 num_batches_yielded += 1
-                yield msg
+                for output in output_batch:
+                    yield output
 
         # Now read from stdout until we have hit the required number.
         num_batches_to_read = num_batches - num_batches_yielded
-        for msg in self._exhaust_and_yield_stdout(num_batches_to_read):
-            yield msg
+        for output_batch in self._exhaust_and_yield_stdout(num_batches_to_read):
+            for output in output_batch:
+                yield output
+
+    def start(self, dummy_input: List[Dict[str, Any]]):
+        # TODO
+        self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
+    def stop(self):
+        pass
+
+
+class DockerStdioWrapper(StdioWrapper):
+    """
+    A model that wraps a binary that reads from stdin and writes to stdout.
+    """
+
+    def __init__(self, cmd: List[str]):
+        """
+        binary_cmd: the command to start the inference binary
+        """
+        super().__init__(cmd)
+
+    def _set_blocking(self, block_until_read_num_batches: int = None) -> None:
+        blocking = block_until_read_num_batches is not None
+        self._socket._sock.setblocking(blocking)
+
+    def _write_batch(self, batch: Sequence[Dict[str, Any]]) -> None:
+        self._socket._sock.send(f"{json.dumps(batch)}\n".encode("utf-8"))
+        self._socket.flush()
+    
+    def _read_batch(self) -> str:
+        try:
+            return self._socket.readline()[8:].decode("utf-8").rstrip()
+        except:
+            raise ValueError
+
+    def start(self, dummy_input: List[Dict[str, Any]]):
+        client = docker.DockerClient()
+        self._container = client.containers.run(
+            image="transformers:latest",
+            command=self._cmd,
+            name="transformers",
+            auto_remove=True,
+            remove=True,
+            stdin_open=True,
+            detach=True,
+            device_requests=[
+                docker.types.DeviceRequest(
+                    device_ids=["0"],
+                    capabilities=[["gpu"]]
+                )
+            ]
+        )
+        self._socket = self._container.attach_socket(
+            params={"stdin": 1, "stdout": 1, "stderr": 1, "stream":1}
+        )
+        # self._socket._sock.send(f"{json.dumps(dummy_input)}\n".encode("utf-8"))
+        # self._socket.flush()
+        # o = self._exhaust_and_yield_stdout(1)
+        # print(o)
+        # for a in o:
+        #     print(a)
+
+    def stop(self):
+        try:
+            self._container.stop()
+            self._container.remove()
+        except:
+            pass
