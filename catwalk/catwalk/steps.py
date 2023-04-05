@@ -1,19 +1,16 @@
-import json
 import time
-from dataclasses import dataclass
 from collections import defaultdict
 from random import Random
 from typing import Any, Dict, Iterable, Optional, Sequence, Tuple, Union
-from tango.common.sequences import MappedSequence
 
 import torch
+from tango.common.sequences import MappedSequence
+
+from catwalk.efficiency.profiler import NUM_LATENCY_INSTANCES, Profiler
 from catwalk.model import Model
 from catwalk.models import MODELS
 from catwalk.task import Task
-from catwalk.tasks import TASKS
-from catwalk.tasks import InstanceFormat
-from catwalk.efficiency.profiler import Profiler
-from catwalk.efficiency.profiler import NUM_LATENCY_INSTANCES
+from catwalk.tasks import TASKS, InstanceFormat
 
 
 class PredictStep():

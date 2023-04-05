@@ -1,10 +1,11 @@
-import subprocess
-import os
-import docker
-
-from typing import Any, Dict, Iterator, Sequence, List
-import more_itertools
 import json
+import os
+import subprocess
+from typing import Any, Dict, Iterator, List, Sequence
+
+import more_itertools
+
+import docker
 from catwalk.model import Model
 
 
