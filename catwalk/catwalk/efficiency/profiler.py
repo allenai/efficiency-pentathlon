@@ -6,7 +6,7 @@ from codecarbon.core.gpu import is_gpu_details_available
 from codecarbon.external.scheduler import PeriodicScheduler
 
 
-NUM_LATENCY_INSTANCES = 32
+NUM_LATENCY_INSTANCES = 100
 
 
 """A wrapper of codecarbon EmissionsTracker aiming to provide GPU memory and untilization data."""

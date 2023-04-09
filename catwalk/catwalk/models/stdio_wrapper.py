@@ -127,7 +127,7 @@ class DockerStdioWrapper(StdioWrapper):
         except:
             raise ValueError
 
-    def start(self, dummy_input: List[Dict[str, Any]]):
+    def start(self, dummy_input: List[Dict[str, Any]]) -> None:
         client = docker.DockerClient()
         self._container = client.containers.run(
             image="transformers:latest",
@@ -147,14 +147,11 @@ class DockerStdioWrapper(StdioWrapper):
         self._socket = self._container.attach_socket(
             params={"stdin": 1, "stdout": 1, "stderr": 1, "stream":1}
         )
-        # self._socket._sock.send(f"{json.dumps(dummy_input)}\n".encode("utf-8"))
-        # self._socket.flush()
-        # o = self._exhaust_and_yield_stdout(1)
-        # print(o)
-        # for a in o:
-        #     print(a)
+        self._socket._sock.send(f"{json.dumps(dummy_input)}\n".encode("utf-8"))
+        self._socket.flush()
+        o = self._exhaust_and_yield_stdout(1)
 
-    def stop(self):
+    def stop(self) -> None:
         try:
             self._container.stop()
             self._container.remove()
