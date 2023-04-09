@@ -1,8 +1,8 @@
 import os
 import numpy as np
 import transformers
-from catwalk.dependencies.lm_eval.base import BaseLM
-from catwalk.dependencies.lm_eval import utils
+from efficiency_benchmark.dependencies.lm_eval.base import BaseLM
+from efficiency_benchmark.dependencies.lm_eval import utils
 from tqdm import tqdm
 import time
 

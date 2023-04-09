@@ -36,16 +36,10 @@ def parse_requirements_file(path):
     return requirements
 
 
-# version.py defines the VERSION and VERSION_SHORT variables.
-# We use exec here so we don't import `cached_path` whilst setting up.
-VERSION = {}  # type: ignore
-with open("catwalk/version.py", "r") as version_file:
-    exec(version_file.read(), VERSION)
-
 setup(
-    name="ai2-catwalk",
-    version=VERSION["VERSION"],
-    description="A library for evaluating language models.",
+    name="ai2-efficiency-benchmark",
+    version=0.0,
+    description="A toolkits for measuring the inference efficiency of NLP models.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     classifiers=[
@@ -56,7 +50,7 @@ setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     keywords="",
-    url="https://github.com/allenai/catwalk",
+    url="https://github.com/allenai/efficiency-benchmark",
     author="Allen Institute for Artificial Intelligence",
     author_email="contact@allenai.org",
     license="Apache",
@@ -71,7 +65,7 @@ setup(
         ],
     ),
     package_data={
-        "catwalk": [
+        "efficiency_benchmark": [
             "py.typed",
             "dependencies/promptsource/templates/*/*.yaml",
             "dependencies/promptsource/templates/*/*/*.yaml"

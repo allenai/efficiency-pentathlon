@@ -10,9 +10,9 @@ high quality distant supervision for answering the questions.
 Homepage: https://nlp.cs.washington.edu/triviaqa/
 """
 import inspect
-import catwalk.dependencies.lm_eval.datasets.triviaqa.triviaqa
-from catwalk.dependencies.lm_eval.base import Task, rf
-from catwalk.dependencies.lm_eval.metrics import mean
+import efficiency_benchmark.dependencies.lm_eval.datasets.triviaqa.triviaqa
+from efficiency_benchmark.dependencies.lm_eval.base import Task, rf
+from efficiency_benchmark.dependencies.lm_eval.metrics import mean
 
 
 _CITATION = """
@@ -30,7 +30,7 @@ _CITATION = """
 
 class TriviaQA(Task):
     VERSION = 0
-    DATASET_PATH = inspect.getfile(catwalk.dependencies.lm_eval.datasets.triviaqa.triviaqa)
+    DATASET_PATH = inspect.getfile(efficiency_benchmark.dependencies.lm_eval.datasets.triviaqa.triviaqa)
     DATASET_NAME = None
 
     def has_training_docs(self):

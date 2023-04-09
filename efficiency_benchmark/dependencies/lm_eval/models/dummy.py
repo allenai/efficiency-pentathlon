@@ -1,5 +1,5 @@
 import random
-from catwalk.dependencies.lm_eval.base import LM
+from efficiency_benchmark.dependencies.lm_eval.base import LM
 
 
 class DummyLM(LM):

@@ -13,8 +13,8 @@ Homepage: https://allenai.org/data/qasper
 from collections import Counter
 import re
 import string
-from catwalk.dependencies.lm_eval.base import rf, Task
-from catwalk.dependencies.lm_eval.metrics import f1_score, mean
+from efficiency_benchmark.dependencies.lm_eval.base import rf, Task
+from efficiency_benchmark.dependencies.lm_eval.metrics import f1_score, mean
 
 
 _CITATION = """

@@ -14,7 +14,7 @@ state-of-the-art models.
 Homepage: https://rowanzellers.com/hellaswag/
 """
 import re
-from catwalk.dependencies.lm_eval.base import MultipleChoiceTask
+from efficiency_benchmark.dependencies.lm_eval.base import MultipleChoiceTask
 
 
 _CITATION = """

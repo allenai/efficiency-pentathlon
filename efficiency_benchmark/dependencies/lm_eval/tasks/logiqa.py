@@ -11,8 +11,8 @@ NLP setting.
 Homepage: https://github.com/lgw863/LogiQA-dataset
 """
 import inspect
-import catwalk.dependencies.lm_eval.datasets.logiqa.logiqa
-from catwalk.dependencies.lm_eval.base import MultipleChoiceTask
+import efficiency_benchmark.dependencies.lm_eval.datasets.logiqa.logiqa
+from efficiency_benchmark.dependencies.lm_eval.base import MultipleChoiceTask
 
 
 _CITATION = """
@@ -29,7 +29,7 @@ _CITATION = """
 
 class LogiQA(MultipleChoiceTask):
     VERSION = 0
-    DATASET_PATH = inspect.getfile(catwalk.dependencies.lm_eval.datasets.logiqa.logiqa)
+    DATASET_PATH = inspect.getfile(efficiency_benchmark.dependencies.lm_eval.datasets.logiqa.logiqa)
     DATASET_NAME = None
 
     def has_training_docs(self):

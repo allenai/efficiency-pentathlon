@@ -9,7 +9,7 @@ to word problems in the AQuA dataset (Ling et al., 2017).
 Homepage: https://math-qa.github.io/math-QA/
 """
 import re
-from catwalk.dependencies.lm_eval.base import MultipleChoiceTask
+from efficiency_benchmark.dependencies.lm_eval.base import MultipleChoiceTask
 
 
 _CITATION = """

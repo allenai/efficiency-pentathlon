@@ -16,10 +16,10 @@ import inspect
 import numpy as np
 import re
 import string
-import catwalk.dependencies.lm_eval.datasets.drop.drop
+import efficiency_benchmark.dependencies.lm_eval.datasets.drop.drop
 from scipy.optimize import linear_sum_assignment
-from catwalk.dependencies.lm_eval.base import Task, rf
-from catwalk.dependencies.lm_eval.metrics import mean
+from efficiency_benchmark.dependencies.lm_eval.base import Task, rf
+from efficiency_benchmark.dependencies.lm_eval.metrics import mean
 
 
 _CITATION = """
@@ -39,7 +39,7 @@ _ARTICLES = re.compile(r"\b(a|an|the)\b", re.UNICODE)
 
 class DROP(Task):
     VERSION = 1
-    DATASET_PATH = inspect.getfile(catwalk.dependencies.lm_eval.datasets.drop.drop)
+    DATASET_PATH = inspect.getfile(efficiency_benchmark.dependencies.lm_eval.datasets.drop.drop)
     DATASET_NAME = None
 
     def has_training_docs(self):

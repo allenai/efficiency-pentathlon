@@ -1,12 +1,15 @@
 import collections
 import itertools
-import numpy as np
 import random
-import catwalk.dependencies.lm_eval.metrics
-import catwalk.dependencies.lm_eval.models
-import catwalk.dependencies.lm_eval.tasks
-import catwalk.dependencies.lm_eval.base
-from catwalk.dependencies.lm_eval.utils import positional_deprecated, run_task_tests
+
+import numpy as np
+
+import efficiency_benchmark.dependencies.lm_eval.base
+import efficiency_benchmark.dependencies.lm_eval.metrics
+import efficiency_benchmark.dependencies.lm_eval.models
+import efficiency_benchmark.dependencies.lm_eval.tasks
+from efficiency_benchmark.dependencies.lm_eval.utils import (
+    positional_deprecated, run_task_tests)
 
 
 @positional_deprecated
@@ -61,15 +64,15 @@ def simple_evaluate(
     if isinstance(model, str):
         if model_args is None:
             model_args = ""
-        lm = catwalk.dependencies.lm_eval.models.get_model(model).create_from_arg_string(
+        lm = efficiency_benchmark.dependencies.lm_eval.models.get_model(model).create_from_arg_string(
             model_args, {"batch_size": batch_size, "device": device}
         )
     else:
-        assert isinstance(model, catwalk.dependencies.lm_eval.base.LM)
+        assert isinstance(model, efficiency_benchmark.dependencies.lm_eval.base.LM)
         lm = model
 
     if not no_cache:
-        lm = catwalk.dependencies.lm_eval.base.CachingLM(
+        lm = efficiency_benchmark.dependencies.lm_eval.base.CachingLM(
             lm,
             "lm_cache/"
             + model
@@ -78,7 +81,7 @@ def simple_evaluate(
             + ".db",
         )
 
-    task_dict = catwalk.dependencies.lm_eval.tasks.get_task_dict(tasks)
+    task_dict = efficiency_benchmark.dependencies.lm_eval.tasks.get_task_dict(tasks)
 
     if check_integrity:
         run_task_tests(task_list=tasks)
@@ -226,7 +229,8 @@ def evaluate(
 
     # Compare all tasks/sets at once to ensure a single training set scan
     if decontaminate:
-        from catwalk.dependencies.lm_eval.decontamination.decontaminate import get_train_overlap
+        from efficiency_benchmark.dependencies.lm_eval.decontamination.decontaminate import \
+            get_train_overlap
 
         print("Finding train/test overlap, please wait...")
         overlaps = get_train_overlap(
@@ -284,7 +288,7 @@ def evaluate(
         # hotfix: bleu, chrf, ter seem to be really expensive to bootstrap
         # so we run them less iterations. still looking for a cleaner way to do this
 
-        stderr = catwalk.dependencies.lm_eval.metrics.stderr_for_metric(
+        stderr = efficiency_benchmark.dependencies.lm_eval.metrics.stderr_for_metric(
             metric=task.aggregation()[real_metric],
             bootstrap_iters=min(bootstrap_iters, 1000)
             if metric in ["bleu", "chrf", "ter"]
@@ -299,7 +303,7 @@ def evaluate(
 
 def make_table(result_dict):
     """Generate table of results."""
-    from pytablewriter import MarkdownTableWriter, LatexTableWriter
+    from pytablewriter import LatexTableWriter, MarkdownTableWriter
 
     md_writer = MarkdownTableWriter()
     latex_writer = LatexTableWriter()

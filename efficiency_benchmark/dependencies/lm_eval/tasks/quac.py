@@ -11,8 +11,8 @@ a teacher who answers the questions by providing short excerpts (spans) from the
 Homepage: https://quac.ai/
 """
 import inspect
-import catwalk.dependencies.lm_eval.datasets.quac.quac
-from catwalk.dependencies.lm_eval.base import Task
+import efficiency_benchmark.dependencies.lm_eval.datasets.quac.quac
+from efficiency_benchmark.dependencies.lm_eval.base import Task
 
 
 _CITATION = """
@@ -27,7 +27,7 @@ _CITATION = """
 
 class QuAC(Task):
     VERSION = 0
-    DATASET_PATH = inspect.getfile(catwalk.dependencies.lm_eval.datasets.quac.quac)
+    DATASET_PATH = inspect.getfile(efficiency_benchmark.dependencies.lm_eval.datasets.quac.quac)
     DATASET_NAME = None
 
     def has_training_docs(self):

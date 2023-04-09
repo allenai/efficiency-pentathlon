@@ -11,8 +11,8 @@ Homepage: https://www.salesforce.com/products/einstein/ai-research/the-wikitext-
 """
 import re
 import inspect
-import catwalk.dependencies.lm_eval.datasets.wikitext.wikitext
-from catwalk.dependencies.lm_eval.base import PerplexityTask
+import efficiency_benchmark.dependencies.lm_eval.datasets.wikitext.wikitext
+from efficiency_benchmark.dependencies.lm_eval.base import PerplexityTask
 
 
 _CITATION = """
@@ -63,7 +63,7 @@ def wikitext_detokenizer(string):
 
 class WikiText(PerplexityTask):
     VERSION = 1
-    DATASET_PATH = inspect.getfile(catwalk.dependencies.lm_eval.datasets.wikitext.wikitext)
+    DATASET_PATH = inspect.getfile(efficiency_benchmark.dependencies.lm_eval.datasets.wikitext.wikitext)
     DATASET_NAME = "wikitext-2-raw-v1"
 
     def has_training_docs(self):

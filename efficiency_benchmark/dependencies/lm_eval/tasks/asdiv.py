@@ -15,9 +15,9 @@ NOTE: We currently ignore formulas for answer generation.
 Homepage: https://github.com/chaochun/nlu-asdiv-dataset
 """
 import inspect
-import catwalk.dependencies.lm_eval.datasets.asdiv.asdiv
-from catwalk.dependencies.lm_eval.base import rf, Task
-from catwalk.dependencies.lm_eval.metrics import mean
+import efficiency_benchmark.dependencies.lm_eval.datasets.asdiv.asdiv
+from efficiency_benchmark.dependencies.lm_eval.base import rf, Task
+from efficiency_benchmark.dependencies.lm_eval.metrics import mean
 
 
 _CITATION = """
@@ -34,7 +34,7 @@ _CITATION = """
 
 class Asdiv(Task):
     VERSION = 0
-    DATASET_PATH = inspect.getfile(catwalk.dependencies.lm_eval.datasets.asdiv.asdiv)
+    DATASET_PATH = inspect.getfile(efficiency_benchmark.dependencies.lm_eval.datasets.asdiv.asdiv)
 
     def has_training_docs(self):
         return False

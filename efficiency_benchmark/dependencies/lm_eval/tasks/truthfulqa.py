@@ -21,10 +21,9 @@ Homepage: https://github.com/sylinrl/TruthfulQA
 """
 import numpy as np
 import sacrebleu
-import datasets
 from rouge_score import rouge_scorer, scoring
-from catwalk.dependencies.lm_eval.base import rf, Task
-from catwalk.dependencies.lm_eval.metrics import mean
+from efficiency_benchmark.dependencies.lm_eval.base import rf, Task
+from efficiency_benchmark.dependencies.lm_eval.metrics import mean
 
 
 _CITATION = """

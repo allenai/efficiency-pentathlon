@@ -9,8 +9,8 @@ even for highly specialized humans.
 Homepage: https://aghie.github.io/head-qa/
 """
 import inspect
-import catwalk.dependencies.lm_eval.datasets.headqa.headqa
-from catwalk.dependencies.lm_eval.base import MultipleChoiceTask
+import efficiency_benchmark.dependencies.lm_eval.datasets.headqa.headqa
+from efficiency_benchmark.dependencies.lm_eval.base import MultipleChoiceTask
 
 
 _CITATION = """
@@ -27,7 +27,7 @@ _CITATION = """
 
 class HeadQABase(MultipleChoiceTask):
     VERSION = 0
-    DATASET_PATH = inspect.getfile(catwalk.dependencies.lm_eval.datasets.headqa.headqa)
+    DATASET_PATH = inspect.getfile(efficiency_benchmark.dependencies.lm_eval.datasets.headqa.headqa)
 
     def has_training_docs(self):
         return True

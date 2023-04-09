@@ -14,7 +14,7 @@ based algorithm and a word co-occurrence algorithm.
 
 Homepage: https://allenai.org/data/open-book-qa
 """
-from catwalk.dependencies.lm_eval.base import MultipleChoiceTask
+from efficiency_benchmark.dependencies.lm_eval.base import MultipleChoiceTask
 
 
 _CITATION = """

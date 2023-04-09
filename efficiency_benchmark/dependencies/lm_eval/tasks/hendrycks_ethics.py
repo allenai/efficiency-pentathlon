@@ -18,10 +18,10 @@ Homepage: https://github.com/hendrycks/ethics
 import abc
 import random
 import inspect
-import catwalk.dependencies.lm_eval.datasets.hendrycks_ethics.hendrycks_ethics
+import efficiency_benchmark.dependencies.lm_eval.datasets.hendrycks_ethics.hendrycks_ethics
 import numpy as np
-from catwalk.dependencies.lm_eval.base import Task, rf
-from catwalk.dependencies.lm_eval.metrics import mean, yesno
+from efficiency_benchmark.dependencies.lm_eval.base import Task, rf
+from efficiency_benchmark.dependencies.lm_eval.metrics import mean, yesno
 
 
 _CITATION = """
@@ -35,7 +35,7 @@ _CITATION = """
 
 
 class Ethics(Task):
-    DATASET_PATH = inspect.getfile(catwalk.dependencies.lm_eval.datasets.hendrycks_ethics.hendrycks_ethics)
+    DATASET_PATH = inspect.getfile(efficiency_benchmark.dependencies.lm_eval.datasets.hendrycks_ethics.hendrycks_ethics)
     DATASET_NAME = None
 
     def has_training_docs(self):

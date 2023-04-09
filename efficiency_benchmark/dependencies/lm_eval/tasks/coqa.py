@@ -11,8 +11,8 @@ Homepage: https://stanfordnlp.github.io/coqa/
 """
 import inspect
 import transformers.data.metrics.squad_metrics as squad_metrics
-import catwalk.dependencies.lm_eval.datasets.coqa.coqa
-from catwalk.dependencies.lm_eval.base import Task, rf, mean
+import efficiency_benchmark.dependencies.lm_eval.datasets.coqa.coqa
+from efficiency_benchmark.dependencies.lm_eval.base import Task, rf, mean
 from itertools import zip_longest
 
 
@@ -30,7 +30,7 @@ _CITATION = """
 
 class CoQA(Task):
     VERSION = 1
-    DATASET_PATH = inspect.getfile(catwalk.dependencies.lm_eval.datasets.coqa.coqa)
+    DATASET_PATH = inspect.getfile(efficiency_benchmark.dependencies.lm_eval.datasets.coqa.coqa)
     DATASET_NAME = None
 
     def has_training_docs(self):

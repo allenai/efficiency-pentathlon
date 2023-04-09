@@ -1,6 +1,6 @@
 import transformers
 import torch
-from catwalk.dependencies.lm_eval.base import BaseLM
+from efficiency_benchmark.dependencies.lm_eval.base import BaseLM
 
 
 class HFLM(BaseLM):

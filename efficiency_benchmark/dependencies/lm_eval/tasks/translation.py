@@ -10,10 +10,9 @@ https://github.com/mjpost/sacrebleu/blob/master/sacrebleu/dataset.py
 Homepage: https://github.com/mjpost/sacrebleu/blob/master/sacrebleu/dataset.py
 """
 import pycountry
-from pprint import pprint
 from sacrebleu import sacrebleu
-from catwalk.dependencies.lm_eval import metrics
-from catwalk.dependencies.lm_eval.base import Task, rf
+from efficiency_benchmark.dependencies.lm_eval import metrics
+from efficiency_benchmark.dependencies.lm_eval.base import Task, rf
 from typing import List
 
 

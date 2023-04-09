@@ -9,9 +9,9 @@ Homepage: https://github.com/Nealcly/MuTual
 """
 import numpy as np
 import inspect
-import catwalk.dependencies.lm_eval.datasets.mutual.mutual
-from catwalk.dependencies.lm_eval.base import Task, rf
-from catwalk.dependencies.lm_eval.metrics import mean
+import efficiency_benchmark.dependencies.lm_eval.datasets.mutual.mutual
+from efficiency_benchmark.dependencies.lm_eval.base import Task, rf
+from efficiency_benchmark.dependencies.lm_eval.metrics import mean
 
 
 _CITATION = """
@@ -27,7 +27,7 @@ _CITATION = """
 
 class MuTualBase(Task):
     VERSION = 1
-    DATASET_PATH = inspect.getfile(catwalk.dependencies.lm_eval.datasets.mutual.mutual)
+    DATASET_PATH = inspect.getfile(efficiency_benchmark.dependencies.lm_eval.datasets.mutual.mutual)
     DATASET_NAME = None
     CHOICES = ["A", "B", "C", "D"]
 

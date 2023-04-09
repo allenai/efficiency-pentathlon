@@ -12,8 +12,8 @@ Homepage: https://www.cs.cmu.edu/~glai1/data/race/
 import collections
 import datasets
 import numpy as np
-from catwalk.dependencies.lm_eval.base import rf, Task
-from catwalk.dependencies.lm_eval.metrics import mean
+from efficiency_benchmark.dependencies.lm_eval.base import rf, Task
+from efficiency_benchmark.dependencies.lm_eval.metrics import mean
 
 
 _CITATION = """

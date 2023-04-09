@@ -17,8 +17,8 @@ model's sample/generation function.
 Homepage: https://github.com/openai/grade-school-math
 """
 import re
-from catwalk.dependencies.lm_eval.base import Task, rf
-from catwalk.dependencies.lm_eval.metrics import mean
+from efficiency_benchmark.dependencies.lm_eval.base import Task, rf
+from efficiency_benchmark.dependencies.lm_eval.metrics import mean
 
 
 _CITATION = """

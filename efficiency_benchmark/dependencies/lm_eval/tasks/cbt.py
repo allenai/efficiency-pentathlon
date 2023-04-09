@@ -13,8 +13,8 @@ used by the Recurrent Language Models described in the paper. See section 4.4.
 Homepage: https://github.com/facebookresearch/ParlAI/tree/main/parlai/tasks/cbt
 """
 import numpy as np
-from catwalk.dependencies.lm_eval.base import rf, Task
-from catwalk.dependencies.lm_eval.metrics import mean
+from efficiency_benchmark.dependencies.lm_eval.base import rf, Task
+from efficiency_benchmark.dependencies.lm_eval.metrics import mean
 
 
 _CITATION = """

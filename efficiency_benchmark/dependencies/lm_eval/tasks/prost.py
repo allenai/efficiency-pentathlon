@@ -14,7 +14,7 @@ have been trained on data not specifically collected to succeed on PROST."
 
 Homepage: https://github.com/nala-cub/prost
 """
-from catwalk.dependencies.lm_eval.base import MultipleChoiceTask
+from efficiency_benchmark.dependencies.lm_eval.base import MultipleChoiceTask
 
 
 _CITATION = """

@@ -15,7 +15,7 @@ Homepage: https://rajpurkar.github.io/SQuAD-explorer/
 """
 import datasets
 from math import exp
-from catwalk.dependencies.lm_eval.base import rf, Task
+from efficiency_benchmark.dependencies.lm_eval.base import rf, Task
 from functools import partial
 from packaging import version
 

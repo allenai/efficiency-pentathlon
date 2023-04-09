@@ -16,8 +16,8 @@ and (4) a yes/no/maybe answer which summarizes the conclusion.
 Homepage: https://pubmedqa.github.io/
 """
 import numpy as np
-from catwalk.dependencies.lm_eval.base import rf, Task
-from catwalk.dependencies.lm_eval.metrics import mean
+from efficiency_benchmark.dependencies.lm_eval.base import rf, Task
+from efficiency_benchmark.dependencies.lm_eval.metrics import mean
 
 
 _CITATION = """

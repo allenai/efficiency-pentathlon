@@ -8,9 +8,9 @@ problem in natural language.
 Homepage: https://github.com/openai/gpt-3/tree/master/data
 """
 import inspect
-import catwalk.dependencies.lm_eval.datasets.arithmetic.arithmetic
-from catwalk.dependencies.lm_eval.base import Task, rf
-from catwalk.dependencies.lm_eval.metrics import mean
+import efficiency_benchmark.dependencies.lm_eval.datasets.arithmetic.arithmetic
+from efficiency_benchmark.dependencies.lm_eval.base import Task, rf
+from efficiency_benchmark.dependencies.lm_eval.metrics import mean
 
 
 _CITATION = """
@@ -30,7 +30,7 @@ _CITATION = """
 
 class Arithmetic(Task):
     VERSION = 0
-    DATASET_PATH = inspect.getfile(catwalk.dependencies.lm_eval.datasets.arithmetic.arithmetic)
+    DATASET_PATH = inspect.getfile(efficiency_benchmark.dependencies.lm_eval.datasets.arithmetic.arithmetic)
 
     def has_training_docs(self):
         return False

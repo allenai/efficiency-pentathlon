@@ -9,7 +9,7 @@ with supporting evidence for the correct answer is provided.
 
 Homepage: https://allenai.org/data/sciq
 """
-from catwalk.dependencies.lm_eval.base import MultipleChoiceTask
+from efficiency_benchmark.dependencies.lm_eval.base import MultipleChoiceTask
 
 
 _CITATION = """

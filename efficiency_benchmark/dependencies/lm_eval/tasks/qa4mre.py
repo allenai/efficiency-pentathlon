@@ -13,7 +13,7 @@ and Entrance Exam.
 
 Homepage: http://nlp.uned.es/clef-qa/repository/qa4mre.php
 """
-from catwalk.dependencies.lm_eval.base import MultipleChoiceTask
+from efficiency_benchmark.dependencies.lm_eval.base import MultipleChoiceTask
 
 
 _CITATION = """

@@ -9,8 +9,8 @@ to choose the correct ending to a four-sentence story.
 Homepage: https://cs.rochester.edu/nlp/rocstories/
 """
 import numpy as np
-from catwalk.dependencies.lm_eval.base import rf, Task
-from catwalk.dependencies.lm_eval.metrics import mean
+from efficiency_benchmark.dependencies.lm_eval.base import rf, Task
+from efficiency_benchmark.dependencies.lm_eval.metrics import mean
 
 
 _CITATION = """

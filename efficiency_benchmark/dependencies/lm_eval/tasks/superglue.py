@@ -12,9 +12,9 @@ TODO: WSC requires free-form generation.
 import numpy as np
 import sklearn
 import transformers.data.metrics.squad_metrics as squad_metrics
-from catwalk.dependencies.lm_eval.base import rf, Task
-from catwalk.dependencies.lm_eval.metrics import mean, acc_all, metric_max_over_ground_truths, yesno
-from catwalk.dependencies.lm_eval.utils import general_detokenize
+from efficiency_benchmark.dependencies.lm_eval.base import rf, Task
+from efficiency_benchmark.dependencies.lm_eval.metrics import mean, acc_all, metric_max_over_ground_truths, yesno
+from efficiency_benchmark.dependencies.lm_eval.utils import general_detokenize
 
 
 _CITATION = """

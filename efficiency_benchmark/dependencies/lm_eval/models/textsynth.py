@@ -16,7 +16,7 @@ import os
 import requests as _requests
 import time
 from tqdm import tqdm
-from catwalk.dependencies.lm_eval.base import BaseLM
+from efficiency_benchmark.dependencies.lm_eval.base import BaseLM
 
 
 logger = logging.getLogger(__name__)
