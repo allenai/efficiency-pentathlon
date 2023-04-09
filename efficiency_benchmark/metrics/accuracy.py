@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Union
 
 import torch
 from torchmetrics.aggregation import BaseAggregator

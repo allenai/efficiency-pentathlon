@@ -1,7 +1,9 @@
-from typing import List, Any, Dict, Tuple, Optional
+from typing import Any, Dict, List, Optional
 
-from catwalk.task import InstanceFormat, RankClassificationInstance, classification_metrics
-from catwalk.tasks import HFDatasetsTask
+from efficiency_benchmark.task import (InstanceFormat,
+                                       RankClassificationInstance,
+                                       classification_metrics)
+from efficiency_benchmark.tasks import HFDatasetsTask
 
 _FIELD_ORDERING = {"ade_corpus_v2": ["Sentence"], "banking_77": ["Query"], "terms_of_service": ["Sentence"],
                    "tai_safety_research": ["Title", "Abstract Note", "Publication Title", "Item Type",
@@ -103,7 +105,7 @@ class RaftTask(HFDatasetsTask):
         **kwargs
     ):
         rci = self.instance_as_rank_classification(instance, **kwargs)
-        from catwalk.dependencies.lm_eval.base import rf
+        from efficiency_benchmark.dependencies.lm_eval.base import rf
         return [
             rf.loglikelihood(choice[0], choice[1])
             for choice in rci.choices

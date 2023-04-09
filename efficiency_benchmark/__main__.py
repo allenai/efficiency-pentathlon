@@ -2,9 +2,8 @@ import argparse
 
 from tango.common.logging import initialize_logging
 
-from catwalk.steps import TabulateMetricsStep
-from catwalk.tasks import TASK_SETS
-
+from efficiency_benchmark.steps import TabulateMetricsStep
+from efficiency_benchmark.tasks import TASK_SETS
 
 _parser = argparse.ArgumentParser()
 _parser.add_argument('--model', type=str, required=True)
@@ -28,8 +27,7 @@ def main(args: argparse.Namespace):
 
     limit = args.limit if hasattr(args, "limit") else None
 
-    from catwalk.steps import CalculateMetricsStep
-    from catwalk.steps import PredictStep
+    from efficiency_benchmark.steps import CalculateMetricsStep, PredictStep
 
     tasks = set()
     for task in args.task:

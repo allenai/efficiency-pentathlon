@@ -6,11 +6,12 @@ from typing import Any, Dict, Iterable, Optional, Sequence, Tuple, Union
 import torch
 from tango.common.sequences import MappedSequence
 
-from catwalk.efficiency.profiler import NUM_LATENCY_INSTANCES, Profiler
-from catwalk.model import Model
-from catwalk.models import MODELS
-from catwalk.task import Task
-from catwalk.tasks import TASKS, InstanceFormat
+from efficiency_benchmark.efficiency.profiler import (NUM_LATENCY_INSTANCES,
+                                                      Profiler)
+from efficiency_benchmark.model import Model
+from efficiency_benchmark.models import MODELS
+from efficiency_benchmark.task import Task
+from efficiency_benchmark.tasks import TASKS, InstanceFormat
 
 
 class PredictStep():

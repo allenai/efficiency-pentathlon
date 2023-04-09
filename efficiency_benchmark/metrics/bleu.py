@@ -1,7 +1,7 @@
-from typing import Union, Any, Dict, List
-from sacrebleu.metrics import BLEU
+from typing import Any, Dict, List, Union
 
 import torch
+from sacrebleu.metrics import BLEU
 from torchmetrics.aggregation import BaseAggregator
 
 

@@ -1,13 +1,12 @@
 import inspect
 from abc import ABC
-from typing import Sequence, Dict, Any, Iterator, Tuple, List, Union
+from typing import Any, Dict, Iterator, List, Sequence, Tuple, Union
 
 import torch
-from tango.common import Registrable, Tqdm
+from tango.common import Registrable
 from tango.common.det_hash import DetHashWithVersion
 
-from catwalk.task import Task
-
+from efficiency_benchmark.task import Task
 
 Instance = Dict[str, Any]
 

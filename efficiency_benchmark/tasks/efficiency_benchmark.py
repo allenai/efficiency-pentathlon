@@ -1,11 +1,12 @@
 import functools
 from dataclasses import dataclass
-from typing import Optional, Sequence, Dict, Any, Union
+from typing import Any, Dict, Optional, Sequence, Union
+
 import datasets
 from tango.common.sequences import MappedSequence
 
-from catwalk.task import Task, InstanceConversion
-from catwalk.tasks.huggingface import get_from_dict
+from efficiency_benchmark.task import InstanceConversion, Task
+from efficiency_benchmark.tasks.huggingface import get_from_dict
 
 
 class EfficiencyBenchmarkTask(Task):

@@ -1,13 +1,13 @@
 import functools
-from dataclasses import dataclass
 import random
-from typing import Optional, Sequence, Dict, Any, List, Union, Mapping, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
 import datasets
 from tango.common.sequences import MappedSequence
 
-from catwalk.task import Task, InstanceFormat, InstanceConversion
-from catwalk.tasks.promptsource import WithPromptsourceMixin
+from efficiency_benchmark.task import InstanceConversion, InstanceFormat, Task
+from efficiency_benchmark.tasks.promptsource import WithPromptsourceMixin
 
 
 def get_from_dict(d: Union[Mapping[str, Any], Sequence[Any]], field: str, missing_ok: bool = False) -> Any:

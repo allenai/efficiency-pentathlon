@@ -2,19 +2,26 @@ from typing import Dict, Optional
 
 import datasets
 
-from catwalk.task import InstanceFormat, ENTAILMENT_METRICS, QA_METRICS, Task, \
-    classification_metrics, BINARY_CLASSIFICATION_METRICS, mc_metrics, PERPLEXITY_METRICS, MT_METRICS
-from catwalk.tasks.eleuther import EleutherTask, RaceEleutherTask, EleutherTaskWithRenamedSplits, \
-    EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits
-from catwalk.tasks.huggingface import hfmc_conversion, HFDatasetsTask, hfqa_conversion, hfclassification_conversion
-from catwalk.tasks.p3 import P3Task
-from catwalk.tasks.raft import RaftTask
-from catwalk.tasks.metaicl import MetaICLTask
-from catwalk.tasks.mrqa import MrqaTask
-from catwalk.tasks.t5 import t5_prompt_conversion
-from catwalk.tasks.efficiency_benchmark import EfficiencyBenchmarkTranslationTask
-from catwalk.tasks.efficiency_benchmark import efficiency_benchmark_mt_conversion
-from catwalk.tasks.efficiency_benchmark import efficiency_benchmark_classification_conversion
+from efficiency_benchmark.task import (BINARY_CLASSIFICATION_METRICS,
+                                       ENTAILMENT_METRICS, MT_METRICS,
+                                       PERPLEXITY_METRICS, QA_METRICS,
+                                       InstanceFormat, Task,
+                                       classification_metrics, mc_metrics)
+from efficiency_benchmark.tasks.efficiency_benchmark import (
+    EfficiencyBenchmarkTranslationTask,
+    efficiency_benchmark_classification_conversion,
+    efficiency_benchmark_mt_conversion)
+from efficiency_benchmark.tasks.eleuther import (
+    EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits,
+    EleutherTask, EleutherTaskWithRenamedSplits, RaceEleutherTask)
+from efficiency_benchmark.tasks.huggingface import (
+    HFDatasetsTask, hfclassification_conversion, hfmc_conversion,
+    hfqa_conversion)
+from efficiency_benchmark.tasks.metaicl import MetaICLTask
+from efficiency_benchmark.tasks.mrqa import MrqaTask
+from efficiency_benchmark.tasks.p3 import P3Task
+from efficiency_benchmark.tasks.raft import RaftTask
+from efficiency_benchmark.tasks.t5 import t5_prompt_conversion
 
 TASKS: Dict[str, Task] = {
     "wmt16-en-ro": EfficiencyBenchmarkTranslationTask("wmt16", "ro-en").add_instance_conversion(

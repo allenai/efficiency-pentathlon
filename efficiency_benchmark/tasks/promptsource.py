@@ -1,12 +1,11 @@
 import collections
 import functools
-from typing import Dict, Any, Optional, Sequence, List
+from typing import Any, Dict, List, Optional, Sequence
 
-from catwalk.dependencies.promptsource.templates import (
-    DatasetTemplates,
-    TemplateCollection,
-)
-from catwalk.task import InstanceConversion, RankClassificationInstance, Task, InstanceFormat
+from efficiency_benchmark.dependencies.promptsource.templates import (
+    DatasetTemplates, TemplateCollection)
+from efficiency_benchmark.task import (InstanceConversion, InstanceFormat,
+                                       RankClassificationInstance, Task)
 
 _promptsource_template_collection = TemplateCollection()
 

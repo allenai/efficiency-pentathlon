@@ -1,10 +1,9 @@
 import time
-from typing import Any, Dict, Iterable, List, Optional
-from codecarbon import EmissionsTracker
-from codecarbon.core.gpu import get_gpu_details
-from codecarbon.core.gpu import is_gpu_details_available
-from codecarbon.external.scheduler import PeriodicScheduler
+from typing import Any, Dict, List, Optional
 
+from codecarbon import EmissionsTracker
+from codecarbon.core.gpu import get_gpu_details, is_gpu_details_available
+from codecarbon.external.scheduler import PeriodicScheduler
 
 NUM_LATENCY_INSTANCES = 100
 

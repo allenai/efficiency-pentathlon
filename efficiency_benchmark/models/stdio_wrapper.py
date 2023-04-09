@@ -3,10 +3,10 @@ import os
 import subprocess
 from typing import Any, Dict, Iterator, List, Sequence
 
+import docker
 import more_itertools
 
-import docker
-from catwalk.model import Model
+from efficiency_benchmark.model import Model
 
 
 class StdioWrapper(Model):

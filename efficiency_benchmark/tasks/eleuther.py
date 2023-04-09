@@ -1,15 +1,18 @@
 import os
 import random
-from typing import Dict, Any, Optional, Union, Callable, Sequence, List, TypeVar, Tuple
+from typing import (Any, Callable, Dict, List, Optional, Sequence, Tuple,
+                    TypeVar, Union)
 
 from tango.common.sequences import MappedSequence
 
-from catwalk.task import Task, InstanceFormat, RankClassificationInstance, WithAnswerOptionsMixin, \
-    classification_metrics
-from catwalk.tasks.promptsource import WithPromptsourceMixin
-
-from catwalk.dependencies.lm_eval.base import Task as EAITask
-from catwalk.dependencies.lm_eval.tasks import get_task as get_eai_task
+from efficiency_benchmark.dependencies.lm_eval.base import Task as EAITask
+from efficiency_benchmark.dependencies.lm_eval.tasks import \
+    get_task as get_eai_task
+from efficiency_benchmark.task import (InstanceFormat,
+                                       RankClassificationInstance, Task,
+                                       WithAnswerOptionsMixin,
+                                       classification_metrics)
+from efficiency_benchmark.tasks.promptsource import WithPromptsourceMixin
 
 T = TypeVar("T")
 

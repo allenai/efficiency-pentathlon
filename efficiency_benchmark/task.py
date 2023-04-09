@@ -1,19 +1,18 @@
 from abc import ABC
 from dataclasses import dataclass
 from enum import Enum
-from functools import partial
 from random import Random
-from typing import Dict, Any, Optional, Sequence, Union, List, Callable, Mapping, Tuple, Iterable
+from typing import (Any, Callable, Dict, Iterable, List, Mapping, Optional,
+                    Sequence, Tuple, Union)
 
 import torchmetrics
 from mypy_extensions import KwArg
 from tango.common import Registrable, det_hash
 
-import catwalk.metrics
-from catwalk.metrics.entropy import EntropyMetric
-from catwalk.metrics.perplexity import PerplexityMetric
-from catwalk.metrics.bleu import BLEUMetric
-
+import efficiency_benchmark.metrics
+from efficiency_benchmark.metrics.bleu import BLEUMetric
+from efficiency_benchmark.metrics.entropy import EntropyMetric
+from efficiency_benchmark.metrics.perplexity import PerplexityMetric
 
 PERPLEXITY_METRICS = {
     "word_perplexity": PerplexityMetric,
@@ -41,16 +40,14 @@ except ImportError:
 @memoize
 def mc_metrics(num_classes: int):
     return {
-        "acc": catwalk.metrics.AccuracyMetric,
-        # "relative_improvement": partial(catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes)
+        "acc": efficiency_benchmark.metrics.AccuracyMetric,
     }
 
 
 @memoize
 def classification_metrics(num_classes: int):
     return {
-        "acc": catwalk.metrics.AccuracyMetric,
-        # "relative_improvement": partial(catwalk.metrics.RelativeAccuracyImprovementMetric, num_classes=num_classes)
+        "acc": efficiency_benchmark.metrics.AccuracyMetric,
     }
 
 

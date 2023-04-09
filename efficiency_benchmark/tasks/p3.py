@@ -1,7 +1,8 @@
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
 
-from catwalk.task import InstanceFormat, RankClassificationInstance
-from catwalk.tasks import HFDatasetsTask
+from efficiency_benchmark.task import (InstanceFormat,
+                                       RankClassificationInstance)
+from efficiency_benchmark.tasks import HFDatasetsTask
 
 
 class P3Task(HFDatasetsTask):

@@ -1,8 +1,8 @@
 from typing import Dict
-from catwalk.model import Model
-from catwalk.models.stdio_wrapper import StdioWrapper
-from catwalk.models.stdio_wrapper import DockerStdioWrapper
 
+from efficiency_benchmark.model import Model
+from efficiency_benchmark.models.stdio_wrapper import (DockerStdioWrapper,
+                                                       StdioWrapper)
 
 # MODELS: Dict[str, Model] = {
 #     # "bert-example": BertExample(),

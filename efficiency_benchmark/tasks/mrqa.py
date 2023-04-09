@@ -1,7 +1,9 @@
-from catwalk.tasks import HFDatasetsTask
-from datasets import load_dataset
 import functools
-from typing import Optional
+
+from datasets import load_dataset
+
+from efficiency_benchmark.tasks import HFDatasetsTask
+
 
 class MrqaTask(HFDatasetsTask):
     TEST_DATASETS = {"race", "drop", "bioasq", "relationextraction", "textbookqa", "duorc.paraphraserc"}

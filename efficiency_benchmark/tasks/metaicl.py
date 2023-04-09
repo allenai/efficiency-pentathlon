@@ -1,11 +1,13 @@
-from catwalk.task import Task, InstanceFormat, RankClassificationInstance
-
-from typing import Optional, Sequence, Dict, Any, Union, Iterable
-
 import functools
+from typing import Any, Dict, Iterable, Optional, Sequence, Union
+
 import datasets
-from tango.common.sequences import MappedSequence
 from tango.common import det_hash
+from tango.common.sequences import MappedSequence
+
+from efficiency_benchmark.task import (InstanceFormat,
+                                       RankClassificationInstance, Task)
+
 
 class MetaICLTask(Task):
     """A task that loads data in the MetaICL fewshot setting. This uses the same set of ICL demonstrations for all test instances."""

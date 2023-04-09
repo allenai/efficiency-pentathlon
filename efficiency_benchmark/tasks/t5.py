@@ -1,6 +1,6 @@
-from typing import Set, Optional, Dict, Tuple, Any, List
+from typing import Any, Dict, List, Optional, Tuple
 
-from catwalk.task import InstanceConversion
+from efficiency_benchmark.task import InstanceConversion
 
 
 def t5_prompt_conversion(
