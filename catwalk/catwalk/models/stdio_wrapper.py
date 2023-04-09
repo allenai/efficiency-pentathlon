@@ -47,7 +47,6 @@ class StdioWrapper(Model):
                 break
             try:
                 output_batch = json.loads(output_batch)
-                assert isinstance(output_batch, list)
             except:
                 # Irrelavent output in stdout
                 continue
@@ -94,9 +93,12 @@ class StdioWrapper(Model):
             for output in output_batch:
                 yield output
 
-    def start(self, dummy_input: List[Dict[str, Any]]):
+    def start(self, dummy_inputs: List[Dict[str, Any]]) -> List[str]:
         # TODO
         self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self._write_batch(dummy_inputs)
+        dummy_outputs = self._exhaust_and_yield_stdout(1)
+        return list(dummy_outputs)
 
     def stop(self):
         pass
@@ -127,7 +129,7 @@ class DockerStdioWrapper(StdioWrapper):
         except:
             raise ValueError
 
-    def start(self, dummy_input: List[Dict[str, Any]]) -> None:
+    def start(self, dummy_inputs: List[Dict[str, Any]]) -> List[str]:
         client = docker.DockerClient()
         self._container = client.containers.run(
             image="transformers:latest",
@@ -139,7 +141,7 @@ class DockerStdioWrapper(StdioWrapper):
             detach=True,
             device_requests=[
                 docker.types.DeviceRequest(
-                    device_ids=["0"],
+                    device_ids=["0"],  # TODO
                     capabilities=[["gpu"]]
                 )
             ]
@@ -147,9 +149,9 @@ class DockerStdioWrapper(StdioWrapper):
         self._socket = self._container.attach_socket(
             params={"stdin": 1, "stdout": 1, "stderr": 1, "stream":1}
         )
-        self._socket._sock.send(f"{json.dumps(dummy_input)}\n".encode("utf-8"))
-        self._socket.flush()
-        o = self._exhaust_and_yield_stdout(1)
+        self._write_batch(dummy_inputs)
+        dummy_outputs = self._exhaust_and_yield_stdout(1)
+        return list(dummy_outputs)
 
     def stop(self) -> None:
         try:

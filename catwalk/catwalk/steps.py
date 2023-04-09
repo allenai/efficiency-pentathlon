@@ -27,7 +27,6 @@ class PredictStep():
         self.task = TASKS[task] if isinstance(task, str) else task
         self.split = split if split is not None else task.default_split
         self.limit = limit
-        self.limit = 64
         self.random_subsample_seed = random_subsample_seed
         self.model = MODELS[model] if isinstance(model, str) else model
         self._eval_inputs, self._targets = self._get_instances()
@@ -91,7 +90,7 @@ class PredictStep():
     ) -> Sequence[Any]:
         output_batches = []
         # try:
-        self.model.start(dummy_input=self._eval_inputs[:1])
+        self.model.start(dummy_inputs=self._eval_inputs[:1])
 
         self._profiler.start()
         for output_batch in self.model.predict(instances=self._eval_inputs, **kwargs):
@@ -120,7 +119,6 @@ class PredictStep():
         output_batches: Iterable[str]
     ) -> Iterable[Dict[str, Any]]:
         yielded_label_index = -1
-        # output_batch = json.loads(output_batch.rstrip())
         for output in output_batches:
             yielded_label_index += 1
             output = output.rstrip()
