@@ -47,6 +47,4 @@ if __name__ == "__main__":
         predictor = MBART()
     else:
         raise NotImplementedError()
-    import time
-    time.sleep(30)
     stdio_predictor_wrapper(predictor)
