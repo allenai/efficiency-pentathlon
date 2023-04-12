@@ -65,13 +65,15 @@ setup(
         ],
     ),
     package_data={
-        "efficiency_benchmark": [
+        "efficiency-benchmark": [
             "py.typed",
             "dependencies/promptsource/templates/*/*.yaml",
             "dependencies/promptsource/templates/*/*/*.yaml"
         ]
     },
+    entry_points={"console_scripts": ["efficiency-benchmark=efficiency_benchmark.__main__:main"]},
     install_requires=parse_requirements_file("requirements.txt"),
     extras_require={"dev": parse_requirements_file("dev-requirements.txt")},
+    include_package_data=True,
     python_requires=">=3.8.0",
 )
