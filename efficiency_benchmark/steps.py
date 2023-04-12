@@ -10,7 +10,7 @@ from efficiency_benchmark.efficiency.profiler import (NUM_LATENCY_INSTANCES,
                                                       Profiler)
 from efficiency_benchmark.task import Task
 from efficiency_benchmark.tasks import TASKS, InstanceFormat
-from efficiency_benchmark.stdio_wrapper import StdioWrapper
+from efficiency_benchmark.stdio_wrapper import StdioWrapper, DockerStdioWrapper
 
 
 class PredictStep():
@@ -29,7 +29,7 @@ class PredictStep():
         self.limit = limit
         self.random_subsample_seed = random_subsample_seed
         self.cmd = cmd
-        self.predictor = StdioWrapper(cmd=cmd)
+        self.predictor = DockerStdioWrapper(cmd=cmd)
         self._eval_inputs, self._targets = self._get_instances()
         num_latency_instances = min(NUM_LATENCY_INSTANCES, len(self._eval_inputs))
         self._latency_inputs = Random(random_subsample_seed).sample(
@@ -119,7 +119,7 @@ class PredictStep():
             yield {
                 "target": target,
                 "output": output,
-                "bleu": (output, target),   # TODO
+                "acc": (output, target),   # TODO
             }
 
 

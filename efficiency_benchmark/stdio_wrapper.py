@@ -44,11 +44,17 @@ class StdioWrapper(ABC):
             except ValueError:
                 # Nothing in stdout
                 break
+
+            # Very annoyingly, docker socket sometimes attach the output with an 8-byte header,
+            # and sometimes not. 
             try:
-                output_batch = json.loads(output_batch)
+                output_batch = json.loads(output_batch[8:].decode("utf-8").strip())
             except:
-                # Irrelavent output in stdout
-                continue
+                try:
+                    output_batch = json.loads(output_batch.decode("utf-8").strip())
+                except:
+                    # Irrelavent output in stdout
+                    continue
             yield output_batch
             num_batches_yielded += 1
 
@@ -61,8 +67,8 @@ class StdioWrapper(ABC):
         self._process.stdin.flush()
     
     def _read_batch(self) -> str:
-        line = self._process.stdout.readline().decode("utf-8").rstrip()
-        if line == "":
+        line = self._process.stdout.readline()
+        if line.decode("utf-8").strip() == "":
             raise ValueError
         return line
 
@@ -78,7 +84,6 @@ class StdioWrapper(ABC):
         num_batches = len(batches)
         for batch in batches:
             self._write_batch(batch)
-
             # Check for anything in stdout but don't block sending additional predictions.
             output_batches = self._exhaust_and_yield_stdout(None)
             for output_batch in output_batches:
@@ -124,7 +129,7 @@ class DockerStdioWrapper(StdioWrapper):
     
     def _read_batch(self) -> str:
         try:
-            return self._socket.readline()[8:].decode("utf-8").rstrip()
+            return self._socket.readline()
         except:
             raise ValueError
 
