@@ -2,19 +2,18 @@ import json
 import os
 import subprocess
 from typing import Any, Dict, Iterator, List, Sequence
+from abc import ABC
 
 import docker
 import more_itertools
 
-from efficiency_benchmark.model import Model
 
-
-class StdioWrapper(Model):
+class StdioWrapper(ABC):
     """
     A model that wraps a binary that reads from stdin and writes to stdout.
     """
 
-    def __init__(self, cmd: List[str]):
+    def __init__(self, *, cmd: List[str]):
         """
         binary_cmd: the command to start the inference binary
         """
@@ -109,11 +108,11 @@ class DockerStdioWrapper(StdioWrapper):
     A model that wraps a binary that reads from stdin and writes to stdout.
     """
 
-    def __init__(self, cmd: List[str]):
+    def __init__(self, *, cmd: List[str]):
         """
         binary_cmd: the command to start the inference binary
         """
-        super().__init__(cmd)
+        super().__init__(cmd=cmd)
 
     def _set_blocking(self, block_until_read_num_batches: int = None) -> None:
         blocking = block_until_read_num_batches is not None
@@ -132,9 +131,9 @@ class DockerStdioWrapper(StdioWrapper):
     def start(self, dummy_inputs: List[Dict[str, Any]]) -> List[str]:
         client = docker.DockerClient()
         self._container = client.containers.run(
-            image="transformers:latest",
+            image="submission:latest",
             command=self._cmd,
-            name="transformers",
+            name="submission",
             auto_remove=True,
             remove=True,
             stdin_open=True,

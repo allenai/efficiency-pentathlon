@@ -1,13 +1,13 @@
+# For efficiency benchmark
 codecarbon
 sacrebleu>=1.5.0
 sentencepiece
 
-ai2-tango[torch,transformers,fairscale,beaker,wandb]>=1.1
-#ai2-tango[torch,transformers,fairscale,beaker,wandb] @ git+https://github.com/allenai/tango.git@main
 
-# Sometimes you want to insist on the latest beaker-py.
-# Uncomment the following if you do.
-#beaker-py @ git+https://github.com/allenai/beaker-py.git@main
+pyyaml>=5.4.1
+
+# catwalk dependencies
+ai2-tango[torch,transformers,fairscale,beaker,wandb]>=1.1
 
 torchmetrics==0.11.0
 more_itertools
@@ -30,4 +30,3 @@ pytest
 
 # For promptsource
 jinja2
-pyyaml>=5

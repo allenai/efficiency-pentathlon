@@ -1,24 +1,23 @@
 import time
 from collections import defaultdict
 from random import Random
-from typing import Any, Dict, Iterable, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Iterable, Optional, Sequence, Tuple, Union
 
 import torch
 from tango.common.sequences import MappedSequence
 
 from efficiency_benchmark.efficiency.profiler import (NUM_LATENCY_INSTANCES,
                                                       Profiler)
-from efficiency_benchmark.model import Model
-from efficiency_benchmark.models import MODELS
 from efficiency_benchmark.task import Task
 from efficiency_benchmark.tasks import TASKS, InstanceFormat
+from efficiency_benchmark.stdio_wrapper import StdioWrapper
 
 
 class PredictStep():
     def __init__(
         self,
         *,
-        model: Union[str, Model],
+        cmd: List[str],
         task: Union[str, Task],
         split: Optional[str] = None,
         limit: Optional[int] = None,
@@ -29,7 +28,8 @@ class PredictStep():
         self.split = split if split is not None else task.default_split
         self.limit = limit
         self.random_subsample_seed = random_subsample_seed
-        self.model = MODELS[model] if isinstance(model, str) else model
+        self.cmd = cmd
+        self.predictor = StdioWrapper(cmd=cmd)
         self._eval_inputs, self._targets = self._get_instances()
         num_latency_instances = min(NUM_LATENCY_INSTANCES, len(self._eval_inputs))
         self._latency_inputs = Random(random_subsample_seed).sample(
@@ -61,8 +61,6 @@ class PredictStep():
         return MappedSequence(task.instance_conversions[instance_format], instances)
 
     def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        if isinstance(kwargs["model"], str):
-            kwargs["model"] = MODELS[kwargs["model"]]
         if isinstance(kwargs["task"], str):
             kwargs["task"] = TASKS[kwargs["task"]]
         if kwargs["split"] is None:
@@ -90,27 +88,21 @@ class PredictStep():
         **kwargs
     ) -> Sequence[Any]:
         output_batches = []
-        # try:
-        self.model.start(dummy_inputs=self._eval_inputs[:1])
+        self.predictor.start(dummy_inputs=self._eval_inputs[:1])
 
         self._profiler.start()
-        for output_batch in self.model.predict(instances=self._eval_inputs, **kwargs):
+        for output_batch in self.predictor.predict(instances=self._eval_inputs, **kwargs):
             output_batches.append(output_batch)
         efficiency_metrics = self._profiler.stop()
         efficiency_metrics["throughput"] = len(self._latency_inputs) / efficiency_metrics["time"]
-        # except:
-        #     self._profiler.stop()
-        #     self.model.stop()
 
         ### Latency ###
         start_time = time.time()
-        for output_batch in self.model.predict(instances=self._latency_inputs, batch_size=1):
+        for output_batch in self.predictor.predict(instances=self._latency_inputs, batch_size=1):
             pass
-        self.model.stop()
+        self.predictor.stop()
         elapsed_time = time.time() - start_time
         efficiency_metrics["latency"] = elapsed_time / len(self._latency_inputs)
-        # TODO
-        # efficiency_metrics["num_params"] = self.model.model.num_parameters()
         self.tabulate_efficiency_metrics(efficiency_metrics)
         results = self.process(output_batches)
         return results
@@ -127,33 +119,83 @@ class PredictStep():
             yield {
                 "target": target,
                 "output": output,
-                "bleu": (output, target),
+                "bleu": (output, target),   # TODO
             }
 
 
 class CalculateMetricsStep():
 
-    def __init__(
-        self,
-        *,
-        model: Union[str, Model],
-        task: Union[str, Task]
-    ):
-        self.model = MODELS[model] if isinstance(model, str) else model
+    _TorchmetricsResult = Union[torch.Tensor, Dict[str, '_TorchmetricsResult']]
+    _CatwalkResult = Union[float, Dict[str, '_CatwalkResult']]
+
+    def __init__(self, task: Union[str, Task]):
         self.task = TASKS[task] if isinstance(task, str) else task
 
     def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        if isinstance(kwargs["model"], str):
-            kwargs["model"] = MODELS[kwargs["model"]]
         if isinstance(kwargs["task"], str):
             kwargs["task"] = TASKS[kwargs["task"]]
         return kwargs
 
-    def run(
-        self,
-        predictions: Sequence[Any]
-    ) -> Dict[str, float]:
-        return self.model.calculate_metrics(self.task, predictions)
+    def _tensor_args(self, args: Tuple[Any]) -> Tuple[Any, ...]:
+        """
+        Annoyingly, torchmetrics only supports tensors as input, not raw values. So we have to convert raw values
+        into tensors.
+        
+        From catwalk.
+        https://github.com/allenai/catwalk/blob/main/catwalk/model.py
+        """
+        fixed_args: List[Any] = []
+        for arg in args:
+            if isinstance(arg, (float, int)):
+                fixed_args.append(torch.tensor(arg))
+            else:
+                fixed_args.append(arg)
+        return tuple(fixed_args)
+
+    def _unsqueeze_args(self, args: Tuple[Any]) -> Tuple[Any, ...]:
+        """
+        Further, torchmetrics can't handle single-instance calls when given tensors. It always needs the first
+        dimension of the tensors to be the instance dimension. So we add one.
+
+        From catwalk.
+        https://github.com/allenai/catwalk/blob/main/catwalk/model.py
+        """
+        fixed_args: List[Any] = []
+        for arg in args:
+            if isinstance(arg, torch.Tensor):
+                fixed_args.append(arg.unsqueeze(0))
+            else:
+                fixed_args.append(arg)
+        return tuple(fixed_args)
+
+
+    def _recursive_tolist(self, args: _TorchmetricsResult) -> _CatwalkResult:
+        """From catwalk.
+        https://github.com/allenai/catwalk/blob/main/catwalk/model.py
+        """
+        if isinstance(args, dict):
+            return { key: self._recursive_tolist(value) for key, value in args.items() }
+        else:
+            return args.tolist()
+        
+    def calculate_metrics(self, predictions: Sequence[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
+        """From catwalk.
+        https://github.com/allenai/catwalk/blob/main/catwalk/model.py
+        """
+        metrics = self.task.make_metrics()
+        for prediction in predictions:
+            for metric_name, metric_args in prediction.items():
+                try:
+                    metric = metrics[metric_name]
+                except KeyError:
+                    continue
+                metric_args = self._tensor_args(metric_args)
+                metric_args = self._unsqueeze_args(metric_args)
+                metric.update(*metric_args)
+        return {
+            metric_name: self._recursive_tolist(metric.compute())
+            for metric_name, metric in metrics.items()
+        }
 
 
 class TabulateMetricsStep():

@@ -5,24 +5,25 @@ from tango.common.logging import initialize_logging
 from efficiency_benchmark.steps import TabulateMetricsStep
 from efficiency_benchmark.tasks import TASK_SETS
 
-_parser = argparse.ArgumentParser()
-_parser.add_argument('--model', type=str, required=True)
-_parser.add_argument('--task', type=str, nargs="+")
-_parser.add_argument('--split', type=str)
-_parser.add_argument('--batch_size', type=int, default=32)
-_parser.add_argument('--num_shots', type=int)
-_parser.add_argument('--fewshot_seed', type=int)
-_parser.add_argument('--limit', type=int)
-_parser.add_argument(
-    '-d', '-w',
-    type=str,
-    default=None,
-    metavar="workspace",
-    dest="workspace",
-    help="the Tango workspace with the cache")
 
+def main():
+    _parser = argparse.ArgumentParser()
+    _parser.add_argument('--task', type=str, nargs="+")
+    _parser.add_argument('--split', type=str)
+    _parser.add_argument('--batch_size', type=int, default=32)
+    _parser.add_argument('--num_shots', type=int)
+    _parser.add_argument('--fewshot_seed', type=int)
+    _parser.add_argument('--limit', type=int)
+    _parser.add_argument(
+        '-d', '-w',
+        type=str,
+        default=None,
+        metavar="workspace",
+        dest="workspace",
+        help="the Tango workspace with the cache")
+    _parser.add_argument('cmd', nargs='*')
+    args = _parser.parse_args()
 
-def main(args: argparse.Namespace):
     initialize_logging(log_level="WARNING")
 
     limit = args.limit if hasattr(args, "limit") else None
@@ -45,15 +46,15 @@ def main(args: argparse.Namespace):
     metric_task_dict = {}
     for task in tasks:
         prediction_step = PredictStep(
-            model=args.model,
+            cmd=args.cmd,
             task=task,
             split=args.split,
             batch_size=args.batch_size,
             limit=limit
         )
         predictions = prediction_step.run(**kwargs)
-        metric_step = CalculateMetricsStep(model=args.model, task=task)
-        metrics = metric_step.run(predictions=predictions)
+        metric_step = CalculateMetricsStep(task=task)
+        metrics = metric_step.calculate_metrics(predictions=predictions)
         metric_task_dict[task] = metrics
 
     table_step = TabulateMetricsStep()
@@ -62,4 +63,4 @@ def main(args: argparse.Namespace):
 
 
 if __name__ == "__main__":
-    main(_parser.parse_args())
+    main()

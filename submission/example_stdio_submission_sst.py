@@ -6,7 +6,7 @@ Example usage:
     cat data.txt | python stdio_submission.py
 """
 
-from utils import stdio_predictor_wrapper
+
 from typing import Any, Dict, Iterator, Sequence
 
 class GoodBinarySentimentClassifier:
@@ -20,7 +20,6 @@ class GoodBinarySentimentClassifier:
         self,
         inputs: Sequence[Dict[str, Any]]
     ) -> Iterator[str]:
-
         for input in inputs:
             label = "negative"
             for positive_word in self.positive_words:
@@ -28,9 +27,3 @@ class GoodBinarySentimentClassifier:
                     label = "positive"
                     break
             yield label
-
-
-if __name__ == "__main__":
-    binary_classifier = GoodBinarySentimentClassifier()
-    stdio_predictor_wrapper(binary_classifier)
-
