@@ -49,7 +49,8 @@ RUN pip3 install transformers
 RUN pip3 install sentencepiece
 
 ENV PYTHONUNBUFFERED="on"
-ADD entrypoint.py /home
-ADD t5.py /home
-ADD mbart.py /home
+ADD *.py /home/
+# ADD t5.py /home
+# ADD mbart.py /home
+# ADD example
 # ENTRYPOINT ["python3", "entrypoint.py"]

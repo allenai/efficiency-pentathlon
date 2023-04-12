@@ -5,6 +5,7 @@ import sys
 import transformers
 from mbart import MBART
 from t5 import T5
+from example_stdio_submission_sst import GoodBinarySentimentClassifier
 
 
 # We provide this
@@ -45,6 +46,8 @@ if __name__ == "__main__":
         )
     elif args.model == "mbart":
         predictor = MBART()
+    elif args.model == "debug":
+        predictor = GoodBinarySentimentClassifier()
     else:
         raise NotImplementedError()
     stdio_predictor_wrapper(predictor)
