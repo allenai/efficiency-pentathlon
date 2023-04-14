@@ -1,61 +1,87 @@
-import argparse
-
+from typing import Tuple
 from tango.common.logging import initialize_logging
 
 from efficiency_benchmark.steps import TabulateMetricsStep
-from efficiency_benchmark.tasks import TASK_SETS
+import click
+from click_help_colors import HelpColorsCommand, HelpColorsGroup
+from efficiency_benchmark.steps import CalculateMetricsStep, PredictStep
 
 
+_CLICK_GROUP_DEFAULTS = {
+    "cls": HelpColorsGroup,
+    "help_options_color": "green",
+    "help_headers_color": "yellow",
+    "context_settings": {"max_content_width": 115},
+}
+
+_CLICK_COMMAND_DEFAULTS = {
+    "cls": HelpColorsCommand,
+    "help_options_color": "green",
+    "help_headers_color": "yellow",
+    "context_settings": {"max_content_width": 115},
+}
+
+
+@click.group(**_CLICK_GROUP_DEFAULTS)
 def main():
-    _parser = argparse.ArgumentParser()
-    _parser.add_argument('--task', type=str, nargs="+")
-    _parser.add_argument('--split', type=str)
-    _parser.add_argument('--batch_size', type=int, default=32)
-    _parser.add_argument('--num_shots', type=int)
-    _parser.add_argument('--fewshot_seed', type=int)
-    _parser.add_argument('--limit', type=int)
-    _parser.add_argument(
-        '-d', '-w',
-        type=str,
-        default=None,
-        metavar="workspace",
-        dest="workspace",
-        help="the Tango workspace with the cache")
-    _parser.add_argument('cmd', nargs='*')
-    args = _parser.parse_args()
+    pass
+
+
+@main.command(**_CLICK_COMMAND_DEFAULTS)
+@click.argument("cmd", nargs=-1)
+@click.option(
+    "-t",
+    "--task",
+    type=str,
+    nargs=1,
+    help="""Tasks.""",
+)
+@click.option(
+    "--split",
+    type=str,
+    help="""Split.""",
+)
+@click.option(
+    "-b",
+    "--batch_size",
+    type=str,
+    help="""Batch size.""",
+)
+def run(
+    cmd: Tuple[str, ...],
+    task: str,
+    split: str = "validation",
+    batch_size: int = 32,
+):
+    # _parser = argparse.ArgumentParser()
+    # _parser.add_argument('--task', type=str, nargs="+")
+    # _parser.add_argument('--split', type=str)
+    # _parser.add_argument('--batch_size', type=int, default=32)
+    # _parser.add_argument('--num_shots', type=int)
+    # _parser.add_argument('--fewshot_seed', type=int)
+    # _parser.add_argument('--limit', type=int)
+    # _parser.add_argument(
+    #     '-d', '-w',
+    #     type=str,
+    #     default=None,
+    #     metavar="workspace",
+    #     dest="workspace",
+    #     help="the Tango workspace with the cache")
+    # _parser.add_argument('cmd', nargs='*')
+    # args = _parser.parse_args()
 
     initialize_logging(log_level="WARNING")
-
-    limit = args.limit if hasattr(args, "limit") else None
-
-    from efficiency_benchmark.steps import CalculateMetricsStep, PredictStep
-
-    tasks = set()
-    for task in args.task:
-        try:
-            tasks |= TASK_SETS[task]
-        except KeyError:
-            tasks.add(task)
-
-    kwargs = {}
-    if args.num_shots is not None:
-        kwargs["num_shots"] = args.num_shots
-    if args.fewshot_seed is not None:
-        kwargs["fewshot_seed"] = args.fewshot_seed
-
     metric_task_dict = {}
-    for task in tasks:
-        prediction_step = PredictStep(
-            cmd=args.cmd,
-            task=task,
-            split=args.split,
-            batch_size=args.batch_size,
-            limit=limit
-        )
-        predictions = prediction_step.run(**kwargs)
-        metric_step = CalculateMetricsStep(task=task)
-        metrics = metric_step.calculate_metrics(predictions=predictions)
-        metric_task_dict[task] = metrics
+    prediction_step = PredictStep(
+        cmd=cmd,
+        task=task,
+        split=split,
+        batch_size=batch_size,
+    )
+    predictions = prediction_step.run(batch_size=batch_size)
+    metric_step = CalculateMetricsStep(task=task)
+    metrics = metric_step.calculate_metrics(predictions=predictions)
+    metric_task_dict[task] = metrics
 
     table_step = TabulateMetricsStep()
     table_step_result = table_step.run(metrics=metric_task_dict)

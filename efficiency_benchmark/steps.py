@@ -25,11 +25,11 @@ class PredictStep():
         **kwargs
     ):
         self.task = TASKS[task] if isinstance(task, str) else task
-        self.split = split if split is not None else task.default_split
+        self.split = split if split is not None else self.task.default_split
         self.limit = limit
         self.random_subsample_seed = random_subsample_seed
         self.cmd = cmd
-        self.predictor = DockerStdioWrapper(cmd=cmd)
+        self.predictor = StdioWrapper(cmd=cmd)
         self._eval_inputs, self._targets = self._get_instances()
         num_latency_instances = min(NUM_LATENCY_INSTANCES, len(self._eval_inputs))
         self._latency_inputs = Random(random_subsample_seed).sample(
