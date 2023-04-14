@@ -30,7 +30,6 @@ RUN  apt-get update && \
 ENV PATH /opt/conda/bin:$PATH
 
 WORKDIR /workspace/
-ADD . /workspace/
-RUN pip install -r requirements.txt
+ADD entrypoint.sh /workspace/entrypoint.sh
 
-# ENTRYPOINT ["/opt/conda/bin/conda"]
+ENTRYPOINT ["bash", "entrypoint.sh"]
