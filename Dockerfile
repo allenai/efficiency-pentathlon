@@ -87,7 +87,6 @@ ENV LD_LIBRARY_PATH=/usr/local/cuda/lib:/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 RUN /opt/miniconda3/bin/pip install --no-cache-dir \
     gpustat \
     jupyter \
-    beaker-gantry \
     oocmap
 
 # Ensure users can modify their container environment.
@@ -140,20 +139,18 @@ RUN curl --silent \
     && tar -zxf beaker.tar.gz -C /usr/local/bin/ ./beaker \
     && rm beaker.tar.gz
 
+
+RUN mkdir -p /workspace
+COPY . /workspace/
+WORKDIR /workspace/
+RUN cd beaker_gantry \
+    && pip install -e . \
+    cd .. \
+    && pip install -e .
+
 # Shell customization including prompt and colors.
 COPY profile.d/ /etc/profile.d/
-
-# The -l flag makes bash act as a login shell and load /etc/profile, etc.
 ENTRYPOINT ["bash", "-l"]
+# ENTRYPOINT ["bash", "entrypoint.sh"]
 
-RUN mkdir -p /home/efficiency_benchmark/
-ADD requirements.txt /home/efficiency_benchmark/requirements.txt
-ADD dev-requirements.txt /home/efficiency_benchmark/dev-requirements.txt
-ADD README.md /home/efficiency_benchmark/README.md
-ADD efficiency_benchmark /home/efficiency_benchmark/efficiency_benchmark
-ADD setup.py /home/efficiency_benchmark
-
-WORKDIR /home/efficiency_benchmark
-RUN pip3 install -e .
-WORKDIR /home
 # ENTRYPOINT ["python3", "entrypoint.py"]
