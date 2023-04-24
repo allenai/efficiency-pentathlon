@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v0.14.1](https://github.com/allenai/beaker-gantry/releases/tag/v0.14.1) - 2023-04-17
+
+### Fixed
+
+- Fixed a bug where some dependencies were not actually installed.
+
+## [v0.14.0](https://github.com/allenai/beaker-gantry/releases/tag/v0.14.0) - 2023-04-17
+
+### Added
+
+- Added automatic support for `pyproject.toml` and `setup.cfg` files in addition to `setup.py`.
+
 ## [v0.13.1](https://github.com/allenai/beaker-gantry/releases/tag/v0.13.1) - 2023-03-20
 
 ### Fixed

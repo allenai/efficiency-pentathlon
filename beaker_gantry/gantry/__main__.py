@@ -93,190 +93,190 @@ def main():
     util.check_for_upgrades()
 
 
-@main.command(**_CLICK_COMMAND_DEFAULTS)
-@click.argument("arg", nargs=-1)
-@click.option(
-    "-n",
-    "--name",
-    type=str,
-    help="""A name to assign to the experiment on Beaker. Defaults to a randomly generated name.""",
-)
-@click.option(
-    "-t",
-    "--task-name",
-    type=str,
-    help="""A name to assign to the task on Beaker.""",
-    default="main",
-    show_default=True,
-)
-@click.option("-d", "--description", type=str, help="""A description for the experiment.""")
-@click.option(
-    "-w",
-    "--workspace",
-    type=str,
-    help="""The Beaker workspace to use.
-    If not specified, your default workspace will be used.""",
-)
-@click.option(
-    "-c",
-    "--cluster",
-    type=str,
-    multiple=True,
-    default=None,
-    help="""A potential cluster to use. This option can be used multiple times to allow multiple clusters.
-    You also specify it as a wildcard, e.g. '--cluster ai2/*-cirrascale'.
-    If you don't specify a cluster or the priority, the priority will default to 'preemptible' and
-    the job will be able to run on any on-premise cluster.""",
-    show_default=True,
-)
-@click.option(
-    "--beaker-image",
-    type=str,
-    default=constants.DEFAULT_IMAGE,
-    help="""The name or ID of an image on Beaker to use for your experiment.
-    Mutually exclusive with --docker-image.""",
-    show_default=True,
-)
-@click.option(
-    "--docker-image",
-    type=str,
-    help="""The name of a public Docker image to use for your experiment.
-    Mutually exclusive with --beaker-image.""",
-)
-@click.option(
-    "--cpus",
-    type=float,
-    help="""Minimum number of logical CPU cores (e.g. 4.0, 0.5).""",
-)
-@click.option(
-    "--gpus",
-    type=int,
-    help="""Minimum number of GPUs (e.g. 1).""",
-)
-@click.option(
-    "--memory",
-    type=str,
-    help="""Minimum available system memory as a number with unit suffix (e.g. 2.5GiB).""",
-)
-@click.option(
-    "--shared-memory",
-    type=str,
-    help="""Size of /dev/shm as a number with unit suffix (e.g. 2.5GiB).""",
-)
-@click.option(
-    "--dataset",
-    type=str,
-    multiple=True,
-    help="""An input dataset in the form of 'dataset-name:/mount/location' to attach to your experiment.
-    You can specify this option more than once to attach multiple datasets.""",
-)
-@click.option(
-    "--gh-token-secret",
-    type=str,
-    help="""The name of the Beaker secret that contains your GitHub token.""",
-    default=constants.GITHUB_TOKEN_SECRET,
-    show_default=True,
-)
-@click.option(
-    "--conda",
-    type=click.Path(exists=True, dir_okay=False),
-    help=f"""Path to a conda environment file for reconstructing your Python environment.
-    If not specified, '{constants.CONDA_ENV_FILE}' will be used if it exists.""",
-)
-@click.option(
-    "--pip",
-    type=click.Path(exists=True, dir_okay=False),
-    help=f"""Path to a PIP requirements file for reconstructing your Python environment.
-    If not specified, '{constants.PIP_REQUIREMENTS_FILE}' will be used if it exists.""",
-)
-@click.option(
-    "--venv",
-    type=str,
-    help="""The name of an existing conda environment on the image to use.""",
-)
-@click.option(
-    "--env",
-    type=str,
-    help="""Environment variables to add the Beaker experiment. Should be in the form '{NAME}={VALUE}'.""",
-    multiple=True,
-)
-@click.option(
-    "--env-secret",
-    type=str,
-    help="""Environment variables to add the Beaker experiment from Beaker secrets.
-    Should be in the form '{NAME}={SECRET_NAME}'.""",
-    multiple=True,
-)
-@click.option(
-    "--nfs / --no-nfs",
-    default=None,
-    help=f"""Whether or not to mount the NFS drive ({constants.NFS_MOUNT}) to the experiment.
-    This only works for cirrascale clusters managed by the Beaker team.
-    If not specified, gantry will always mount NFS when it knows the cluster supports it.""",
-)
-@click.option(
-    "--show-logs/--no-logs",
-    default=True,
-    show_default=True,
-    help="""Whether or not to stream the logs to stdout as the experiment runs.
-    This only takes effect when --timeout is non-zero.""",
-)
-@click.option(
-    "--timeout",
-    type=int,
-    default=0,
-    help="""Time to wait (in seconds) for the experiment to finish.
-    A timeout of -1 means wait indefinitely.
-    A timeout of 0 means don't wait at all.""",
-    show_default=True,
-)
-@click.option(
-    "--allow-dirty",
-    is_flag=True,
-    help="""Allow submitting the experiment with a dirty working directory.""",
-)
-@click.option(
-    "-y",
-    "--yes",
-    is_flag=True,
-    help="""Skip all confirmation prompts.""",
-)
-@click.option("--dry-run", is_flag=True, help="""Do a dry run only.""")
-@click.option(
-    "--save-spec",
-    type=click.Path(dir_okay=False, file_okay=True),
-    help="""A path to save the generated Beaker experiment spec to.""",
-)
-@click.option(
-    "--priority",
-    type=click.Choice([str(p) for p in Priority]),
-    help="The job priority. If you don't specify at least one cluster, priority will default to 'preemptible'.",
-)
-@click.option(
-    "--install",
-    type=str,
-    help="""Override the default installation command, e.g. '--install "python setup.py install"'""",
-)
-@click.option(
-    "--replicas",
-    type=int,
-    help="""The number of task replicas to run.""",
-)
-@click.option(
-    "--leader-selection",
-    is_flag=True,
-    help="""Specifies that the first task replica should be the leader and populates each task
-    with 'BEAKER_LEADER_REPLICA_HOSTNAME' and 'BEAKER_LEADER_REPLICA_NODE_ID' environment variables.
-    This is only applicable when '--replicas INT' and '--host-networking' are used,
-    although the '--host-networking' flag can be omitted in this case since it's assumed.""",
-)
-@click.option(
-    "--host-networking",
-    is_flag=True,
-    help="""Specifies that each task replica should use the host's network.
-    When used with '--replicas INT', this allows the replicas to communicate with each
-    other using their hostnames.""",
-)
+# @main.command(**_CLICK_COMMAND_DEFAULTS)
+# @click.argument("arg", nargs=-1)
+# @click.option(
+#     "-n",
+#     "--name",
+#     type=str,
+#     help="""A name to assign to the experiment on Beaker. Defaults to a randomly generated name.""",
+# )
+# @click.option(
+#     "-t",
+#     "--task-name",
+#     type=str,
+#     help="""A name to assign to the task on Beaker.""",
+#     default="main",
+#     show_default=True,
+# )
+# @click.option("-d", "--description", type=str, help="""A description for the experiment.""")
+# @click.option(
+#     "-w",
+#     "--workspace",
+#     type=str,
+#     help="""The Beaker workspace to use.
+#     If not specified, your default workspace will be used.""",
+# )
+# @click.option(
+#     "-c",
+#     "--cluster",
+#     type=str,
+#     multiple=True,
+#     default=None,
+#     help="""A potential cluster to use. This option can be used multiple times to allow multiple clusters.
+#     You also specify it as a wildcard, e.g. '--cluster ai2/*-cirrascale'.
+#     If you don't specify a cluster or the priority, the priority will default to 'preemptible' and
+#     the job will be able to run on any on-premise cluster.""",
+#     show_default=True,
+# )
+# @click.option(
+#     "--beaker-image",
+#     type=str,
+#     default=constants.DEFAULT_IMAGE,
+#     help="""The name or ID of an image on Beaker to use for your experiment.
+#     Mutually exclusive with --docker-image.""",
+#     show_default=True,
+# )
+# @click.option(
+#     "--docker-image",
+#     type=str,
+#     help="""The name of a public Docker image to use for your experiment.
+#     Mutually exclusive with --beaker-image.""",
+# )
+# @click.option(
+#     "--cpus",
+#     type=float,
+#     help="""Minimum number of logical CPU cores (e.g. 4.0, 0.5).""",
+# )
+# @click.option(
+#     "--gpus",
+#     type=int,
+#     help="""Minimum number of GPUs (e.g. 1).""",
+# )
+# @click.option(
+#     "--memory",
+#     type=str,
+#     help="""Minimum available system memory as a number with unit suffix (e.g. 2.5GiB).""",
+# )
+# @click.option(
+#     "--shared-memory",
+#     type=str,
+#     help="""Size of /dev/shm as a number with unit suffix (e.g. 2.5GiB).""",
+# )
+# @click.option(
+#     "--dataset",
+#     type=str,
+#     multiple=True,
+#     help="""An input dataset in the form of 'dataset-name:/mount/location' to attach to your experiment.
+#     You can specify this option more than once to attach multiple datasets.""",
+# )
+# @click.option(
+#     "--gh-token-secret",
+#     type=str,
+#     help="""The name of the Beaker secret that contains your GitHub token.""",
+#     default=constants.GITHUB_TOKEN_SECRET,
+#     show_default=True,
+# )
+# @click.option(
+#     "--conda",
+#     type=click.Path(exists=True, dir_okay=False),
+#     help=f"""Path to a conda environment file for reconstructing your Python environment.
+#     If not specified, '{constants.CONDA_ENV_FILE}' will be used if it exists.""",
+# )
+# @click.option(
+#     "--pip",
+#     type=click.Path(exists=True, dir_okay=False),
+#     help=f"""Path to a PIP requirements file for reconstructing your Python environment.
+#     If not specified, '{constants.PIP_REQUIREMENTS_FILE}' will be used if it exists.""",
+# )
+# @click.option(
+#     "--venv",
+#     type=str,
+#     help="""The name of an existing conda environment on the image to use.""",
+# )
+# @click.option(
+#     "--env",
+#     type=str,
+#     help="""Environment variables to add the Beaker experiment. Should be in the form '{NAME}={VALUE}'.""",
+#     multiple=True,
+# )
+# @click.option(
+#     "--env-secret",
+#     type=str,
+#     help="""Environment variables to add the Beaker experiment from Beaker secrets.
+#     Should be in the form '{NAME}={SECRET_NAME}'.""",
+#     multiple=True,
+# )
+# @click.option(
+#     "--nfs / --no-nfs",
+#     default=None,
+#     help=f"""Whether or not to mount the NFS drive ({constants.NFS_MOUNT}) to the experiment.
+#     This only works for cirrascale clusters managed by the Beaker team.
+#     If not specified, gantry will always mount NFS when it knows the cluster supports it.""",
+# )
+# @click.option(
+#     "--show-logs/--no-logs",
+#     default=True,
+#     show_default=True,
+#     help="""Whether or not to stream the logs to stdout as the experiment runs.
+#     This only takes effect when --timeout is non-zero.""",
+# )
+# @click.option(
+#     "--timeout",
+#     type=int,
+#     default=0,
+#     help="""Time to wait (in seconds) for the experiment to finish.
+#     A timeout of -1 means wait indefinitely.
+#     A timeout of 0 means don't wait at all.""",
+#     show_default=True,
+# )
+# @click.option(
+#     "--allow-dirty",
+#     is_flag=True,
+#     help="""Allow submitting the experiment with a dirty working directory.""",
+# )
+# @click.option(
+#     "-y",
+#     "--yes",
+#     is_flag=True,
+#     help="""Skip all confirmation prompts.""",
+# )
+# @click.option("--dry-run", is_flag=True, help="""Do a dry run only.""")
+# @click.option(
+#     "--save-spec",
+#     type=click.Path(dir_okay=False, file_okay=True),
+#     help="""A path to save the generated Beaker experiment spec to.""",
+# )
+# @click.option(
+#     "--priority",
+#     type=click.Choice([str(p) for p in Priority]),
+#     help="The job priority. If you don't specify at least one cluster, priority will default to 'preemptible'.",
+# )
+# @click.option(
+#     "--install",
+#     type=str,
+#     help="""Override the default installation command, e.g. '--install "python setup.py install"'""",
+# )
+# @click.option(
+#     "--replicas",
+#     type=int,
+#     help="""The number of task replicas to run.""",
+# )
+# @click.option(
+#     "--leader-selection",
+#     is_flag=True,
+#     help="""Specifies that the first task replica should be the leader and populates each task
+#     with 'BEAKER_LEADER_REPLICA_HOSTNAME' and 'BEAKER_LEADER_REPLICA_NODE_ID' environment variables.
+#     This is only applicable when '--replicas INT' and '--host-networking' are used,
+#     although the '--host-networking' flag can be omitted in this case since it's assumed.""",
+# )
+# @click.option(
+#     "--host-networking",
+#     is_flag=True,
+#     help="""Specifies that each task replica should use the host's network.
+#     When used with '--replicas INT', this allows the replicas to communicate with each
+#     other using their hostnames.""",
+# )
 def run(
     arg: Tuple[str, ...],
     name: Optional[str] = None,
