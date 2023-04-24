@@ -34,9 +34,7 @@ class PredictStep():
         num_latency_instances = min(NUM_LATENCY_INSTANCES, len(self._eval_inputs))
         self._latency_inputs = Random(random_subsample_seed).sample(
                 self._eval_inputs, num_latency_instances)
-        self._profiler = Profiler(
-            interval=0.1,
-        )
+        self._profiler = Profiler(interval=0.1)
 
     def _get_instances(self) -> Tuple[Sequence[Dict[str, Any]], Sequence[Dict[str, Any]]]:
         instances = self.task.get_split(self.split)
