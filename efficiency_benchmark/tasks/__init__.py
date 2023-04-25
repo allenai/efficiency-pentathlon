@@ -309,8 +309,7 @@ TASKS: Dict[str, Task] = {
     "wic": EleutherTask("wic", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "wsc": EleutherTask(
         "wsc",
-        ranked_classification=True,
-        promptsource_task_spec=('super_glue', 'wsc.fixed')
+        ranked_classification=True
     ).add_metrics(mc_metrics(2)),
     #"coqa": EleutherTask("coqa"),  # currently broken in the datasets library
     "drop": EleutherTask("drop").add_metrics(QA_METRICS),
@@ -364,8 +363,7 @@ TASKS: Dict[str, Task] = {
         )
     ).add_metrics(mc_metrics(5)),
     "triviaqa": EleutherTask(
-        "triviaqa",
-        promptsource_task_spec=("trivia_qa", "unfiltered")
+        "triviaqa"
     ).add_metrics(QA_METRICS),
     "arc_easy": EleutherTask("arc_easy", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,

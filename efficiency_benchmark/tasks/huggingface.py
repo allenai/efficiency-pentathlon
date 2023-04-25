@@ -7,7 +7,6 @@ import datasets
 from tango.common.sequences import MappedSequence
 
 from efficiency_benchmark.task import InstanceConversion, InstanceFormat, Task
-from efficiency_benchmark.tasks.promptsource import WithPromptsourceMixin
 
 
 def get_from_dict(d: Union[Mapping[str, Any], Sequence[Any]], field: str, missing_ok: bool = False) -> Any:
@@ -54,7 +53,7 @@ def get_from_dict(d: Union[Mapping[str, Any], Sequence[Any]], field: str, missin
         raise ValueError()
 
 
-class HFDatasetsTask(Task, WithPromptsourceMixin):
+class HFDatasetsTask(Task):
     def __init__(
         self,
         dataset_path: str,
@@ -66,8 +65,6 @@ class HFDatasetsTask(Task, WithPromptsourceMixin):
         self.dataset_path = dataset_path
         self.dataset_name = dataset_name
         self.add_instance_conversion(InstanceFormat.HF_DICT, lambda x: x)
-
-        WithPromptsourceMixin.__init__(self, self.dataset_path, self.dataset_name)
 
     @functools.lru_cache
     def has_split(self, split: str) -> bool:

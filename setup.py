@@ -37,7 +37,7 @@ def parse_requirements_file(path):
 
 
 setup(
-    name="ai2-efficiency-benchmark",
+    name="efficiency-benchmark",
     version=0.0,
     description="A toolkits for measuring the inference efficiency of NLP models.",
     long_description=open("README.md").read(),
@@ -67,8 +67,8 @@ setup(
     package_data={
         "efficiency-benchmark": [
             "py.typed",
-            "dependencies/promptsource/templates/*/*.yaml",
-            "dependencies/promptsource/templates/*/*/*.yaml"
+            # "dependencies/promptsource/templates/*/*.yaml",
+            # "dependencies/promptsource/templates/*/*/*.yaml"
         ]
     },
     entry_points={"console_scripts": ["efficiency-benchmark=efficiency_benchmark.__main__:main"]},

@@ -1,7 +1,6 @@
 import os
 import random
-from typing import (Any, Callable, Dict, List, Optional, Sequence, Tuple,
-                    TypeVar, Union)
+from typing import (Any, Callable, Dict, List, Optional, Sequence, TypeVar, Union)
 
 from tango.common.sequences import MappedSequence
 
@@ -12,7 +11,6 @@ from efficiency_benchmark.task import (InstanceFormat,
                                        RankClassificationInstance, Task,
                                        WithAnswerOptionsMixin,
                                        classification_metrics)
-from efficiency_benchmark.tasks.promptsource import WithPromptsourceMixin
 
 T = TypeVar("T")
 
@@ -22,14 +20,13 @@ def _identity(x: T) -> T:
 
 
 @Task.register("eleuther")
-class EleutherTask(Task, WithPromptsourceMixin):
+class EleutherTask(Task):
     def __init__(
         self,
         eleuther_task: Union[str, Callable[[], EAITask]],
         *,
         version_override: Optional[str] = None,
-        ranked_classification: bool = False,
-        promptsource_task_spec: Optional[Tuple[str, str]] = None,
+        ranked_classification: bool = False
     ):
         Task.__init__(self, version_override=version_override)
         self.eleuther_task: Optional[EAITask] = None
@@ -55,11 +52,6 @@ class EleutherTask(Task, WithPromptsourceMixin):
         self.add_instance_conversion(InstanceFormat.ELEUTHER_REQUESTS, self.instance_as_eleuther_requests)
         if ranked_classification:
             self.add_instance_conversion(InstanceFormat.RANK_CLASSIFICATION, self.instance_as_rank_classification)
-
-        if promptsource_task_spec is None:
-            WithPromptsourceMixin.__init__(self, self.dataset_path, self.dataset_name)
-        else:
-            WithPromptsourceMixin.__init__(self, *promptsource_task_spec)
 
     def __getstate__(self):
         result = self.__dict__.copy()
@@ -220,7 +212,6 @@ class RaceEleutherTask(EleutherTask):
     def __init__(self, *, version_override: Optional[str] = None):
         super().__init__("race", version_override=version_override)
         del self.instance_conversions[InstanceFormat.HF_DICT]
-        del self.instance_conversions[InstanceFormat.PROMPTSOURCE]
         self.add_instance_conversion(InstanceFormat.ELEUTHER_DOC, lambda x: x)
 
     def has_split(self, split: str) -> bool:
