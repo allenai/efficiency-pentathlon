@@ -143,14 +143,12 @@ RUN curl --silent \
 RUN mkdir -p /workspace
 COPY . /workspace/
 WORKDIR /workspace/
+RUN conda create -n efficiency-benchmark python=3.9
 RUN cd beaker_gantry \
-    && pip install -e . \
+    && /opt/miniconda3/envs/efficiency-benchmark/bin/pip install -e . \
     cd .. \
-    && pip install -e .
+    && /opt/miniconda3/envs/efficiency-benchmark/bin/pip install -e .
 
 # Shell customization including prompt and colors.
 COPY profile.d/ /etc/profile.d/
 ENTRYPOINT ["bash", "-l"]
-# ENTRYPOINT ["bash", "entrypoint.sh"]
-
-# ENTRYPOINT ["python3", "entrypoint.py"]
