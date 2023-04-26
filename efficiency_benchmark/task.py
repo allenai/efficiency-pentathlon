@@ -7,12 +7,12 @@ from typing import (Any, Callable, Dict, Iterable, List, Mapping, Optional,
 
 import torchmetrics
 from mypy_extensions import KwArg
-from tango.common import Registrable, det_hash
 
 import efficiency_benchmark.metrics
 from efficiency_benchmark.metrics.bleu import BLEUMetric
 from efficiency_benchmark.metrics.entropy import EntropyMetric
 from efficiency_benchmark.metrics.perplexity import PerplexityMetric
+from efficiency_benchmark.tango_utils import det_hash
 
 PERPLEXITY_METRICS = {
     "word_perplexity": PerplexityMetric,
@@ -79,7 +79,7 @@ class RankClassificationInstance:
 InstanceConversion = Union[Callable[[Dict[str, Any]], Any], Callable[[Dict[str, Any], KwArg()], Any]]
 
 
-class Task(Registrable, ABC):
+class Task(ABC):
     """
     Base class for tasks in Catwalk
     """

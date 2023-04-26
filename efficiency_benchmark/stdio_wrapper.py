@@ -1,10 +1,9 @@
 import json
 import os
 import subprocess
-from typing import Any, Dict, Iterator, List, Sequence
 from abc import ABC
+from typing import Any, Dict, Iterator, List, Sequence
 
-import docker
 import more_itertools
 
 
@@ -106,60 +105,3 @@ class StdioWrapper(ABC):
 
     def stop(self):
         pass
-
-
-class DockerStdioWrapper(StdioWrapper):
-    """
-    A model that wraps a binary that reads from stdin and writes to stdout.
-    """
-
-    def __init__(self, *, cmd: List[str]):
-        """
-        binary_cmd: the command to start the inference binary
-        """
-        super().__init__(cmd=cmd)
-
-    def _set_blocking(self, block_until_read_num_batches: int = None) -> None:
-        blocking = block_until_read_num_batches is not None
-        self._socket._sock.setblocking(blocking)
-
-    def _write_batch(self, batch: Sequence[Dict[str, Any]]) -> None:
-        self._socket._sock.send(f"{json.dumps(batch)}\n".encode("utf-8"))
-        self._socket.flush()
-    
-    def _read_batch(self) -> str:
-        try:
-            return self._socket.readline()
-        except:
-            raise ValueError
-
-    def start(self, dummy_inputs: List[Dict[str, Any]]) -> List[str]:
-        client = docker.DockerClient()
-        self._container = client.containers.run(
-            image="submission:latest",
-            command=self._cmd,
-            name="submission",
-            auto_remove=True,
-            remove=True,
-            stdin_open=True,
-            detach=True,
-            device_requests=[
-                docker.types.DeviceRequest(
-                    device_ids=["0"],  # TODO
-                    capabilities=[["gpu"]]
-                )
-            ]
-        )
-        self._socket = self._container.attach_socket(
-            params={"stdin": 1, "stdout": 1, "stderr": 1, "stream":1}
-        )
-        self._write_batch(dummy_inputs)
-        dummy_outputs = self._exhaust_and_yield_stdout(1)
-        return list(dummy_outputs)
-
-    def stop(self) -> None:
-        try:
-            self._container.stop()
-            self._container.remove()
-        except:
-            pass

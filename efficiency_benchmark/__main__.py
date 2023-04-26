@@ -1,5 +1,4 @@
 from typing import Tuple
-from tango.common.logging import initialize_logging
 
 from efficiency_benchmark.steps import TabulateMetricsStep
 import click
@@ -72,7 +71,6 @@ def run(
     # _parser.add_argument('cmd', nargs='*')
     # args = _parser.parse_args()
 
-    initialize_logging(log_level="WARNING")
     metric_task_dict = {}
     prediction_step = PredictStep(
         cmd=cmd,

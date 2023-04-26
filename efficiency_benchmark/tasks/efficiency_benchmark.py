@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Sequence, Union
 
 import datasets
-from tango.common.sequences import MappedSequence
 
+from efficiency_benchmark.tango_utils import MappedSequence
 from efficiency_benchmark.task import InstanceConversion, Task
 from efficiency_benchmark.tasks.huggingface import get_from_dict
 
