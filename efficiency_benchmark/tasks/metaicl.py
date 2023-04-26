@@ -2,9 +2,8 @@ import functools
 from typing import Any, Dict, Iterable, Optional, Sequence, Union
 
 import datasets
-from tango.common import det_hash
-from tango.common.sequences import MappedSequence
 
+from efficiency_benchmark.tango_utils import MappedSequence, det_hash
 from efficiency_benchmark.task import (InstanceFormat,
                                        RankClassificationInstance, Task)
 

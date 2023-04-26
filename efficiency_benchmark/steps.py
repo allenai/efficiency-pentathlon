@@ -1,16 +1,16 @@
 import time
 from collections import defaultdict
 from random import Random
-from typing import Any, Dict, List, Iterable, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import torch
-from tango.common.sequences import MappedSequence
 
 from efficiency_benchmark.efficiency.profiler import (NUM_LATENCY_INSTANCES,
                                                       Profiler)
+from efficiency_benchmark.stdio_wrapper import StdioWrapper
+from efficiency_benchmark.tango_utils import MappedSequence
 from efficiency_benchmark.task import Task
 from efficiency_benchmark.tasks import TASKS, InstanceFormat
-from efficiency_benchmark.stdio_wrapper import StdioWrapper, DockerStdioWrapper
 
 
 class PredictStep():

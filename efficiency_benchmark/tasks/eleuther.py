@@ -1,12 +1,12 @@
 import os
 import random
-from typing import (Any, Callable, Dict, List, Optional, Sequence, TypeVar, Union)
-
-from tango.common.sequences import MappedSequence
+from typing import (Any, Callable, Dict, List, Optional, Sequence, TypeVar,
+                    Union)
 
 from efficiency_benchmark.dependencies.lm_eval.base import Task as EAITask
 from efficiency_benchmark.dependencies.lm_eval.tasks import \
     get_task as get_eai_task
+from efficiency_benchmark.tango_utils import MappedSequence
 from efficiency_benchmark.task import (InstanceFormat,
                                        RankClassificationInstance, Task,
                                        WithAnswerOptionsMixin,
@@ -19,7 +19,6 @@ def _identity(x: T) -> T:
     return x
 
 
-@Task.register("eleuther")
 class EleutherTask(Task):
     def __init__(
         self,
@@ -151,7 +150,6 @@ class EleutherTask(Task):
         return RankClassificationInstance(choices, label)
 
 
-@Task.register("eleuther::classification")
 class EleutherClassificationTask(EleutherTask, WithAnswerOptionsMixin):
     def __init__(
         self,
@@ -205,7 +203,6 @@ class EleutherClassificationTask(EleutherTask, WithAnswerOptionsMixin):
         return RankClassificationInstance(choices, label)
 
 
-@Task.register("eleuther::race")
 class RaceEleutherTask(EleutherTask):
     """The EAI Race task is different because there is no 1:1 correspondence between HF instances and EAI
     instances. EAI chose to follow the GPT3 evaluation approach, which combines multiple questions into one."""
@@ -233,7 +230,6 @@ class RaceEleutherTask(EleutherTask):
         raise KeyError(split)
 
 
-@Task.register("eleuther::renamed_splits")
 class EleutherTaskWithRenamedSplits(EleutherTask):
     """This task is different because EAI relabels the datasets."""
     def __init__(
@@ -270,7 +266,7 @@ class EleutherTaskWithRenamedSplits(EleutherTask):
         # to make them act like sequences.
         return MappedSequence(lambda x: x, result)
 
-@Task.register("eleuther::classification_with_renamed_splits")
+
 class EleutherClassificationTaskWithRenamedSplits(EleutherTaskWithRenamedSplits, WithAnswerOptionsMixin):
     def __init__(
         self,
