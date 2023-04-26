@@ -5,6 +5,8 @@ from efficiency_benchmark.steps import TabulateMetricsStep
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
 from efficiency_benchmark.steps import CalculateMetricsStep, PredictStep
+import docker
+from beaker_gantry.gantry import run as gantry_run
 
 
 _CLICK_GROUP_DEFAULTS = {
@@ -86,6 +88,45 @@ def run(
     table_step = TabulateMetricsStep()
     table_step_result = table_step.run(metrics=metric_task_dict)
     print("\n".join(table_step_result))
+
+
+@main.command(**_CLICK_COMMAND_DEFAULTS)
+@click.argument("cmd", nargs=-1)
+@click.option(
+    "-t",
+    "--task",
+    type=str,
+    nargs=1,
+    help="""Tasks.""",
+)
+@click.option(
+    "--split",
+    type=str,
+    help="""Split.""",
+)
+@click.option(
+    "-b",
+    "--batch_size",
+    type=str,
+    help="""Batch size.""",
+)
+def submit(
+    cmd: Tuple[str, ...],
+    task: str,
+    split: str = "validation",
+    batch_size: int = 32,
+):
+    
+    initialize_logging(log_level="WARNING")
+    gantry_run(
+        arg=cmd,
+        # name="efficiency-benchmark-submission",
+        cluster=["ai2/allennlp-elanding-a100-40g"], # TODO
+        beaker_image="haop/efficiency-benchmark",  # TODO
+        cpus= None,
+        gpus=None,
+        allow_dirty=True
+    )
 
 
 if __name__ == "__main__":
