@@ -43,28 +43,6 @@ RUN apt-get install -y --no-install-recommends \
     libxcb1-dev \
     vulkan-utils
 
-# This is used by PRIOR for running THOR workloads and was derived from:
-# https://gitlab.com/nvidia/container-images/vulkan/-/blob/master/docker/Dockerfile.ubuntu
-# ARG VULKAN_SDK_VERSION=1.3.239.0
-# # Download the Vulkan SDK and extract the headers, loaders, layers and binary utilities
-# RUN wget -q --show-progress \
-#     --progress=bar:force:noscroll \
-#     --directory-prefix=/tmp \
-#     https://sdk.lunarg.com/sdk/download/${VULKAN_SDK_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.gz \
-#     && echo "Installing Vulkan SDK ${VULKAN_SDK_VERSION}" \
-#     && mkdir -p /opt/vulkan \
-#     && tar -xf /tmp/vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.gz -C /opt/vulkan \
-#     && mkdir -p /usr/local/include/ && cp -ra /opt/vulkan/${VULKAN_SDK_VERSION}/x86_64/include/* /usr/local/include/ \
-#     && mkdir -p /usr/local/lib && cp -ra /opt/vulkan/${VULKAN_SDK_VERSION}/x86_64/lib/* /usr/local/lib/ \
-#     && cp -a /opt/vulkan/${VULKAN_SDK_VERSION}/x86_64/lib/libVkLayer_*.so /usr/local/lib \
-#     && mkdir -p /usr/local/share/vulkan/explicit_layer.d \
-#     && cp /opt/vulkan/${VULKAN_SDK_VERSION}/x86_64/etc/vulkan/explicit_layer.d/VkLayer_*.json /usr/local/share/vulkan/explicit_layer.d \
-#     && mkdir -p /usr/local/share/vulkan/registry \
-#     && cp -a /opt/vulkan/${VULKAN_SDK_VERSION}/x86_64/share/vulkan/registry/* /usr/local/share/vulkan/registry \
-#     && cp -a /opt/vulkan/${VULKAN_SDK_VERSION}/x86_64/bin/* /usr/local/bin \
-#     && ldconfig \
-#     && rm /tmp/vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.gz && rm -rf /opt/vulkan
-
 # This ensures the dynamic linker (or NVIDIA's container runtime, I'm not sure)
 # puts the right NVIDIA things in the right place (that THOR requires).
 ENV NVIDIA_DRIVER_CAPABILITIES=graphics,utility,compute
@@ -95,19 +73,6 @@ RUN echo '%users ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 # Make the base image friendlier for interactive workloads. This makes things like the man command
 # work.
 RUN yes | unminimize
-
-# Install AWS CLI
-# RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
-#     && unzip awscliv2.zip \
-#     && ./aws/install \
-#     && rm awscliv2.zip
-
-# Install Google Cloud CLI
-# RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" \
-#         | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list \
-#     && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg \
-#         | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add - \
-#     && apt-get update -y && apt-get install google-cloud-sdk -y
 
 # Install MLNX OFED user-space drivers
 # See https://docs.nvidia.com/networking/pages/releaseview.action?pageId=15049785#Howto:DeployRDMAacceleratedDockercontaineroverInfiniBandfabric.-Dockerfile
@@ -143,11 +108,11 @@ RUN curl --silent \
 RUN mkdir -p /workspace
 COPY . /workspace/
 WORKDIR /workspace/
-RUN conda create -n efficiency-benchmark python=3.9
+# RUN conda create -n efficiency-benchmark python=3.9
 RUN cd beaker_gantry \
-    && /opt/miniconda3/envs/efficiency-benchmark/bin/pip install -e . \
+    && pip install -e . \
     cd .. \
-    && /opt/miniconda3/envs/efficiency-benchmark/bin/pip install -e .
+    && pip install -e .
 
 # Shell customization including prompt and colors.
 COPY profile.d/ /etc/profile.d/
