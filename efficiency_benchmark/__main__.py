@@ -1,12 +1,11 @@
 from typing import Tuple
 
-from efficiency_benchmark.steps import TabulateMetricsStep
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
-from efficiency_benchmark.steps import CalculateMetricsStep, PredictStep
-import docker
-from beaker_gantry.gantry import run as gantry_run
 
+from beaker_gantry.gantry import run as gantry_run
+from efficiency_benchmark.steps import (CalculateMetricsStep, PredictStep,
+                                        TabulateMetricsStep)
 
 _CLICK_GROUP_DEFAULTS = {
     "cls": HelpColorsGroup,
@@ -114,8 +113,6 @@ def submit(
     split: str = "validation",
     batch_size: int = 32,
 ):
-    
-    initialize_logging(log_level="WARNING")
     gantry_run(
         arg=cmd,
         # name="efficiency-benchmark-submission",
