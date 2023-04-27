@@ -15,6 +15,7 @@ bettermap
 base58==2.1.1
 click_help_colors==0.9.1
 sqlitedict==2.1.0
+pyserial==3.5
 
 # For the P3 datasets, which we get from huggingface datasets
 protobuf<=3.20

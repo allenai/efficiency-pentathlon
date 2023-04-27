@@ -109,10 +109,7 @@ RUN mkdir -p /workspace
 COPY . /workspace/
 WORKDIR /workspace/
 # RUN conda create -n efficiency-benchmark python=3.9
-RUN cd beaker_gantry \
-    && pip install -e . \
-    cd .. \
-    && pip install -e .
+RUN pip install .
 
 # Shell customization including prompt and colors.
 COPY profile.d/ /etc/profile.d/
