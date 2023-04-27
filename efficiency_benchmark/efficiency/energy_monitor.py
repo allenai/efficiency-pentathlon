@@ -8,12 +8,15 @@ from datetime import datetime
 import serial
 
 
+IDLE_POWER = 180.5  # Watts
+
+
 def main(args):
   output_file = args.output_file
   of = open(output_file, 'w')
   of.write('timestamp,value\n')
   of.flush()
-  ser = serial.Serial('/dev/ttyUSB0', 38400)
+  ser = serial.Serial('/dev/ttyUSB0', 115200)
 
   # ser.write(b'f10')
   # ser.write(b'f20')
