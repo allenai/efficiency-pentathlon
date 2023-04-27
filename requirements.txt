@@ -27,5 +27,12 @@ rouge-score>=0.0.4  # Can we replace this with torchmetrics?
 mypy_extensions
 pytest
 
-# For promptsource
-jinja2
+# gantry dependencies
+beaker-py>=1.14.0,<2.0
+GitPython>=3.0,<4.0
+rich
+click
+click-help-colors
+petname>=2.6,<3.0
+requests
+packaging
