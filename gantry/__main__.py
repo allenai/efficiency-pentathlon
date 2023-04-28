@@ -394,7 +394,7 @@ def run(
 
     # Validate clusters.
     if cluster:
-        cl_objects = beaker.cluster.list()
+        cl_objects = beaker.cluster.list("efficiency-benchmark")
         final_clusters = []
         for pat in cluster:
             matching_clusters = [cl.full_name for cl in cl_objects if fnmatch(cl.full_name, pat)]

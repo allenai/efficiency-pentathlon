@@ -3,7 +3,7 @@ from typing import Tuple
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
 
-from beaker_gantry.gantry import run as gantry_run
+from gantry import run as gantry_run
 from efficiency_benchmark.steps import (CalculateMetricsStep, PredictStep,
                                         TabulateMetricsStep)
 
@@ -116,8 +116,9 @@ def submit(
     gantry_run(
         arg=cmd,
         # name="efficiency-benchmark-submission",
-        cluster=["ai2/allennlp-elanding-a100-40g"], # TODO
+        cluster=["efficiency-benchmark/elanding-rtx-8000"], # TODO
         beaker_image="haop/efficiency-benchmark",  # TODO
+        workspace="efficiency-benchmark/efficiency-benchmark",
         cpus= None,
         gpus=None,
         allow_dirty=True
