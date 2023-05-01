@@ -146,4 +146,5 @@ echo "
 
 # Execute the arguments to this script as commands themselves, piping output into a log file.
 # shellcheck disable=SC2296
-exec "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/out.log"
+echo efficiency-benchmark run --task "$TASK" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/out.log"
+exec efficiency-benchmark run --task "$TASK" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/out.log"

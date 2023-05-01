@@ -44,7 +44,8 @@ def main():
 @click.option(
     "-b",
     "--batch_size",
-    type=str,
+    type=int,
+    default=32,
     help="""Batch size.""",
 )
 def run(
@@ -104,23 +105,31 @@ def run(
 @click.option(
     "-b",
     "--batch_size",
-    type=str,
+    type=int,
+    default=32,
     help="""Batch size.""",
+)
+@click.option(
+    "--gpus",
+    type=int,
+    help="""Minimum number of GPUs (e.g. 1).""",
 )
 def submit(
     cmd: Tuple[str, ...],
     task: str,
     split: str = "validation",
     batch_size: int = 32,
+    gpus: int = 1
 ):
     gantry_run(
         arg=cmd,
+        task=task,
         # name="efficiency-benchmark-submission",
         cluster=["efficiency-benchmark/elanding-rtx-8000"], # TODO
         beaker_image="haop/efficiency-benchmark",  # TODO
         workspace="efficiency-benchmark/efficiency-benchmark",
         cpus= None,
-        gpus=None,
+        gpus=gpus,
         allow_dirty=True
     )
 

@@ -1,11 +1,16 @@
 import time
+import numpy as np
+import threading
 from typing import Any, Dict, List, Optional
 
+from efficiency_benchmark.efficiency.power_monitor import PowerMonitor
+from efficiency_benchmark.efficiency.power_monitor import POWER_FIELDS
 from codecarbon import EmissionsTracker
 from codecarbon.core.gpu import get_gpu_details, is_gpu_details_available
 from codecarbon.external.scheduler import PeriodicScheduler
 
 NUM_LATENCY_INSTANCES = 100
+NUM_POWER_MONITOR_FIELDS = 18
 
 
 """A wrapper of codecarbon EmissionsTracker aiming to provide GPU memory and untilization data."""
@@ -24,6 +29,7 @@ class Profiler():
             # gpu_ids=gpu_ids
             **kwargs
         )
+        self._try_power_monitor()
         self._gpu_details_available: bool = is_gpu_details_available()
         self._gpu_scheduler: Optional[PeriodicScheduler] = None
         self._max_used_gpu_memory: Optional[float] = None
@@ -38,6 +44,22 @@ class Profiler():
             self._max_used_gpu_memory = -1.0
             self._gpu_utilization = 0.0
             self._gpu_utilization_count = 0
+
+    def _try_power_monitor(self):
+        self._power_monitor_ser = PowerMonitor.try_open_serial_port()
+        if self._power_monitor_ser is not None:
+            self._power_monitor_reads: List = []
+            stop_event = threading.Event()
+            self._power_monitor = PowerMonitor(
+                stop_event=stop_event,
+                target=PowerMonitor.read_power_monitor, 
+                args=(self._power_monitor_ser, stop_event, self._power_monitor_reads)
+            )
+            self._use_power_monitor = True
+            print("Power monitor is available.")
+        else:
+            self._use_power_monitor = False
+            print("Power monitor is not available; using codecarbon estimation.")
 
     def _profile_gpu(self):
         all_gpu_details: List[Dict] = get_gpu_details()
@@ -63,26 +85,47 @@ class Profiler():
         self._emission_tracker.start()
         if self._gpu_details_available:
             self._gpu_scheduler.start()
+        if self._use_power_monitor:
+            self._power_monitor.start()
         self._start_time = time.time()
 
     def stop(self) -> Dict[str, Any]:
         time_elapsed = time.time() - self._start_time
         self._emission_tracker.stop()
-        try:
-            self._gpu_scheduler.stop()
-        except:
-            raise RuntimeError("Failed to stop gpu scheduler.")
+        
+        if self._use_power_monitor:
+            self._power_monitor.stop()
+            self._power_monitor.join()
+            PowerMonitor.try_close_serial_port(self._power_monitor_ser)
+
+        if self._gpu_details_available:
+            try:
+                self._gpu_scheduler.stop()
+            except:
+                pass
+                # raise RuntimeError("Failed to stop gpu scheduler.")
         self._profile_gpu()
+
         self._max_used_gpu_memory = self._max_used_gpu_memory / 2 ** 30
         self._gpu_utilization /= self._gpu_utilization_count
         codecarbon_data = self._emission_tracker.final_emissions_data
+
+        if self._use_power_monitor:
+            powers = []
+            for r in self._power_monitor_reads:
+                powers.append(np.array([ float(r[f]) for f in POWER_FIELDS ]).sum())
+            avg_power = np.array(powers).mean()
+            total_energy_in_watt_seconds = avg_power * time_elapsed
+            total_energy = total_energy_in_watt_seconds / 3600.0 / 1000.0  # kWh
+        else:
+            total_energy = codecarbon_data.gpu_energy + codecarbon_data.cpu_energy + codecarbon_data.ram_energy
         self.efficiency_metrics: Dict[str, Any] = {
             "time": time_elapsed,
             "max_gpu_mem": self._max_used_gpu_memory,
             "gpu_energy": codecarbon_data.gpu_energy,  # kWh
-            "cpu_energy": codecarbon_data.cpu_energy,  # kWh
-            "dram_energy": codecarbon_data.ram_energy,  # kWh
-            "total_energy": codecarbon_data.gpu_energy + codecarbon_data.cpu_energy + codecarbon_data.ram_energy,
+            # "cpu_energy": codecarbon_data.cpu_energy,  # kWh
+            # "dram_energy": codecarbon_data.ram_energy,  # kWh
+            "total_energy": total_energy,
             "carbon": codecarbon_data.emissions
         }
         return self.efficiency_metrics

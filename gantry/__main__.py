@@ -278,6 +278,7 @@ def main():
 #     other using their hostnames.""",
 # )
 def run(
+    task: str,
     arg: Tuple[str, ...],
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -376,7 +377,7 @@ def run(
     # Validate the input datasets.
     datasets_to_use = util.ensure_datasets(beaker, *dataset) if dataset else []
 
-    env_vars = []
+    env_vars = [("TASK", task)]
     for e in env or []:
         try:
             env_name, val = e.split("=")

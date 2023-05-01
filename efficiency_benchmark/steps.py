@@ -117,7 +117,7 @@ class PredictStep():
             yield {
                 "target": target,
                 "output": output,
-                "acc": (output, target),   # TODO
+                "bleu": (output, target),   # TODO
             }
 
 
