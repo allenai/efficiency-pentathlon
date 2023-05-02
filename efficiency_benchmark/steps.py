@@ -38,10 +38,8 @@ class PredictStep():
 
     def _get_instances(self) -> Tuple[Sequence[Dict[str, Any]], Sequence[Dict[str, Any]]]:
         instances = self.task.get_split(self.split)
-        # TODO
         instances = self._convert_instances(
             instances, InstanceFormat.EFFICIENCY_BENCHMARK, self.task)
-
         random_subsample_seed = 0 if self.random_subsample_seed is None else self.random_subsample_seed
         if self.limit is not None and len(instances) > self.limit:
             instances = instances[:self.limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, self.limit)

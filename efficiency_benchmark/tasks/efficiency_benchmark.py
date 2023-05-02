@@ -35,32 +35,40 @@ class EfficiencyBenchmarkTask(Task):
         return ds
 
 
-class EfficiencyBenchmarkTranslationTask(EfficiencyBenchmarkTask):
-    def __init__(
-        self,
-        dataset_path: str,
-        dataset_name: Optional[str] = None,
-        *,
-        version_override: Optional[str] = None
-    ):
-        EfficiencyBenchmarkTask.__init__(self, dataset_path, dataset_name, version_override=version_override)
+# class EfficiencyBenchmarkTranslationTask(EfficiencyBenchmarkTask):
+#     def __init__(
+#         self,
+#         dataset_path: str,
+#         dataset_name: Optional[str] = None,
+#         *,
+#         version_override: Optional[str] = None
+#     ):
+#         EfficiencyBenchmarkTask.__init__(self, dataset_path, dataset_name, version_override=version_override)
 
 
-class EfficiencyBenchmarkClassificationTask(EfficiencyBenchmarkTask):
+# class EfficiencyBenchmarkClassificationTask(EfficiencyBenchmarkTask):
+#     def __init__(
+#         self,
+#         dataset_path: str,
+#         dataset_name: Optional[str] = None,
+#         *,
+#         version_override: Optional[str] = None
+#     ):
+#         EfficiencyBenchmarkTask.__init__(self, dataset_path, dataset_name, version_override=version_override)
+
+
+class EfficiencyBenchmarkRaftTask(EfficiencyBenchmarkTask):
     def __init__(
         self,
-        dataset_path: str,
-        dataset_name: Optional[str] = None,
-        *,
-        version_override: Optional[str] = None
+        subset: str
     ):
-        EfficiencyBenchmarkTask.__init__(self, dataset_path, dataset_name, version_override=version_override)
+        EfficiencyBenchmarkTask.__init__(self, "ought/raft", subset)
 
 
 @dataclass
 class EfficiencyBenchmarkInstance:
     input: Union[str, Dict[str, Any]]
-    target: str
+    target: Optional[str]
     id: Optional[str]
 
 
@@ -111,6 +119,33 @@ def efficiency_benchmark_classification_conversion(
         return EfficiencyBenchmarkInstance(
             input=input,
             target=target,
+            id=str(get_from_dict(instance, id_field)) if id_field else None
+        )
+
+    # We're doing this in this stupid way because this makes the conversion function picklable.
+    return functools.partial(convert, **kwargs)
+
+
+def efficiency_benchmark_raft_conversion(
+    **kwargs,
+) -> InstanceConversion:
+
+    def convert(
+        instance: Dict[str, Any],
+        *,
+        label_field: str = "Label",
+        id_field: Optional[str] = "ID",
+        task_name: Optional[str] = None,
+    ) -> EfficiencyBenchmarkInstance:
+        
+        input = instance
+        if task_name:
+            input["task_name"] = task_name
+        if label_field in input:
+            input.pop(label_field)
+        return EfficiencyBenchmarkInstance(
+            input=input,
+            target=None,
             id=str(get_from_dict(instance, id_field)) if id_field else None
         )
 

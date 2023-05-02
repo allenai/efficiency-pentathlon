@@ -8,9 +8,11 @@ from efficiency_benchmark.task import (BINARY_CLASSIFICATION_METRICS,
                                        InstanceFormat, Task,
                                        classification_metrics, mc_metrics)
 from efficiency_benchmark.tasks.efficiency_benchmark import (
-    EfficiencyBenchmarkTranslationTask,
+    EfficiencyBenchmarkTask,
+    EfficiencyBenchmarkRaftTask,
     efficiency_benchmark_classification_conversion,
-    efficiency_benchmark_mt_conversion)
+    efficiency_benchmark_mt_conversion,
+    efficiency_benchmark_raft_conversion)
 from efficiency_benchmark.tasks.eleuther import (
     EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits,
     EleutherTask, EleutherTaskWithRenamedSplits, RaceEleutherTask)
@@ -24,34 +26,82 @@ from efficiency_benchmark.tasks.raft import RaftTask
 from efficiency_benchmark.tasks.t5 import t5_prompt_conversion
 
 TASKS: Dict[str, Task] = {
-    "wmt16-en-ro": EfficiencyBenchmarkTranslationTask("wmt16", "ro-en").add_instance_conversion(
+    "wmt16-en-ro": EfficiencyBenchmarkTask("wmt16", "ro-en").add_instance_conversion(
         InstanceFormat.EFFICIENCY_BENCHMARK,
         efficiency_benchmark_mt_conversion(
             input_field="en",
             target_field="ro"
         )
     ).add_metrics(MT_METRICS),  # TODO
-    "wmt16-ro-en": EfficiencyBenchmarkTranslationTask("wmt16", "ro-en").add_instance_conversion(
+    "wmt16-ro-en": EfficiencyBenchmarkTask("wmt16", "ro-en").add_instance_conversion(
         InstanceFormat.EFFICIENCY_BENCHMARK,
         efficiency_benchmark_mt_conversion(
             input_field="ro",
             target_field="en"
         )
     ).add_metrics(MT_METRICS),  # TODO
-    "wmt14-de-en": EfficiencyBenchmarkTranslationTask("wmt14", "de-en").add_instance_conversion(
+    "wmt14-de-en": EfficiencyBenchmarkTask("wmt14", "de-en").add_instance_conversion(
         InstanceFormat.EFFICIENCY_BENCHMARK,
         efficiency_benchmark_mt_conversion(
             input_field="de",
             target_field="en"
         )
     ).add_metrics(MT_METRICS),  # TODO
-    "wmt14-en-de": EfficiencyBenchmarkTranslationTask("wmt14", "de-en").add_instance_conversion(
+    "wmt14-en-de": EfficiencyBenchmarkTask("wmt14", "de-en").add_instance_conversion(
         InstanceFormat.EFFICIENCY_BENCHMARK,
         efficiency_benchmark_mt_conversion(
             input_field="en",
             target_field="de"
         )
-    ).add_metrics(MT_METRICS),  # TODO
+    ).add_metrics(MT_METRICS), 
+    
+    # RAFT
+    "raft::ade_corpus_v2": EfficiencyBenchmarkRaftTask("ade_corpus_v2").add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_raft_conversion(task_name="ade_corpus_v2")
+    ),
+    "raft::banking_77": EfficiencyBenchmarkRaftTask("banking_77").add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_raft_conversion(task_name="banking_77")
+    ),
+    "raft::neurips_impact_statement_risks": EfficiencyBenchmarkRaftTask("neurips_impact_statement_risks").add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_raft_conversion(task_name="neurips_impact_statement_risks")
+    ),
+    "raft::one_stop_english": EfficiencyBenchmarkRaftTask("one_stop_english").add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_raft_conversion(task_name="one_stop_english")
+    ),
+    "raft::overruling": EfficiencyBenchmarkRaftTask("overruling").add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_raft_conversion(task_name="overruling")
+    ),
+    "raft::semiconductor_org_types": EfficiencyBenchmarkRaftTask("semiconductor_org_types").add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_raft_conversion(task_name="semiconductor_org_types")
+    ),
+    "raft::systematic_review_inclusion": EfficiencyBenchmarkRaftTask("systematic_review_inclusion").add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_raft_conversion(task_name="systematic_review_inclusion")
+    ),
+    "raft::tai_safety_research": EfficiencyBenchmarkRaftTask("tai_safety_research").add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_raft_conversion(task_name="tai_safety_research")
+    ),
+    "raft::terms_of_service": EfficiencyBenchmarkRaftTask("terms_of_service").add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_raft_conversion(task_name="terms_of_service")
+    ),
+    "raft::tweet_eval_hate": EfficiencyBenchmarkRaftTask("tweet_eval_hate").add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_raft_conversion(task_name="tweet_eval_hate")
+    ),
+    "raft::twitter_complaints": EfficiencyBenchmarkRaftTask("twitter_complaints").add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_raft_conversion(task_name="twitter_complaints")
+    ),
+
+    # from catwalk
     "wikitext": EleutherTask("wikitext").add_metrics(PERPLEXITY_METRICS),
     "piqa": EleutherTask("piqa", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
@@ -501,18 +551,6 @@ TASKS: Dict[str, Task] = {
     "cycle_letters": EleutherTask("cycle_letters").add_metrics(QA_METRICS),
     "random_insertion": EleutherTask("random_insertion").add_metrics(QA_METRICS),
     "reversed_words": EleutherTask("reversed_words").add_metrics(QA_METRICS),
-    # RAFT
-    "raft::ade_corpus_v2": RaftTask("ade_corpus_v2"),
-    "raft::banking_77": RaftTask("banking_77", 77),
-    "raft::neurips_impact_statement_risks": RaftTask("neurips_impact_statement_risks"),
-    "raft::one_stop_english": RaftTask("one_stop_english", 3),
-    "raft::overruling": RaftTask("overruling"),
-    "raft::semiconductor_org_types": RaftTask("semiconductor_org_types", 3),
-    "raft::systematic_review_inclusion": RaftTask("systematic_review_inclusion"),
-    "raft::tai_safety_research": RaftTask("tai_safety_research"),
-    "raft::terms_of_service": RaftTask("terms_of_service"),
-    "raft::tweet_eval_hate": RaftTask("tweet_eval_hate"),
-    "raft::twitter_complaints": RaftTask("twitter_complaints"),
 
     # MetaICL
     "metaicl::piqa": MetaICLTask("piqa").add_metrics(mc_metrics(2)),
