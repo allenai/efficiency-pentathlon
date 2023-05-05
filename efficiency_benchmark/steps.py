@@ -113,11 +113,13 @@ class PredictStep():
             yielded_label_index += 1
             output = output.rstrip()
             target = self._targets[yielded_label_index]
-            results.append({
+
+            result = {metric_name: (output, target) for metric_name in self.task.metrics.keys()}
+            result.update({
                 "target": target,
                 "output": output,
-                "bleu": (output, target)
             })
+            results.append(result)
         return results
             
 
