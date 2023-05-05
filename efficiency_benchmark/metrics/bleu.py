@@ -24,8 +24,8 @@ class BLEUMetric(BaseAggregator):
         target: str
     ) -> None:  # type: ignore
         self._outputs.append(output)
-        self._targets.append([target])
+        self._targets.append(target)
 
     def compute(self) -> torch.Tensor:
-        bleu = self._bleu_metric.corpus_score(self._outputs, self._targets)
+        bleu = self._bleu_metric.corpus_score(self._outputs, [self._targets])
         return torch.Tensor([bleu.score])
