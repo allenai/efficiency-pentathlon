@@ -208,13 +208,6 @@ def main():
 #     multiple=True,
 # )
 # @click.option(
-#     "--nfs / --no-nfs",
-#     default=None,
-#     help=f"""Whether or not to mount the NFS drive ({constants.NFS_MOUNT}) to the experiment.
-#     This only works for cirrascale clusters managed by the Beaker team.
-#     If not specified, gantry will always mount NFS when it knows the cluster supports it.""",
-# )
-# @click.option(
 #     "--show-logs/--no-logs",
 #     default=True,
 #     show_default=True,
@@ -299,7 +292,6 @@ def run(
     env: Optional[Tuple[str, ...]] = None,
     env_secret: Optional[Tuple[str, ...]] = None,
     timeout: int = 0,
-    nfs: Optional[bool] = None,
     show_logs: bool = True,
     allow_dirty: bool = False,
     dry_run: bool = False,
@@ -426,7 +418,6 @@ def run(
         conda=conda,
         pip=pip,
         venv=venv,
-        nfs=nfs,
         datasets=datasets_to_use,
         env=env_vars,
         env_secrets=env_secrets,
