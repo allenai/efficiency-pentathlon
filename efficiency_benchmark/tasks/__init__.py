@@ -22,7 +22,6 @@ from efficiency_benchmark.tasks.huggingface import (
 from efficiency_benchmark.tasks.metaicl import MetaICLTask
 from efficiency_benchmark.tasks.mrqa import MrqaTask
 from efficiency_benchmark.tasks.p3 import P3Task
-from efficiency_benchmark.tasks.raft import RaftTask
 from efficiency_benchmark.tasks.t5 import t5_prompt_conversion
 
 TASKS: Dict[str, Task] = {
