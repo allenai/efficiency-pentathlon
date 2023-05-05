@@ -106,17 +106,20 @@ class PredictStep():
     def process(
         self,
         output_batches: Iterable[str]
-    ) -> Iterable[Dict[str, Any]]:
+    ) -> Sequence[Dict[str, Any]]:
         yielded_label_index = -1
+        results = []
         for output in output_batches:
             yielded_label_index += 1
             output = output.rstrip()
             target = self._targets[yielded_label_index]
-            yield {
+            results.append({
                 "target": target,
                 "output": output,
-                "bleu": (output, target),   # TODO
-            }
+                "bleu": (output, target)
+            })
+        return results
+            
 
 
 class CalculateMetricsStep():
