@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
@@ -42,43 +42,44 @@ def main():
     help="""Split.""",
 )
 @click.option(
+    "-o",
+    "--output_file",
+    type=str,
+    nargs=1,
+    help="""Output file.""",
+)
+@click.option(
     "-b",
     "--batch_size",
     type=int,
     default=32,
     help="""Batch size.""",
 )
+@click.option(
+    "-l",
+    "--limit",
+    type=int,
+    default=None,
+    help="""Limit.""",
+)
 def run(
     cmd: Tuple[str, ...],
     task: str,
     split: str = "validation",
-    batch_size: int = 32,
+    output_file: Optional[str] = None,
+    batch_size: Optional[int] = 32,
+    limit: Optional[int] = None,
 ):
-    # _parser = argparse.ArgumentParser()
-    # _parser.add_argument('--task', type=str, nargs="+")
-    # _parser.add_argument('--split', type=str)
-    # _parser.add_argument('--batch_size', type=int, default=32)
-    # _parser.add_argument('--num_shots', type=int)
-    # _parser.add_argument('--fewshot_seed', type=int)
-    # _parser.add_argument('--limit', type=int)
-    # _parser.add_argument(
-    #     '-d', '-w',
-    #     type=str,
-    #     default=None,
-    #     metavar="workspace",
-    #     dest="workspace",
-    #     help="the Tango workspace with the cache")
-    # _parser.add_argument('cmd', nargs='*')
-    # args = _parser.parse_args()
-
-    metric_task_dict = {}
     prediction_step = PredictStep(
         cmd=cmd,
         task=task,
         split=split,
         batch_size=batch_size,
+        limit=limit,
     )
     predictions = prediction_step.run(batch_size=batch_size)
+
+    metric_task_dict = {}
     metric_step = CalculateMetricsStep(task=task)
     metrics = metric_step.calculate_metrics(predictions=predictions)
     metric_task_dict[task] = metrics
@@ -86,6 +87,22 @@ def run(
     table_step = TabulateMetricsStep()
     table_step_result = table_step.run(metrics=metric_task_dict)
     print("\n".join(table_step_result))
+    # Logging results
+    # gantry saves `/results` to Beaker. We output to this folder if runnning on Beaker
+    try:
+        with open("/results/outputs", "w") as fout:
+            for p in predictions:
+                fout.write(p["output"] + "\n")
+    except:
+        # Running locally.
+        if output_file is not None:
+            with open(output_file, "w") as fout:
+                for p in predictions:
+                    fout.write(p["output"] + "\n")
+        else:
+            pass
+            # for p in predictions:
+            #     print(p)
 
 
 @main.command(**_CLICK_COMMAND_DEFAULTS)
@@ -110,6 +127,13 @@ def run(
     help="""Batch size.""",
 )
 @click.option(
+    "-l",
+    "--limit",
+    type=int,
+    default=None,
+    help="""Limit.""",
+)
+@click.option(
     "--gpus",
     type=int,
     help="""Minimum number of GPUs (e.g. 1).""",
@@ -119,6 +143,7 @@ def submit(
     task: str,
     split: str = "validation",
     batch_size: int = 32,
+    limit: int = None,
     gpus: int = 1
 ):
     gantry_run(
