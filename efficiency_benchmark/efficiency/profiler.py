@@ -8,6 +8,7 @@ from efficiency_benchmark.efficiency.power_monitor import POWER_FIELDS
 from codecarbon import EmissionsTracker
 from codecarbon.core.gpu import get_gpu_details, is_gpu_details_available
 from codecarbon.external.scheduler import PeriodicScheduler
+from codecarbon.core.units import Energy, Power, Time
 
 NUM_LATENCY_INSTANCES = 100
 NUM_POWER_MONITOR_FIELDS = 18
@@ -90,14 +91,22 @@ class Profiler():
         self._start_time = time.time()
 
     def stop(self) -> Dict[str, Any]:
-        time_elapsed = time.time() - self._start_time
+        time_elapsed = Time.from_seconds(time.time() - self._start_time)
         self._emission_tracker.stop()
         
         if self._use_power_monitor:
             self._power_monitor.stop()
             self._power_monitor.join()
             PowerMonitor.try_close_serial_port(self._power_monitor_ser)
-
+            powers = []
+            for r in self._power_monitor_reads:
+                powers.append(np.array([ float(r[f]) for f in POWER_FIELDS ]).sum())
+            avg_power: Power = Power.from_watts(np.array(powers).mean())
+            total_energy: Energy = Energy.from_power_and_time(power=avg_power, time=time_elapsed)
+            self._emission_tracker.final_emissions_data.energy_consumed = 0
+            self._emission_tracker.final_emissions_data.energy_consumed = total_energy
+            self._emission_tracker.final_emissions_data = self._emission_tracker._prepare_emissions_data()
+                
         if self._gpu_details_available:
             try:
                 self._gpu_scheduler.stop()
@@ -110,22 +119,14 @@ class Profiler():
         self._gpu_utilization /= self._gpu_utilization_count
         codecarbon_data = self._emission_tracker.final_emissions_data
 
-        if self._use_power_monitor:
-            powers = []
-            for r in self._power_monitor_reads:
-                powers.append(np.array([ float(r[f]) for f in POWER_FIELDS ]).sum())
-            avg_power = np.array(powers).mean()
-            total_energy_in_watt_seconds = avg_power * time_elapsed
-            total_energy = total_energy_in_watt_seconds / 3600.0 / 1000.0  # kWh
-        else:
-            total_energy = codecarbon_data.gpu_energy + codecarbon_data.cpu_energy + codecarbon_data.ram_energy
         self.efficiency_metrics: Dict[str, Any] = {
-            "time": time_elapsed,
+            "time": time_elapsed.seconds,
             "max_gpu_mem": self._max_used_gpu_memory,
             "gpu_energy": codecarbon_data.gpu_energy,  # kWh
             # "cpu_energy": codecarbon_data.cpu_energy,  # kWh
             # "dram_energy": codecarbon_data.ram_energy,  # kWh
-            "total_energy": total_energy,
+            "avg_power": avg_power,
+            "total_energy": codecarbon_data.energy_consumed,
             "carbon": codecarbon_data.emissions
         }
         return self.efficiency_metrics
