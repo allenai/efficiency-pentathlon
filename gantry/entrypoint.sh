@@ -2,14 +2,6 @@
 
 set -eo pipefail
 
-#  # TODO
-GITHUB_REPO="haopeng-nlp/submission.git"
-GIT_REF="main"
-RUNTIME_DIR="./gantry-runtime"
-RESULTS_DIR="./results"
-CONDA_ENV_FILE="environment.yml"
-PIP_REQUIREMENTS_FILE="requirements.txt"
-PYTHON_VERSION=3.9 
 
 # Ensure we have all the environment variables we need.
 for env_var in "$GITHUB_REPO" "$GIT_REF"; do
