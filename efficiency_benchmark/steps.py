@@ -5,8 +5,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import torch
 
-from efficiency_benchmark.efficiency.profiler import (NUM_LATENCY_INSTANCES,
-                                                      Profiler)
+from efficiency_benchmark.efficiency.profiler import Profiler
 from efficiency_benchmark.stdio_wrapper import StdioWrapper
 from efficiency_benchmark.tango_utils import MappedSequence
 from efficiency_benchmark.task import Task

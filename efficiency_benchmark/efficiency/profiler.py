@@ -10,7 +10,7 @@ from codecarbon.core.gpu import get_gpu_details, is_gpu_details_available
 from codecarbon.external.scheduler import PeriodicScheduler
 from codecarbon.core.units import Energy, Power, Time
 
-NUM_LATENCY_INSTANCES = 100
+
 NUM_POWER_MONITOR_FIELDS = 18
 
 
