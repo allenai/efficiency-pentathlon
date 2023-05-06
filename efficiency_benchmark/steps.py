@@ -4,12 +4,17 @@ from random import Random
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import torch
-
+import numpy as np
 from efficiency_benchmark.efficiency.profiler import Profiler
 from efficiency_benchmark.stdio_wrapper import StdioWrapper
 from efficiency_benchmark.tango_utils import MappedSequence
 from efficiency_benchmark.task import Task
 from efficiency_benchmark.tasks import TASKS, InstanceFormat
+import more_itertools
+
+
+MAX_BATCH_SIZE = 64
+NUM_BATCHES = 10
 
 
 class PredictStep():
@@ -18,6 +23,7 @@ class PredictStep():
         *,
         cmd: List[str],
         task: Union[str, Task],
+        scenario: str,
         split: Optional[str] = None,
         limit: Optional[int] = None,
         random_subsample_seed: Optional[int] = None,
@@ -25,6 +31,7 @@ class PredictStep():
     ):
         self.task = TASKS[task] if isinstance(task, str) else task
         self.split = split if split is not None else self.task.default_split
+        self.scenario = scenario
         self.limit = limit
         self.random_subsample_seed = random_subsample_seed
         self.cmd = cmd
@@ -40,7 +47,28 @@ class PredictStep():
         if self.limit is not None and len(instances) > self.limit:
             instances = instances[:self.limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, self.limit)
         self._instances = list(instances)
-        self._inputs = [i.input for i in instances]
+        self._batches = self._batchify()
+
+    def _batchify(self) -> List[List[str]]:
+        inputs = [i.input for i in self._instances]
+        if self.scenario == "single_stream":
+            batches = list(more_itertools.chunked(inputs, 1))
+            batches = batches[:NUM_BATCHES]
+        elif self.scenario == "random_batch":
+            num_instances_per_batch = np.random.randint(
+                low=1, high=MAX_BATCH_SIZE + 1, size=NUM_BATCHES)
+            indices = list(range(len(inputs)))
+            batches = []
+            for num_instances in num_instances_per_batch:
+                batch_indices = np.random.choice(indices, size=num_instances, replace=False)
+                batches.append([inputs[i] for i in batch_indices])
+        elif self.scenario == "offline":
+            raise NotImplementedError()
+        else:
+            raise ValueError(f"Unknown scenario: {self._scenario}. Choose from 'single_stream', 'random_batch', 'offline'")
+        self._num_batches = len(batches)
+        self._num_instances = sum(len(batch) for batch in batches)
+        return batches
 
     @classmethod
     def _convert_instances(
@@ -72,21 +100,18 @@ class PredictStep():
         print(f"Total Energy: {efficiency_metrics['total_energy']: .2e} Wh")
         print(f"CO2 emission: {efficiency_metrics['carbon']: .2e} grams.")
         print(f"Throughput: {efficiency_metrics['throughput']: .2f} instances / s.")
-        print(f"Latency: {efficiency_metrics['latency'] * 1000: .2f} ms.")
+        print(f"Latency: {efficiency_metrics['latency'] * 1000: .2f} ms / batch.")
 
-    def run(
-        self,
-        **kwargs
-    ) -> Sequence[Any]:
+    def run(self) -> Sequence[Any]:
         output_batches = []
-        self.predictor.start(dummy_inputs=self._inputs[:1])
+        self.predictor.start(dummy_inputs=self._batches[-1])
 
         self._profiler.start()
-        for output_batch in self.predictor.predict(instances=self._inputs, **kwargs):
+        for output_batch in self.predictor.predict(batches=self._batches):
             output_batches.append(output_batch)
         efficiency_metrics = self._profiler.stop()
-        efficiency_metrics["throughput"] = len(self._inputs) / efficiency_metrics["time"]
-        efficiency_metrics["latency"] = efficiency_metrics["time"] / len(self._inputs)
+        efficiency_metrics["throughput"] = self._num_instances / efficiency_metrics["time"]
+        efficiency_metrics["latency"] = efficiency_metrics["time"] / self._num_batches
         self.tabulate_efficiency_metrics(efficiency_metrics)
         results = self.process(output_batches)
         return results

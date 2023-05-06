@@ -46,7 +46,7 @@ def main():
     "--scenario",
     type=str,
     default="single_stream",
-    help="""Evaluation scenario [single_stream, batched, offline].""",
+    help="""Evaluation scenario [single_stream, random_batch, offline].""",
 )
 @click.option(
     "-o",
@@ -74,11 +74,11 @@ def run(
     prediction_step = PredictStep(
         cmd=cmd,
         task=task,
+        scenario=scenario,
         split=split,
-        batch_size=batch_size,
         limit=limit,
     )
-    predictions = prediction_step.run(batch_size=batch_size)
+    predictions = prediction_step.run()
 
     metric_task_dict = {}
     metric_step = CalculateMetricsStep(task=task)

@@ -4,8 +4,6 @@ import subprocess
 from abc import ABC
 from typing import Any, Dict, Iterator, List, Sequence
 
-import more_itertools
-
 
 class StdioWrapper(ABC):
     """
@@ -74,12 +72,10 @@ class StdioWrapper(ABC):
     def predict(  # type: ignore
         self,
         *,
-        instances: Sequence[Dict[str, Any]],
-        batch_size: int = 32
+        batches: List[List[str]]
     ) -> Iterator[str]:
 
         num_batches_yielded = 0
-        batches = list(more_itertools.chunked(instances, batch_size))
         num_batches = len(batches)
         for batch in batches:
             self._write_batch(batch)
