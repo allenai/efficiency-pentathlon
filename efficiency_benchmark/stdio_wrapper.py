@@ -83,21 +83,22 @@ class StdioWrapper(ABC):
         num_batches = len(batches)
         for batch in batches:
             self._write_batch(batch)
-            # Check for anything in stdout but don't block sending additional predictions.
-            output_batches = self._exhaust_and_yield_stdout(None)
+            # Block until we receive an output batch.
+            output_batches = self._exhaust_and_yield_stdout(1)
             for output_batch in output_batches:
                 num_batches_yielded += 1
                 for output in output_batch:
                     yield output
 
         # Now read from stdout until we have hit the required number.
+        # Legacy code from non-blocking mode.
         num_batches_to_read = num_batches - num_batches_yielded
-        for output_batch in self._exhaust_and_yield_stdout(num_batches_to_read):
-            for output in output_batch:
-                yield output
+        if num_batches_to_read > 0:
+            for output_batch in self._exhaust_and_yield_stdout(num_batches_to_read):
+                for output in output_batch:
+                    yield output
 
     def start(self, dummy_inputs: List[Dict[str, Any]]) -> List[str]:
-        # TODO
         self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         self._write_batch(dummy_inputs)
         dummy_outputs = self._exhaust_and_yield_stdout(1)

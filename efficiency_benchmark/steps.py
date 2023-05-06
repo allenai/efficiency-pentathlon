@@ -30,22 +30,18 @@ class PredictStep():
         self.random_subsample_seed = random_subsample_seed
         self.cmd = cmd
         self.predictor = StdioWrapper(cmd=cmd)
-        self._eval_inputs, self._targets = self._get_instances()
-        num_latency_instances = min(NUM_LATENCY_INSTANCES, len(self._eval_inputs))
-        self._latency_inputs = Random(random_subsample_seed).sample(
-                self._eval_inputs, num_latency_instances)
+        self._build_instances()
         self._profiler = Profiler(interval=0.1)
 
-    def _get_instances(self) -> Tuple[Sequence[Dict[str, Any]], Sequence[Dict[str, Any]]]:
+    def _build_instances(self) -> Tuple[Sequence[Dict[str, Any]], Sequence[Dict[str, Any]]]:
         instances = self.task.get_split(self.split)
         instances = self._convert_instances(
             instances, InstanceFormat.EFFICIENCY_BENCHMARK, self.task)
         random_subsample_seed = 0 if self.random_subsample_seed is None else self.random_subsample_seed
         if self.limit is not None and len(instances) > self.limit:
             instances = instances[:self.limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, self.limit)
-
-        return [i.input for i in instances], \
-               [i.target for i in instances]
+        self._instances = list(instances)
+        self._inputs = [i.input for i in instances]
 
     @classmethod
     def _convert_instances(
@@ -84,21 +80,14 @@ class PredictStep():
         **kwargs
     ) -> Sequence[Any]:
         output_batches = []
-        self.predictor.start(dummy_inputs=self._eval_inputs[:1])
+        self.predictor.start(dummy_inputs=self._inputs[:1])
 
         self._profiler.start()
-        for output_batch in self.predictor.predict(instances=self._eval_inputs, **kwargs):
+        for output_batch in self.predictor.predict(instances=self._inputs, **kwargs):
             output_batches.append(output_batch)
         efficiency_metrics = self._profiler.stop()
-        efficiency_metrics["throughput"] = len(self._latency_inputs) / efficiency_metrics["time"]
-
-        ### Latency ###
-        start_time = time.time()
-        for output_batch in self.predictor.predict(instances=self._latency_inputs, batch_size=1):
-            pass
-        self.predictor.stop()
-        elapsed_time = time.time() - start_time
-        efficiency_metrics["latency"] = elapsed_time / len(self._latency_inputs)
+        efficiency_metrics["throughput"] = len(self._inputs) / efficiency_metrics["time"]
+        efficiency_metrics["latency"] = efficiency_metrics["time"] / len(self._inputs)
         self.tabulate_efficiency_metrics(efficiency_metrics)
         results = self.process(output_batches)
         return results
@@ -112,7 +101,7 @@ class PredictStep():
         for output in output_batches:
             yielded_label_index += 1
             output = output.rstrip()
-            target = self._targets[yielded_label_index]
+            target = self._instances[yielded_label_index].target
 
             result = {metric_name: (output, target) for metric_name in self.task.metrics.keys()}
             result.update({

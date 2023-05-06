@@ -42,18 +42,18 @@ def main():
     help="""Split.""",
 )
 @click.option(
+    "-s",
+    "--scenario",
+    type=str,
+    default="single_stream",
+    help="""Evaluation scenario [single_stream, batched, offline].""",
+)
+@click.option(
     "-o",
     "--output_file",
     type=str,
     nargs=1,
     help="""Output file.""",
-)
-@click.option(
-    "-b",
-    "--batch_size",
-    type=int,
-    default=32,
-    help="""Batch size.""",
 )
 @click.option(
     "-l",
@@ -66,10 +66,11 @@ def run(
     cmd: Tuple[str, ...],
     task: str,
     split: str = "validation",
+    scenario: str = "single_stream",
     output_file: Optional[str] = None,
-    batch_size: Optional[int] = 32,
     limit: Optional[int] = None,
 ):
+    batch_size=1 if scenario == "single_stream" else 32  # TODO
     prediction_step = PredictStep(
         cmd=cmd,
         task=task,
