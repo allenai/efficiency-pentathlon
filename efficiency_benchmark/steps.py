@@ -11,6 +11,7 @@ from efficiency_benchmark.tango_utils import MappedSequence
 from efficiency_benchmark.task import Task
 from efficiency_benchmark.tasks import TASKS, InstanceFormat
 import more_itertools
+import csv
 
 
 MAX_BATCH_SIZE = 64
@@ -136,7 +137,6 @@ class PredictStep():
         return results
             
 
-
 class CalculateMetricsStep():
 
     _TorchmetricsResult = Union[torch.Tensor, Dict[str, '_TorchmetricsResult']]
@@ -236,3 +236,35 @@ class TabulateMetricsStep():
             raise NotImplementedError()
         else:
             raise AttributeError("At the moment, only the 'text' format is supported.")
+        
+
+class LogOutputStep():
+
+    def __init__(self, task: Union[str, Task], output_file: Optional[str] = None):
+        self.task = TASKS[task] if isinstance(task, str) else task
+        self.output_file = output_file
+
+    def run(self, predictions: Sequence[Dict[str, Any]]) -> None:
+        predictions = self.remove_metrics(predictions)
+        if self.output_file is None:
+            # Log to stdout if no output file is specified.
+            for prediction in predictions:
+                print(prediction)
+        else:
+            field_names = predictions[0].keys()
+            with open(self.output_file, "w") as fout:
+                writer = csv.DictWriter(fout, fieldnames=field_names, delimiter="\t")
+                writer.writeheader()
+                for prediction in predictions:
+                    writer.writerow(prediction)
+
+    def remove_metrics(
+            self, 
+            predictions: Sequence[Dict[str, Any]]
+    ) -> Sequence[Dict[str, Any]]:
+        # Remove metrics from the output.
+        for prediction in predictions:
+            for metric_name in self.task.metrics.keys():
+                prediction.pop(metric_name)
+        return predictions
+

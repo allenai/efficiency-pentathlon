@@ -5,7 +5,7 @@ from click_help_colors import HelpColorsCommand, HelpColorsGroup
 
 from gantry import run as gantry_run
 from efficiency_benchmark.steps import (CalculateMetricsStep, PredictStep,
-                                        TabulateMetricsStep)
+                                        TabulateMetricsStep, LogOutputStep)
 
 _CLICK_GROUP_DEFAULTS = {
     "cls": HelpColorsGroup,
@@ -70,7 +70,6 @@ def run(
     output_file: Optional[str] = None,
     limit: Optional[int] = None,
 ):
-    batch_size=1 if scenario == "single_stream" else 32  # TODO
     prediction_step = PredictStep(
         cmd=cmd,
         task=task,
@@ -85,25 +84,13 @@ def run(
     metrics = metric_step.calculate_metrics(predictions=predictions)
     metric_task_dict[task] = metrics
 
+    output_step = LogOutputStep(task=task, output_file=output_file)
+    output_step.run(predictions=predictions)
+
     table_step = TabulateMetricsStep()
     table_step_result = table_step.run(metrics=metric_task_dict)
+
     print("\n".join(table_step_result))
-    # Logging results
-    # gantry saves `/results` to Beaker. We output to this folder if runnning on Beaker
-    try:
-        with open("/results/outputs", "w") as fout:
-            for p in predictions:
-                fout.write(p["output"] + "\n")
-    except:
-        # Running locally.
-        if output_file is not None:
-            with open(output_file, "w") as fout:
-                for p in predictions:
-                    fout.write(p["output"] + "\n")
-        else:
-            pass
-            # for p in predictions:
-            #     print(p)
 
 
 @main.command(**_CLICK_COMMAND_DEFAULTS)
@@ -121,13 +108,6 @@ def run(
     help="""Split.""",
 )
 @click.option(
-    "-b",
-    "--batch_size",
-    type=int,
-    default=32,
-    help="""Batch size.""",
-)
-@click.option(
     "-l",
     "--limit",
     type=int,
@@ -143,14 +123,12 @@ def submit(
     cmd: Tuple[str, ...],
     task: str,
     split: str = "validation",
-    batch_size: int = 32,
     limit: int = None,
     gpus: int = 1
 ):
     gantry_run(
         arg=cmd,
         task=task,
-        # name="efficiency-benchmark-submission",
         cluster=["efficiency-benchmark/elanding-rtx-8000"], # TODO
         beaker_image="haop/efficiency-benchmark",  # TODO
         workspace="efficiency-benchmark/efficiency-benchmark",
