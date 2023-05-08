@@ -2,6 +2,11 @@
 
 set -eo pipefail
 
+RUNTIME_DIR="/gantry-runtime"
+RESULTS_DIR="/results"
+CONDA_ENV_FILE="environment.yml"
+PIP_REQUIREMENTS_FILE="requirements.txt"
+PYTHON_VERSION=3.9 
 
 # Ensure we have all the environment variables we need.
 for env_var in "$GITHUB_REPO" "$GIT_REF"; do
@@ -139,4 +144,4 @@ echo "
 # Execute the arguments to this script as commands themselves, piping output into a log file.
 # shellcheck disable=SC2296
 echo efficiency-benchmark run --task "$TASK" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/out.log"
-exec efficiency-benchmark run --task "$TASK" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/out.log"
+exec efficiency-benchmark run --task "$TASK" --output_file /results/outputs.csv -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/out.log"

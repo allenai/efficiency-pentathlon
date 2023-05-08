@@ -66,7 +66,7 @@ def run(
     cmd: Tuple[str, ...],
     task: str,
     split: str = "validation",
-    scenario: str = "single_stream",
+    scenario: str = "random_batch",
     output_file: Optional[str] = None,
     limit: Optional[int] = None,
 ):
