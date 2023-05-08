@@ -2,6 +2,8 @@
 
 set -eo pipefail
 
+
+# Constants. #
 RUNTIME_DIR="/gantry-runtime"
 RESULTS_DIR="/results"
 CONDA_ENV_FILE="environment.yml"
