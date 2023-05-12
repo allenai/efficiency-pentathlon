@@ -77,7 +77,7 @@ def run(
         split=split,
         limit=limit,
     )
-    predictions = prediction_step.run()
+    predictions, efficiency_metrics = prediction_step.run()
 
     metric_task_dict = {}
     metric_step = CalculateMetricsStep(task=task)
@@ -91,6 +91,7 @@ def run(
     table_step_result = table_step.run(metrics=metric_task_dict)
 
     print("\n".join(table_step_result))
+    prediction_step.tabulate_efficiency_metrics(efficiency_metrics)
 
 
 @main.command(**_CLICK_COMMAND_DEFAULTS)

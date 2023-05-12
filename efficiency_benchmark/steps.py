@@ -14,7 +14,7 @@ import more_itertools
 import csv
 
 
-MAX_BATCH_SIZE = 64
+MAX_BATCH_SIZE = 64  # TODO
 NUM_BATCHES = 1000
 
 
@@ -90,7 +90,7 @@ class PredictStep():
     def tabulate_efficiency_metrics(
         self,
         efficiency_metrics: Dict[str, Any]
-    ):
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         print(f"Time Elapsed: {efficiency_metrics['time']:.2f} s")
         # print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .2f} GiB")
         # print(f"Number of Parameters: {efficiency_metrics['num_params'] / 1e6: .2f} M")
@@ -116,8 +116,8 @@ class PredictStep():
         efficiency_metrics["latency"] = efficiency_metrics["time"] / self._num_batches
         results, num_output_words = self.process(output_batches)
         efficiency_metrics["throughput_words"] = num_output_words / efficiency_metrics["time"]
-        self.tabulate_efficiency_metrics(efficiency_metrics)
-        return results
+        # self.tabulate_efficiency_metrics(efficiency_metrics)
+        return results, efficiency_metrics
 
     def process(
         self,
