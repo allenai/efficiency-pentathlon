@@ -10,9 +10,11 @@ from efficiency_benchmark.task import (BINARY_CLASSIFICATION_METRICS,
 from efficiency_benchmark.tasks.efficiency_benchmark import (
     EfficiencyBenchmarkTask,
     EfficiencyBenchmarkRaftTask,
+    EfficiencyBenchmarkPromptTask,
     efficiency_benchmark_classification_conversion,
     efficiency_benchmark_mt_conversion,
-    efficiency_benchmark_raft_conversion)
+    efficiency_benchmark_raft_conversion,
+    efficiency_benchmark_prompt_conversion)
 from efficiency_benchmark.tasks.eleuther import (
     EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits,
     EleutherTask, EleutherTaskWithRenamedSplits, RaceEleutherTask)
@@ -53,7 +55,10 @@ TASKS: Dict[str, Task] = {
             target_field="de"
         )
     ).add_metrics(MT_METRICS), 
-    
+    "wikitext-prompt": EfficiencyBenchmarkPromptTask("wikitext", "wikitext-103-raw-v1").add_instance_conversion(
+        InstanceFormat.EFFICIENCY_BENCHMARK,
+        efficiency_benchmark_prompt_conversion()
+    ),
     # RAFT
     "raft::ade_corpus_v2": EfficiencyBenchmarkRaftTask("ade_corpus_v2").add_instance_conversion(
         InstanceFormat.EFFICIENCY_BENCHMARK,
