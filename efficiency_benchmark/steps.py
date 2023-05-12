@@ -101,6 +101,7 @@ class PredictStep():
         print(f"Total Energy: {efficiency_metrics['total_energy']: .2e} Wh")
         print(f"CO2 emission: {efficiency_metrics['carbon']: .2e} grams.")
         print(f"Throughput: {efficiency_metrics['throughput']: .2f} instances / s.")
+        print(f"Throughput: {efficiency_metrics['throughput_words']: .2f} words / s.")
         print(f"Latency: {efficiency_metrics['latency'] * 1000: .2f} ms / batch.")
 
     def run(self) -> Sequence[Any]:
@@ -113,16 +114,18 @@ class PredictStep():
         efficiency_metrics = self._profiler.stop()
         efficiency_metrics["throughput"] = self._num_instances / efficiency_metrics["time"]
         efficiency_metrics["latency"] = efficiency_metrics["time"] / self._num_batches
+        results, num_output_words = self.process(output_batches)
+        efficiency_metrics["throughput_words"] = num_output_words / efficiency_metrics["time"]
         self.tabulate_efficiency_metrics(efficiency_metrics)
-        results = self.process(output_batches)
         return results
 
     def process(
         self,
         output_batches: Iterable[str]
-    ) -> Sequence[Dict[str, Any]]:
+    ) -> Tuple[Sequence[Dict[str, Any]], int]:
         yielded_label_index = -1
         results = []
+        num_output_words = 0
         for output in output_batches:
             yielded_label_index += 1
             output = output.rstrip()
@@ -133,8 +136,9 @@ class PredictStep():
                 "target": target,
                 "output": output,
             })
+            num_output_words += len(output.split())
             results.append(result)
-        return results
+        return results, num_output_words
             
 
 class CalculateMetricsStep():
