@@ -15,7 +15,7 @@ import csv
 
 
 MAX_BATCH_SIZE = 64
-NUM_BATCHES = 10
+NUM_BATCHES = 1000
 
 
 class PredictStep():
@@ -54,10 +54,10 @@ class PredictStep():
         inputs = [i.input for i in self._instances]
         if self.scenario == "single_stream":
             batches = list(more_itertools.chunked(inputs, 1))
-            batches = batches[:NUM_BATCHES]
+            batches = batches[:self.limit]
         elif self.scenario == "random_batch":
             num_instances_per_batch = np.random.randint(
-                low=1, high=MAX_BATCH_SIZE + 1, size=NUM_BATCHES)
+                low=1, high=MAX_BATCH_SIZE + 1, size=self.limit)
             indices = list(range(len(inputs)))
             batches = []
             for num_instances in num_instances_per_batch:
