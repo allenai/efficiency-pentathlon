@@ -2,6 +2,7 @@ import threading
 import time
 from serial import Serial, SerialException
 from typing import Dict, List
+import json
 
 
 IDLE_POWER = 180.5  # Watts
@@ -52,10 +53,15 @@ class PowerMonitor(threading.Thread):
             ser.close()
             outputs = data_str.strip().split("\n")
             for output in outputs:
-                content = output.strip().split(",")
-                if len(content) != NUM_FIELDS:
+                try:
+                    power_readings.append(json.loads(output))
+                except json.JSONDecodeError:
                     continue
-                power_readings.append({x.split(":")[0]: x.split(":")[1] for x in content})
+
+                # content = output.strip().split(",")
+                # if len(content) != NUM_FIELDS:
+                #     continue
+                # power_readings.append({x.split(":")[0]: x.split(":")[1] for x in content})
 
         while not stop_event.is_set():
             try:
@@ -91,7 +97,7 @@ def main():
         exit()
     try:
         while True:
-            time.sleep(1)
+            time.sleep(0.1)
     except KeyboardInterrupt:
         power_monitor.stop()
         power_monitor.join()
@@ -101,4 +107,5 @@ def main():
 
 
 if __name__ == "__main__":
+    # TODO: address multiple reads
     main()

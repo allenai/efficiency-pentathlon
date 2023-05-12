@@ -119,12 +119,20 @@ def run(
     type=int,
     help="""Minimum number of GPUs (e.g. 1).""",
 )
+@click.option(
+    "--dataset",
+    type=str,
+    multiple=True,
+    help="""An input dataset in the form of 'dataset-name:/mount/location' to attach to your experiment.
+    You can specify this option more than once to attach multiple datasets.""",
+)
 def submit(
     cmd: Tuple[str, ...],
     task: str,
     split: str = "validation",
     limit: int = None,
-    gpus: int = 1
+    gpus: int = 1,
+    dataset: Optional[Tuple[str, ...]] = None,
 ):
     gantry_run(
         arg=cmd,
@@ -134,7 +142,8 @@ def submit(
         workspace="efficiency-benchmark/efficiency-benchmark",
         cpus= None,
         gpus=gpus,
-        allow_dirty=True
+        allow_dirty=True,
+        dataset=dataset
     )
 
 
