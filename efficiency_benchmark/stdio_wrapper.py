@@ -3,6 +3,7 @@ import os
 import subprocess
 from abc import ABC
 from typing import Any, Dict, Iterator, List, Sequence
+import tqdm
 
 
 class StdioWrapper(ABC):
@@ -77,7 +78,7 @@ class StdioWrapper(ABC):
 
         num_batches_yielded = 0
         num_batches = len(batches)
-        for batch in batches:
+        for batch in tqdm.tqdm(batches, desc="Making predictions"):
             self._write_batch(batch)
             # Block until we receive an output batch.
             output_batches = self._exhaust_and_yield_stdout(1)
