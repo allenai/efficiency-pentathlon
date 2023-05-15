@@ -1,6 +1,7 @@
 import time
 from collections import defaultdict
 from random import Random
+import itertools
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import torch
@@ -29,44 +30,48 @@ class PredictStep():
         limit: Optional[int] = None,
         **kwargs
     ):
+        np.random.seed(42)
         self.task = TASKS[task] if isinstance(task, str) else task
         self.split = split if split is not None else self.task.default_split
         self.scenario = scenario
         self.limit = limit
         self.cmd = cmd
         self.predictor = StdioWrapper(cmd=cmd)
-        self._build_instances()
         self._profiler = Profiler(interval=0.1)
+        self._get_batches()
 
-    def _build_instances(self) -> Tuple[Sequence[Dict[str, Any]], Sequence[Dict[str, Any]]]:
+    def _get_batches(self) -> List[List[str]]:
         instances = self.task.get_split(self.split)
         instances = self._convert_instances(
             instances, InstanceFormat.EFFICIENCY_BENCHMARK, self.task)
-        if self.limit is not None and len(instances) > self.limit:
-            instances = Random(42).sample(instances, self.limit)
-        self._instances = list(instances)
-        self._batches = self._batchify()
-
-    def _batchify(self) -> List[List[str]]:
-        inputs = [i.input for i in self._instances]
+        instances = list(instances)
         if self.scenario == "single_stream":
-            batches = list(more_itertools.chunked(inputs, 1))
-            batches = batches[:self.limit]
+            batches = list(more_itertools.chunked(instances, 1))
         elif self.scenario == "random_batch":
             num_instances_per_batch = np.random.randint(
-                low=1, high=MAX_BATCH_SIZE + 1, size=self.limit)
-            indices = list(range(len(inputs)))
+                low=1, high=MAX_BATCH_SIZE + 1, size=NUM_BATCHES)
             batches = []
-            for num_instances in num_instances_per_batch:
-                batch_indices = np.random.choice(indices, size=num_instances, replace=False)
-                batches.append([inputs[i] for i in batch_indices])
+            for n in num_instances_per_batch:
+                batch = np.random.choice(instances, size=n, replace=False).tolist()
+                batches.append(batch)
         elif self.scenario == "offline":
             raise NotImplementedError()
         else:
             raise ValueError(f"Unknown scenario: {self._scenario}. Choose from 'single_stream', 'random_batch', 'offline'")
+
+        if self.limit is not None and len(batches) > self.limit:
+            indices = np.random.choice(
+                list(range(len(batches))), 
+                size=self.limit, 
+                replace=False
+            )
+            batches = [ batches[i] for i in indices]
         self._num_batches = len(batches)
         self._num_instances = sum(len(batch) for batch in batches)
-        return batches
+        self._input_batches = [ [instance.input for instance in batch] for batch in batches]
+        target_batches = [ [instance.target for instance in batch] for batch in batches]
+        self._targets = list(itertools.chain(*target_batches))
+        assert len(self._targets) == self._num_instances
 
     @classmethod
     def _convert_instances(
@@ -103,10 +108,10 @@ class PredictStep():
 
     def run(self) -> Sequence[Any]:
         output_batches = []
-        self.predictor.start(dummy_inputs=self._batches[-1])
+        self.predictor.start(dummy_inputs=self._input_batches[-1])
 
         self._profiler.start()
-        for output_batch in self.predictor.predict(batches=self._batches):
+        for output_batch in self.predictor.predict(batches=self._input_batches):
             output_batches.append(output_batch)
         efficiency_metrics = self._profiler.stop()
         efficiency_metrics["throughput"] = self._num_instances / efficiency_metrics["time"]
@@ -126,11 +131,11 @@ class PredictStep():
         for output in output_batches:
             yielded_label_index += 1
             output = output.rstrip()
-            target = self._instances[yielded_label_index].target
+            target = self._targets[yielded_label_index]
 
             result = {metric_name: (output, target) for metric_name in self.task.metrics.keys()}
             result.update({
-                "target": target,
+                "target": self._targets[yielded_label_index] if self._targets is not None else None,
                 "output": output,
             })
             num_output_words += len(output.split())
