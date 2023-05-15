@@ -27,14 +27,12 @@ class PredictStep():
         scenario: str,
         split: Optional[str] = None,
         limit: Optional[int] = None,
-        random_subsample_seed: Optional[int] = None,
         **kwargs
     ):
         self.task = TASKS[task] if isinstance(task, str) else task
         self.split = split if split is not None else self.task.default_split
         self.scenario = scenario
         self.limit = limit
-        self.random_subsample_seed = random_subsample_seed
         self.cmd = cmd
         self.predictor = StdioWrapper(cmd=cmd)
         self._build_instances()
@@ -44,9 +42,8 @@ class PredictStep():
         instances = self.task.get_split(self.split)
         instances = self._convert_instances(
             instances, InstanceFormat.EFFICIENCY_BENCHMARK, self.task)
-        random_subsample_seed = 0 if self.random_subsample_seed is None else self.random_subsample_seed
         if self.limit is not None and len(instances) > self.limit:
-            instances = instances[:self.limit] if random_subsample_seed is None else Random(random_subsample_seed).sample(instances, self.limit)
+            instances = Random(42).sample(instances, self.limit)
         self._instances = list(instances)
         self._batches = self._batchify()
 
