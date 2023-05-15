@@ -1,20 +1,19 @@
-import time
-from collections import defaultdict
-from random import Random
+import csv
 import itertools
+from collections import defaultdict
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
-import torch
+import more_itertools
 import numpy as np
+import torch
+
 from efficiency_benchmark.efficiency.profiler import Profiler
 from efficiency_benchmark.stdio_wrapper import StdioWrapper
 from efficiency_benchmark.tango_utils import MappedSequence
 from efficiency_benchmark.task import Task
 from efficiency_benchmark.tasks import TASKS, InstanceFormat
-import more_itertools
-import csv
 
-
+ 
 EXPECTED_BATCH_SIZE = 32
 NUM_BATCHES = 1000
 
@@ -26,6 +25,7 @@ class PredictStep():
         cmd: List[str],
         task: Union[str, Task],
         scenario: str,
+        max_batch_size: int,
         split: Optional[str] = None,
         limit: Optional[int] = None,
         **kwargs
@@ -34,10 +34,11 @@ class PredictStep():
         self.task = TASKS[task] if isinstance(task, str) else task
         self.split = split if split is not None else self.task.default_split
         self.scenario = scenario
+        self.max_batch_size = max_batch_size
         self.limit = limit
         self.cmd = cmd
         self.predictor = StdioWrapper(cmd=cmd)
-        self._profiler = Profiler(interval=0.1)
+        self.profiler = Profiler(interval=0.1)
         self._get_batches()
 
     def _get_batches(self) -> List[List[str]]:
@@ -45,7 +46,9 @@ class PredictStep():
         instances = self._convert_instances(
             instances, InstanceFormat.EFFICIENCY_BENCHMARK, self.task)
         instances = list(instances)
-        if self.scenario == "single_stream":
+        if self.scenario == "accuracy":
+            batches = list(more_itertools.chunked(instances, self.max_batch_size))
+        elif self.scenario == "single_stream":
             batches = list(more_itertools.chunked(instances, 1))
         elif self.scenario == "random_batch":
             num_instances_per_batch = np.random.poisson(
@@ -68,12 +71,15 @@ class PredictStep():
                 replace=False
             )
             batches = [ batches[i] for i in indices]
-        self._num_batches = len(batches)
-        self._num_instances = sum(len(batch) for batch in batches)
-        self._input_batches = [ [instance.input for instance in batch] for batch in batches]
-        target_batches = [ [instance.target for instance in batch] for batch in batches]
-        self._targets = list(itertools.chain(*target_batches))
-        assert len(self._targets) == self._num_instances
+        self.num_batches = len(batches)
+        self.num_instances = sum(len(batch) for batch in batches)
+        self.input_batches = [ [instance.input for instance in batch] for batch in batches]
+        if self.scenario == "accuracy":
+            target_batches = [ [instance.target for instance in batch] for batch in batches]
+            self.targets = list(itertools.chain(*target_batches))
+            assert len(self.targets) == self.num_instances
+        else:
+            self.targets = None
 
     @classmethod
     def _convert_instances(
@@ -110,14 +116,14 @@ class PredictStep():
 
     def run(self) -> Sequence[Any]:
         output_batches = []
-        self.predictor.start(dummy_inputs=self._input_batches[-1])
+        self.predictor.start(dummy_inputs=self.input_batches[-1])
 
-        self._profiler.start()
-        for output_batch in self.predictor.predict(batches=self._input_batches):
+        self.profiler.start()
+        for output_batch in self.predictor.predict(batches=self.input_batches):
             output_batches.append(output_batch)
-        efficiency_metrics = self._profiler.stop()
-        efficiency_metrics["throughput"] = self._num_instances / efficiency_metrics["time"]
-        efficiency_metrics["latency"] = efficiency_metrics["time"] / self._num_batches
+        efficiency_metrics = self.profiler.stop()
+        efficiency_metrics["throughput"] = self.num_instances / efficiency_metrics["time"]
+        efficiency_metrics["latency"] = efficiency_metrics["time"] / self.num_batches
         results, num_output_words = self.process(output_batches)
         efficiency_metrics["throughput_words"] = num_output_words / efficiency_metrics["time"]
         # self.tabulate_efficiency_metrics(efficiency_metrics)
@@ -133,13 +139,16 @@ class PredictStep():
         for output in output_batches:
             yielded_label_index += 1
             output = output.rstrip()
-            target = self._targets[yielded_label_index]
-
-            result = {metric_name: (output, target) for metric_name in self.task.metrics.keys()}
-            result.update({
-                "target": self._targets[yielded_label_index] if self._targets is not None else None,
+            target = self.targets[yielded_label_index] if self.targets is not None else None
+            result = {
+                "target": target,
                 "output": output,
-            })
+            }
+            if self.scenario == "accuracy":
+                result.update(
+                    {metric_name: (output, target) for metric_name in self.task.metrics.keys()
+                     }
+                )
             num_output_words += len(output.split())
             results.append(result)
         return results, num_output_words

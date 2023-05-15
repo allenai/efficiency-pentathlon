@@ -49,6 +49,13 @@ def main():
     help="""Evaluation scenario [single_stream, random_batch, offline].""",
 )
 @click.option(
+    "-b",
+    "--max_batch_size",
+    type=int,
+    default=32,
+    help="""Maximum batch size.""",
+)
+@click.option(
     "-o",
     "--output_file",
     type=str,
@@ -67,25 +74,26 @@ def run(
     task: str,
     split: str = "validation",
     scenario: str = "random_batch",
+    max_batch_size: int = 32,
     output_file: Optional[str] = None,
     limit: Optional[int] = None,
 ):
+    metric_task_dict = {}
     prediction_step = PredictStep(
         cmd=cmd,
         task=task,
         scenario=scenario,
+        max_batch_size=max_batch_size,
         split=split,
         limit=limit,
     )
     predictions, efficiency_metrics = prediction_step.run()
-
-    metric_task_dict = {}
-    metric_step = CalculateMetricsStep(task=task)
-    metrics = metric_step.calculate_metrics(predictions=predictions)
-    metric_task_dict[task] = metrics
-
-    output_step = LogOutputStep(task=task, output_file=output_file)
-    output_step.run(predictions=predictions)
+    if scenario == "accuracy":
+        metric_step = CalculateMetricsStep(task=task)
+        metrics = metric_step.calculate_metrics(predictions=predictions)
+        metric_task_dict[task] = metrics
+        output_step = LogOutputStep(task=task, output_file=output_file)
+        output_step.run(predictions=predictions)
 
     table_step = TabulateMetricsStep()
     table_step_result = table_step.run(metrics=metric_task_dict)
