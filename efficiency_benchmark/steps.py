@@ -15,7 +15,7 @@ import more_itertools
 import csv
 
 
-MAX_BATCH_SIZE = 64  # TODO
+EXPECTED_BATCH_SIZE = 32
 NUM_BATCHES = 1000
 
 
@@ -48,10 +48,12 @@ class PredictStep():
         if self.scenario == "single_stream":
             batches = list(more_itertools.chunked(instances, 1))
         elif self.scenario == "random_batch":
-            num_instances_per_batch = np.random.randint(
-                low=1, high=MAX_BATCH_SIZE + 1, size=NUM_BATCHES)
+            num_instances_per_batch = np.random.poisson(
+                lam=EXPECTED_BATCH_SIZE, size=NUM_BATCHES)
             batches = []
             for n in num_instances_per_batch:
+                if n == 0:
+                    continue
                 batch = np.random.choice(instances, size=n, replace=False).tolist()
                 batches.append(batch)
         elif self.scenario == "offline":
