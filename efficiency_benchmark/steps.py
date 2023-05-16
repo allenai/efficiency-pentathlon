@@ -14,7 +14,7 @@ from efficiency_benchmark.task import Task
 from efficiency_benchmark.tasks import TASKS, InstanceFormat
 
  
-EXPECTED_BATCH_SIZE = 32
+EXPECTED_BATCH_SIZE = 128
 NUM_BATCHES = 1000
 
 
@@ -46,6 +46,7 @@ class PredictStep():
         instances = self._convert_instances(
             instances, InstanceFormat.EFFICIENCY_BENCHMARK, self.task)
         instances = list(instances)
+        np.random.shuffle(instances)
         if self.scenario == "accuracy":
             batches = list(more_itertools.chunked(instances, self.max_batch_size))
         elif self.scenario == "single_stream":
@@ -62,7 +63,7 @@ class PredictStep():
         elif self.scenario == "offline":
             raise NotImplementedError()
         else:
-            raise ValueError(f"Unknown scenario: {self._scenario}. Choose from 'single_stream', 'random_batch', 'offline'")
+            raise ValueError(f"Unknown scenario: {self.scenario}. Choose from 'single_stream', 'random_batch', 'offline'")
 
         if self.limit is not None and len(batches) > self.limit:
             indices = np.random.choice(
@@ -104,11 +105,12 @@ class PredictStep():
         print(f"Time Elapsed: {efficiency_metrics['time']:.2f} s")
         # print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .2f} GiB")
         # print(f"Number of Parameters: {efficiency_metrics['num_params'] / 1e6: .2f} M")
-        print(f"Max GPU Memory Usage: {efficiency_metrics['max_gpu_mem']: .2f} GiB")
+        print(f"Max GPU memory usage: {efficiency_metrics['max_gpu_mem']: .2f} GiB.")
         # print(f"GPU Energy: {efficiency_metrics['gpu_energy']:.2e} Wh")
         # print(f"CPU Energy: {efficiency_metrics['cpu_energy']: .2e} Wh")
         # print(f"Memory Energy: {efficiency_metrics['dram_energy']: .2e} Wh")
-        print(f"Total Energy: {efficiency_metrics['total_energy']: .2e} Wh")
+        print(f"Average power: {efficiency_metrics['avg_power']: .2e} W.")
+        print(f"Total energy: {efficiency_metrics['total_energy']: .2e} Wh.")
         print(f"CO2 emission: {efficiency_metrics['carbon']: .2e} grams.")
         print(f"Throughput: {efficiency_metrics['throughput']: .2f} instances / s.")
         print(f"Throughput: {efficiency_metrics['throughput_words']: .2f} words / s.")
@@ -119,7 +121,7 @@ class PredictStep():
         self.predictor.start(dummy_inputs=self.input_batches[-1])
 
         self.profiler.start()
-        for output_batch in self.predictor.predict(batches=self.input_batches):
+        for output_batch in self.predictor.predict(input_batches=self.input_batches, max_batch_size=self.max_batch_size):
             output_batches.append(output_batch)
         efficiency_metrics = self.profiler.stop()
         efficiency_metrics["throughput"] = self.num_instances / efficiency_metrics["time"]

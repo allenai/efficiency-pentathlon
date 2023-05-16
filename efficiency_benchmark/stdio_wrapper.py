@@ -4,6 +4,7 @@ import subprocess
 from abc import ABC
 from typing import Any, Dict, Iterator, List, Sequence
 import tqdm
+import more_itertools
 
 
 class StdioWrapper(ABC):
@@ -73,27 +74,32 @@ class StdioWrapper(ABC):
     def predict(  # type: ignore
         self,
         *,
-        batches: List[List[str]]
+        input_batches: List[List[str]],
+        max_batch_size: int
     ) -> Iterator[str]:
+        for input_batch in tqdm.tqdm(input_batches, desc="Making predictions"):
 
-        num_batches_yielded = 0
-        num_batches = len(batches)
-        for batch in tqdm.tqdm(batches, desc="Making predictions"):
-            self._write_batch(batch)
-            # Block until we receive an output batch.
-            output_batches = self._exhaust_and_yield_stdout(1)
-            for output_batch in output_batches:
-                num_batches_yielded += 1
-                for output in output_batch:
-                    yield output
+            # Make sure the batch size does not exceed a user defined maximum.
+            # Split into smaller batches if necessary.
+            splitted_batches = list(more_itertools.chunked(input_batch, max_batch_size))
+            num_splitted_batches = len(splitted_batches)
+            num_batches_yielded = 0
+            for batch in splitted_batches:
+                self._write_batch(batch)
+                # Feed all splitted batches without blocking.
+                output_batches = self._exhaust_and_yield_stdout(None)
+                for output_batch in output_batches:
+                    num_batches_yielded += 1
+                    for output in output_batch:
+                        yield output
 
-        # Now read from stdout until we have hit the required number.
-        # Legacy code from non-blocking mode.
-        num_batches_to_read = num_batches - num_batches_yielded
-        if num_batches_to_read > 0:
-            for output_batch in self._exhaust_and_yield_stdout(num_batches_to_read):
-                for output in output_batch:
-                    yield output
+            # Now read from stdout until we have hit the required number.
+            # Legacy code from non-blocking mode.
+            num_batches_to_read = num_splitted_batches - num_batches_yielded
+            if num_batches_to_read > 0:
+                for output_batch in self._exhaust_and_yield_stdout(num_batches_to_read):
+                    for output in output_batch:
+                        yield output
 
     def start(self, dummy_inputs: List[Dict[str, Any]]) -> List[str]:
         self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
