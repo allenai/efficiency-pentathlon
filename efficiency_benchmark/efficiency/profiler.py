@@ -125,7 +125,7 @@ class Profiler():
             "gpu_energy": codecarbon_data.gpu_energy,  # kWh
             "cpu_energy": codecarbon_data.cpu_energy,  # kWh
             "dram_energy": codecarbon_data.ram_energy,  # kWh
-            "avg_power": avg_power if self._use_power_monitor else Power.from_watts(0),
+            "avg_power": avg_power.W if self._use_power_monitor else codecarbon_data.cpu_power + codecarbon_data.gpu_power,
             "total_energy": codecarbon_data.energy_consumed,
             "carbon": codecarbon_data.emissions
         }
