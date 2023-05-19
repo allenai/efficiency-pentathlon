@@ -9,9 +9,9 @@ import torch
 
 from efficiency_benchmark.efficiency.profiler import Profiler
 from efficiency_benchmark.stdio_wrapper import StdioWrapper
-from efficiency_benchmark.tango_utils import MappedSequence
 from efficiency_benchmark.task import Task
-from efficiency_benchmark.tasks import TASKS, InstanceFormat
+from efficiency_benchmark.tasks import TASKS
+from efficiency_benchmark.tasks import EfficiencyBenchmarkTask
 
  
 EXPECTED_BATCH_SIZE = 128
@@ -31,7 +31,7 @@ class PredictStep():
         **kwargs
     ):
         np.random.seed(42)
-        self.task = TASKS[task] if isinstance(task, str) else task
+        self.task: EfficiencyBenchmarkTask = TASKS[task] if isinstance(task, str) else task
         self.split = split if split is not None else self.task.default_split
         self.scenario = scenario
         self.max_batch_size = max_batch_size
@@ -42,11 +42,7 @@ class PredictStep():
         self._get_batches()
 
     def _get_batches(self) -> List[List[str]]:
-        instances = self.task.get_split(self.split)
-        instances = self._convert_instances(
-            instances, InstanceFormat.EFFICIENCY_BENCHMARK, self.task)
-        instances = list(instances)
-        np.random.shuffle(instances)
+        instances = self.task.get_scenario_instances(scenario=self.scenario, split=self.split)
         if self.scenario == "accuracy":
             batches = list(more_itertools.chunked(instances, self.max_batch_size))
         elif self.scenario == "single_stream":
@@ -81,15 +77,6 @@ class PredictStep():
             assert len(self.targets) == self.num_instances
         else:
             self.targets = None
-
-    @classmethod
-    def _convert_instances(
-        self,
-        instances: Sequence[Dict[str, Any]],
-        instance_format,
-        task
-    ) -> MappedSequence:
-        return MappedSequence(task.instance_conversions[instance_format], instances)
 
     def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(kwargs["task"], str):

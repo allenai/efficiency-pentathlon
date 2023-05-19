@@ -1,14 +1,21 @@
 import functools
 import os
-import numpy as np
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Sequence, Union
+from random import Random
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 import datasets
+import numpy as np
 from datasets import Dataset
+
 from efficiency_benchmark.tango_utils import MappedSequence
 from efficiency_benchmark.task import InstanceConversion, Task
+from efficiency_benchmark.tasks import InstanceFormat
 from efficiency_benchmark.tasks.huggingface import get_from_dict
+
+MIN_SINGLE_STREAM_INSTANCES = 1000
+MIN_RANDOM_BATCH_INSTANCES = 5000
+MIN_OFFLINE_INSTANCES = 32 * 10000
 
 
 # TODO
@@ -24,19 +31,87 @@ class EfficiencyBenchmarkTask(Task):
         Task.__init__(self, version_override=version_override)
         self.dataset_path = dataset_path
         self.dataset_name = dataset_name
+        self.online_instances: List[str] = None
 
     def has_split(self, split: str) -> bool:
         return split in datasets.get_dataset_split_names(self.dataset_path, self.dataset_name)
 
-    def dataset(self, split: str):
-        #TODo
-        return datasets.load_dataset(self.dataset_path, self.dataset_name, split=split)
+    @property
+    def base_dir(self) -> str:
+        return os.path.join(DATA_DIR, self.dataset_path, self.dataset_name)
+    
+    def offline_data_path(self, split: str) -> str:
+        self.online_data_path = os.path.join(self.base_dir, split, "offline.json")
 
-    def load_data(self):
-        base_dir = os.path.join(DATA_DIR, self.dataset_path, self.dataset_name)
-        self.accuracy = Dataset.from_json(os.path.join(base_dir, "accuracy.json"))
-        self.single_stream_data = Dataset.from_json(os.path.join(base_dir, "single_stream.json"))
-        self.offline_data = Dataset.from_json(os.path.join(base_dir, "offline.json"))
+    def _convert_instances(
+        self,
+        instances: Sequence[Dict[str, Any]],
+        instance_format
+    ) -> MappedSequence:
+        return MappedSequence(self.instance_conversions[instance_format], instances)
+    
+    def load_instances_from_json(self, path: str) -> List[str]:
+        return Dataset.from_json(path).to_list()
+
+    def save_instances_to_json(self, instances: List[str], path: str):
+        Dataset.from_list(instances).to_json(path)
+
+    def get_instances(self, split: str, min_num_instances: Optional[int] = None) -> List[str]:
+        if self.online_instances is not None:
+            instances = self.online_instances
+        else:
+            instances = self.get_split(split=split)
+            instances = list(self._convert_instances(
+                instances, InstanceFormat.EFFICIENCY_BENCHMARK)
+            )
+            self.online_instances = instances
+
+        def _maybe_extend_and_shuffle() -> List[str]:
+            if min_num_instances is not None:
+                while len(instances) < min_num_instances:
+                    instances.extend(self.online_instances)
+            Random(42).shuffle(instances)
+            return instances
+        return _maybe_extend_and_shuffle() 
+
+    def get_single_stream_instances(self, split: str) -> List[str]:
+        return self.get_instances(
+            split=split,
+            min_num_instances=MIN_SINGLE_STREAM_INSTANCES
+        )
+
+    def get_random_batch_instances(self, split: str) -> List[str]:
+        return self.get_instances(
+            split=split,
+            min_num_instances=MIN_RANDOM_BATCH_INSTANCES
+        )
+
+    def prepare_offline_instances(self, split: str, override: bool = True) -> None:
+        path: str = self.offline_data_path(split)
+        if os.path.exists(path) and not override:
+            print(f"Offline instances already exist: {path}. Skipping...")
+            return
+        instances = self.get_instances(
+            split=split,
+            min_num_instances=MIN_OFFLINE_INSTANCES
+        )
+        try:
+            # Try to cache preprocessed instances to a file
+            self.save_instances_to_json(instances, path)
+            print(f"Saved offline instances to {path}.")
+        except:
+            print(f"Failed to save offline instances to file: {path}")
+    
+    def get_scenario_instances(self, scenario: str, split: str) -> List[str]:
+        funcs = {
+            "single_stream": self.get_single_stream_instances,
+            "random_batch": self.get_random_batch_instances,
+            "accuracy": self.get_instances,
+        }
+        return funcs[scenario](split=split)
+        
+    def dataset(self, split: str):
+        return datasets.load_dataset(self.dataset_path, self.dataset_name, split=split)
 
     def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
         ds = self.dataset(split=split)
