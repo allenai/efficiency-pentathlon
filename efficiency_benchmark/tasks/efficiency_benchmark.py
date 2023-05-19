@@ -13,9 +13,17 @@ from efficiency_benchmark.task import InstanceConversion, Task
 from efficiency_benchmark.tasks import InstanceFormat
 from efficiency_benchmark.tasks.huggingface import get_from_dict
 
+
 MIN_SINGLE_STREAM_INSTANCES = 1000
 MIN_RANDOM_BATCH_INSTANCES = 5000
 MIN_OFFLINE_INSTANCES = 32 * 10000
+
+
+@dataclass
+class EfficiencyBenchmarkInstance:
+    input: Union[str, Dict[str, Any]]
+    target: Optional[str]
+    id: Optional[str]
 
 
 # TODO
@@ -31,7 +39,7 @@ class EfficiencyBenchmarkTask(Task):
         Task.__init__(self, version_override=version_override)
         self.dataset_path = dataset_path
         self.dataset_name = dataset_name
-        self.online_instances: List[str] = None
+        self.online_instances: List[EfficiencyBenchmarkInstance] = None
 
     def has_split(self, split: str) -> bool:
         return split in datasets.get_dataset_split_names(self.dataset_path, self.dataset_name)
@@ -50,13 +58,17 @@ class EfficiencyBenchmarkTask(Task):
     ) -> MappedSequence:
         return MappedSequence(self.instance_conversions[instance_format], instances)
     
-    def load_instances_from_json(self, path: str) -> List[str]:
+    def load_instances_from_json(self, path: str) -> List[EfficiencyBenchmarkInstance]:
         return Dataset.from_json(path).to_list()
 
-    def save_instances_to_json(self, instances: List[str], path: str):
+    def save_instances_to_json(self, instances: List[EfficiencyBenchmarkInstance], path: str):
         Dataset.from_list(instances).to_json(path)
 
-    def get_instances(self, split: str, min_num_instances: Optional[int] = None) -> List[str]:
+    def get_instances(
+            self, 
+            split: str, 
+            min_num_instances: Optional[int] = None
+    ) -> List[EfficiencyBenchmarkInstance]:
         if self.online_instances is not None:
             instances = self.online_instances
         else:
@@ -65,8 +77,7 @@ class EfficiencyBenchmarkTask(Task):
                 instances, InstanceFormat.EFFICIENCY_BENCHMARK)
             )
             self.online_instances = instances
-
-        def _maybe_extend_and_shuffle() -> List[str]:
+        def _maybe_extend_and_shuffle() -> List[EfficiencyBenchmarkInstance]:
             if min_num_instances is not None:
                 while len(instances) < min_num_instances:
                     instances.extend(self.online_instances)
@@ -74,13 +85,13 @@ class EfficiencyBenchmarkTask(Task):
             return instances
         return _maybe_extend_and_shuffle() 
 
-    def get_single_stream_instances(self, split: str) -> List[str]:
+    def get_single_stream_instances(self, split: str) -> List[EfficiencyBenchmarkInstance]:
         return self.get_instances(
             split=split,
             min_num_instances=MIN_SINGLE_STREAM_INSTANCES
         )
 
-    def get_random_batch_instances(self, split: str) -> List[str]:
+    def get_random_batch_instances(self, split: str) -> List[EfficiencyBenchmarkInstance]:
         return self.get_instances(
             split=split,
             min_num_instances=MIN_RANDOM_BATCH_INSTANCES
@@ -102,7 +113,7 @@ class EfficiencyBenchmarkTask(Task):
         except:
             print(f"Failed to save offline instances to file: {path}")
     
-    def get_scenario_instances(self, scenario: str, split: str) -> List[str]:
+    def get_scenario_instances(self, scenario: str, split: str) -> List[EfficiencyBenchmarkInstance]:
         funcs = {
             "single_stream": self.get_single_stream_instances,
             "random_batch": self.get_random_batch_instances,
@@ -171,13 +182,6 @@ class EfficiencyBenchmarkRaftTask(EfficiencyBenchmarkTask):
         subset: str
     ):
         EfficiencyBenchmarkTask.__init__(self, "ought/raft", subset)
-
-
-@dataclass
-class EfficiencyBenchmarkInstance:
-    input: Union[str, Dict[str, Any]]
-    target: Optional[str]
-    id: Optional[str]
 
 
 def efficiency_benchmark_mt_conversion(

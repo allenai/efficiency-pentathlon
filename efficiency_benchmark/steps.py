@@ -12,6 +12,8 @@ from efficiency_benchmark.stdio_wrapper import StdioWrapper
 from efficiency_benchmark.task import Task
 from efficiency_benchmark.tasks import TASKS
 from efficiency_benchmark.tasks import EfficiencyBenchmarkTask
+from efficiency_benchmark.tasks.efficiency_benchmark import MIN_OFFLINE_INSTANCES
+from efficiency_benchmark.tasks.efficiency_benchmark import EfficiencyBenchmarkInstance
 
  
 EXPECTED_BATCH_SIZE = 128
@@ -39,10 +41,14 @@ class PredictStep():
         self.cmd = cmd
         self.predictor = StdioWrapper(cmd=cmd)
         self.profiler = Profiler(interval=0.1)
-        self._get_batches()
+        self.targets = None
+        self._prepare_data()
 
-    def _get_batches(self) -> List[List[str]]:
-        instances = self.task.get_scenario_instances(scenario=self.scenario, split=self.split)
+    def _prepare_data(self) -> List[List[str]]:
+        if self.scenario == "offline":
+            self.task.prepare_offline_instances(split=self.split)
+            self.num_instances = MIN_OFFLINE_INSTANCES
+        instances: List[EfficiencyBenchmarkInstance] = self.task.get_scenario_instances(scenario=self.scenario, split=self.split)
         if self.scenario == "accuracy":
             batches = list(more_itertools.chunked(instances, self.max_batch_size))
         elif self.scenario == "single_stream":
@@ -56,8 +62,6 @@ class PredictStep():
                     continue
                 batch = np.random.choice(instances, size=n, replace=False).tolist()
                 batches.append(batch)
-        elif self.scenario == "offline":
-            raise NotImplementedError()
         else:
             raise ValueError(f"Unknown scenario: {self.scenario}. Choose from 'single_stream', 'random_batch', 'offline'")
 
@@ -75,8 +79,6 @@ class PredictStep():
             target_batches = [ [instance.target for instance in batch] for batch in batches]
             self.targets = list(itertools.chain(*target_batches))
             assert len(self.targets) == self.num_instances
-        else:
-            self.targets = None
 
     def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(kwargs["task"], str):
@@ -101,7 +103,9 @@ class PredictStep():
         print(f"CO2 emission: {efficiency_metrics['carbon']: .2e} grams.")
         print(f"Throughput: {efficiency_metrics['throughput']: .2f} instances / s.")
         print(f"Throughput: {efficiency_metrics['throughput_words']: .2f} words / s.")
-        print(f"Latency: {efficiency_metrics['latency'] * 1000: .2f} ms / batch.")
+        if self.scenario != "offline":
+            efficiency_metrics["latency"] = efficiency_metrics["time"] / self.num_batches
+            print(f"Latency: {efficiency_metrics['latency'] * 1000: .2f} ms / batch.")
 
     def run(self) -> Sequence[Any]:
         output_batches = []
@@ -111,9 +115,9 @@ class PredictStep():
         for output_batch in self.predictor.predict(input_batches=self.input_batches, max_batch_size=self.max_batch_size):
             output_batches.append(output_batch)
         efficiency_metrics = self.profiler.stop()
-        efficiency_metrics["throughput"] = self.num_instances / efficiency_metrics["time"]
-        efficiency_metrics["latency"] = efficiency_metrics["time"] / self.num_batches
         results, num_output_words = self.process(output_batches)
+
+        efficiency_metrics["throughput"] = self.num_instances / efficiency_metrics["time"]
         efficiency_metrics["throughput_words"] = num_output_words / efficiency_metrics["time"]
         # self.tabulate_efficiency_metrics(efficiency_metrics)
         return results, efficiency_metrics
