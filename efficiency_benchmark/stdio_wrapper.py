@@ -101,11 +101,56 @@ class StdioWrapper(ABC):
                     for output in output_batch:
                         yield output
 
-    def start(self, dummy_inputs: List[Dict[str, Any]]) -> List[str]:
+    def provide_offline_configs(
+            self,
+            offline_data_path: str,
+            offline_output_file: str,
+            limit: int = -1
+    ) -> bool:
+        configs = {
+            "offline_data_path": offline_data_path,
+            "offline_output_path": offline_output_file,
+            "limit": limit
+        }
+        os.set_blocking(self._process.stdout.fileno(), True)
+        self._process.stdin.write(f"{json.dumps(configs)}\n".encode("utf-8"))
+        self._process.stdin.flush()
+
+        while True:
+            line = self._process.stdout.readline()
+            print(line.decode("utf-8").strip())
+            if line.decode("utf-8").strip() == "Model and data loaded. Start the timer.":
+                break
+
+    def block_for_prediction(
+            self
+    ) -> bool:
+        os.set_blocking(self._process.stdout.fileno(), True)
+
+        while True:
+            line = self._process.stdout.readline()
+            print(line.decode("utf-8").strip())
+            if line.decode("utf-8").strip() == "Offiline prediction done. Stop the timer.":
+                break
+    
+    def block_for_outputs(
+            self
+    ) -> bool:
+        os.set_blocking(self._process.stdout.fileno(), True)
+
+        while True:
+            line = self._process.stdout.readline()
+            print(line.decode("utf-8").strip())
+            if line.decode("utf-8").strip() == "Offiline outputs written. Exit.":
+                break
+
+    def start(self):
         self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
+    def dummy_predict(self, dummy_inputs: List[Dict[str, Any]]) -> List[str]:
         self._write_batch(dummy_inputs)
         dummy_outputs = self._exhaust_and_yield_stdout(1)
         return list(dummy_outputs)
-
+    
     def stop(self):
         pass

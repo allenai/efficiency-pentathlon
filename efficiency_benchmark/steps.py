@@ -6,16 +6,15 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 import more_itertools
 import numpy as np
 import torch
+from datasets import Dataset
 
 from efficiency_benchmark.efficiency.profiler import Profiler
 from efficiency_benchmark.stdio_wrapper import StdioWrapper
 from efficiency_benchmark.task import Task
-from efficiency_benchmark.tasks import TASKS
-from efficiency_benchmark.tasks import EfficiencyBenchmarkTask
-from efficiency_benchmark.tasks.efficiency_benchmark import MIN_OFFLINE_INSTANCES
-from efficiency_benchmark.tasks.efficiency_benchmark import EfficiencyBenchmarkInstance
+from efficiency_benchmark.tasks import TASKS, EfficiencyBenchmarkTask
+from efficiency_benchmark.tasks.efficiency_benchmark import (
+    MIN_OFFLINE_INSTANCES, EfficiencyBenchmarkInstance)
 
- 
 EXPECTED_BATCH_SIZE = 128
 NUM_BATCHES = 1000
 
@@ -42,13 +41,27 @@ class PredictStep():
         self.predictor = StdioWrapper(cmd=cmd)
         self.profiler = Profiler(interval=0.1)
         self.targets = None
+
         self._prepare_data()
 
-    def _prepare_data(self) -> List[List[str]]:
+    def _prepare_data(self):
+
         if self.scenario == "offline":
             self.task.prepare_offline_instances(split=self.split)
-            self.num_instances = MIN_OFFLINE_INSTANCES
+            self.offline_data_path = self.task.offline_data_path(split=self.split)
+            self.offline_output_path = self.task.offline_output_path(split=self.split)
+            return
+
         instances: List[EfficiencyBenchmarkInstance] = self.task.get_scenario_instances(scenario=self.scenario, split=self.split)
+        if self.limit is not None and len(instances) > self.limit:
+            indices = np.random.choice(
+                list(range(len(instances))), 
+                size=self.limit, 
+                replace=False
+            )
+            instances = [ instances[i] for i in indices]
+        self.num_instances = len(instances)
+
         if self.scenario == "accuracy":
             batches = list(more_itertools.chunked(instances, self.max_batch_size))
         elif self.scenario == "single_stream":
@@ -57,23 +70,21 @@ class PredictStep():
             num_instances_per_batch = np.random.poisson(
                 lam=EXPECTED_BATCH_SIZE, size=NUM_BATCHES)
             batches = []
+            idx = 0
             for n in num_instances_per_batch:
                 if n == 0:
                     continue
-                batch = np.random.choice(instances, size=n, replace=False).tolist()
+                batch = instances[idx : idx + n]
+                idx += n
                 batches.append(batch)
+                if idx >= len(instances):
+                    break
         else:
             raise ValueError(f"Unknown scenario: {self.scenario}. Choose from 'single_stream', 'random_batch', 'offline'")
 
-        if self.limit is not None and len(batches) > self.limit:
-            indices = np.random.choice(
-                list(range(len(batches))), 
-                size=self.limit, 
-                replace=False
-            )
-            batches = [ batches[i] for i in indices]
         self.num_batches = len(batches)
-        self.num_instances = sum(len(batch) for batch in batches)
+        assert self.num_instances == sum(len(batch) for batch in batches)
+
         self.input_batches = [ [instance.input for instance in batch] for batch in batches]
         if self.scenario == "accuracy":
             target_batches = [ [instance.target for instance in batch] for batch in batches]
@@ -107,9 +118,16 @@ class PredictStep():
             efficiency_metrics["latency"] = efficiency_metrics["time"] / self.num_batches
             print(f"Latency: {efficiency_metrics['latency'] * 1000: .2f} ms / batch.")
 
-    def run(self) -> Sequence[Any]:
+    def run(self) -> Tuple[Sequence[Any], Dict[str, Any]]:
+        self.predictor.start()
+        if self.scenario == "offline":
+            return self.run_offline()
+        else:
+            return self.run_online()
+
+    def run_online(self) -> Tuple[Sequence[Any], Dict[str, Any]]:
         output_batches = []
-        self.predictor.start(dummy_inputs=self.input_batches[-1])
+        self.predictor.dummy_predict(dummy_inputs=self.input_batches[-1])
 
         self.profiler.start()
         for output_batch in self.predictor.predict(input_batches=self.input_batches, max_batch_size=self.max_batch_size):
@@ -120,6 +138,26 @@ class PredictStep():
         efficiency_metrics["throughput"] = self.num_instances / efficiency_metrics["time"]
         efficiency_metrics["throughput_words"] = num_output_words / efficiency_metrics["time"]
         # self.tabulate_efficiency_metrics(efficiency_metrics)
+        return results, efficiency_metrics
+
+    def run_offline(self) -> Tuple[Sequence[Any], Dict[str, Any]]:
+        self.predictor.provide_offline_configs(
+            offline_data_path=self.offline_data_path,
+            offline_output_file=self.task.offline_output_path(split=self.split),
+            limit=self.limit
+        )
+        self.profiler.start()
+        self.predictor.block_for_prediction()
+        print("prediction done")
+
+        efficiency_metrics = self.profiler.stop()
+        self.predictor.block_for_outputs()
+        self.predictor.stop()
+        results = Dataset.from_json(self.offline_output_path).to_list()
+        self.num_instances = len(results)
+        efficiency_metrics["throughput"] = self.num_instances / efficiency_metrics["time"]
+        num_output_words = sum([ len(result["output"].split()) for result in results])
+        efficiency_metrics["throughput_words"] = num_output_words / efficiency_metrics["time"] 
         return results, efficiency_metrics
 
     def process(

@@ -59,6 +59,10 @@ class EfficiencyBenchmarkTask(Task):
     
     def offline_data_path(self, split: str) -> str:
         return os.path.join(self.base_dir, split, "offline.json")
+    
+    # TODO
+    def offline_output_path(self, split: str) -> str:
+        return os.path.join(self.base_dir, split, "offline_output.json")
 
     def _convert_instances(
         self,
