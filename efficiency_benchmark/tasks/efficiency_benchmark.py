@@ -5,6 +5,7 @@ from random import Random
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 import datasets
+import pandas as pd
 import numpy as np
 from datasets import Dataset
 
@@ -25,9 +26,17 @@ class EfficiencyBenchmarkInstance:
     target: Optional[str]
     id: Optional[str]
 
+    def to_dict(self) -> Dict[str, Any]:
+        d = {"input": self.input}
+        if self.target is not None:
+            d["target"] = self.target
+        if self.id is not None:
+            d["id"] = self.id
+        return d
+
 
 # TODO
-DATA_DIR = "/datasets"
+DATA_DIR = "/home/haop/datasets/eb"
 class EfficiencyBenchmarkTask(Task):
     def __init__(
         self,
@@ -49,7 +58,7 @@ class EfficiencyBenchmarkTask(Task):
         return os.path.join(DATA_DIR, self.dataset_path, self.dataset_name)
     
     def offline_data_path(self, split: str) -> str:
-        self.online_data_path = os.path.join(self.base_dir, split, "offline.json")
+        return os.path.join(self.base_dir, split, "offline.json")
 
     def _convert_instances(
         self,
@@ -62,7 +71,9 @@ class EfficiencyBenchmarkTask(Task):
         return Dataset.from_json(path).to_list()
 
     def save_instances_to_json(self, instances: List[EfficiencyBenchmarkInstance], path: str):
+        instances = [i.to_dict() for i in instances]
         Dataset.from_list(instances).to_json(path)
+        return
 
     def get_instances(
             self, 
