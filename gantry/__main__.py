@@ -302,6 +302,9 @@ def run(
     replicas: Optional[int] = None,
     leader_selection: bool = False,
     host_networking: bool = False,
+    split: str = "validation",
+    limit: Optional[int] = None,
+    max_batch_size: int = 32,
 ):
     """
     Run an experiment on Beaker.
@@ -369,7 +372,7 @@ def run(
     # Validate the input datasets.
     datasets_to_use = util.ensure_datasets(beaker, *dataset) if dataset else []
 
-    env_vars = [("TASK", task)]
+    env_vars = [("TASK", task), ("LIMIT", limit), ("MAX_BATCH_SIZE", max_batch_size), ("SPLIT", split)]
     for e in env or []:
         try:
             env_name, val = e.split("=")

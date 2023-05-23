@@ -1,11 +1,12 @@
+import os
 from typing import Optional, Tuple
 
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
 
+from efficiency_benchmark.steps import (CalculateMetricsStep, LogOutputStep,
+                                        PredictStep, TabulateMetricsStep)
 from gantry import run as gantry_run
-from efficiency_benchmark.steps import (CalculateMetricsStep, PredictStep,
-                                        TabulateMetricsStep, LogOutputStep)
 
 _CLICK_GROUP_DEFAULTS = {
     "cls": HelpColorsGroup,
@@ -57,7 +58,7 @@ def main():
 )
 @click.option(
     "-o",
-    "--output_file",
+    "--offline_dir",
     type=str,
     nargs=1,
     help="""Output file.""",
@@ -73,9 +74,9 @@ def run(
     cmd: Tuple[str, ...],
     task: str,
     split: str = "validation",
-    scenario: str = "random_batch",
+    scenario: str = "accuracy",
     max_batch_size: int = 32,
-    output_file: Optional[str] = None,
+    offline_dir: str = f"{os.getcwd()}/datasets/efficiency-beenchmark",
     limit: Optional[int] = None,
 ):
     metric_task_dict = {}
@@ -84,6 +85,7 @@ def run(
         task=task,
         scenario=scenario,
         max_batch_size=max_batch_size,
+        offline_dir=offline_dir,
         split=split,
         limit=limit,
     )
@@ -124,6 +126,13 @@ def run(
     help="""Limit.""",
 )
 @click.option(
+    "-b",
+    "--max_batch_size",
+    type=int,
+    default=32,
+    help="""Maximum batch size.""",
+)
+@click.option(
     "--gpus",
     type=int,
     help="""Minimum number of GPUs (e.g. 1).""",
@@ -140,12 +149,16 @@ def submit(
     task: str,
     split: str = "validation",
     limit: int = None,
+    max_batch_size: int = 32,
     gpus: int = 1,
     dataset: Optional[Tuple[str, ...]] = None,
 ):
     gantry_run(
         arg=cmd,
         task=task,
+        split=split,
+        limit=limit,
+        max_batch_size=max_batch_size,
         cluster=["efficiency-benchmark/elanding-rtx-8000"], # TODO
         beaker_image="haop/efficiency-benchmark",  # TODO
         workspace="efficiency-benchmark/efficiency-benchmark",

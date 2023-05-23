@@ -118,7 +118,6 @@ class StdioWrapper(ABC):
 
         while True:
             line = self._process.stdout.readline()
-            print(line.decode("utf-8").strip())
             if line.decode("utf-8").strip() == "Model and data loaded. Start the timer.":
                 break
 
@@ -129,7 +128,6 @@ class StdioWrapper(ABC):
 
         while True:
             line = self._process.stdout.readline()
-            print(line.decode("utf-8").strip())
             if line.decode("utf-8").strip() == "Offiline prediction done. Stop the timer.":
                 break
     
@@ -140,7 +138,6 @@ class StdioWrapper(ABC):
 
         while True:
             line = self._process.stdout.readline()
-            print(line.decode("utf-8").strip())
             if line.decode("utf-8").strip() == "Offiline outputs written. Exit.":
                 break
 

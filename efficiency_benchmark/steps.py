@@ -27,6 +27,7 @@ class PredictStep():
         task: Union[str, Task],
         scenario: str,
         max_batch_size: int,
+        offline_dir: str,
         split: Optional[str] = None,
         limit: Optional[int] = None,
         **kwargs
@@ -36,6 +37,7 @@ class PredictStep():
         self.split = split if split is not None else self.task.default_split
         self.scenario = scenario
         self.max_batch_size = max_batch_size
+        self.offline_dir = offline_dir
         self.limit = limit
         self.cmd = cmd
         self.predictor = StdioWrapper(cmd=cmd)
@@ -47,9 +49,15 @@ class PredictStep():
     def _prepare_data(self):
 
         if self.scenario == "offline":
-            self.task.prepare_offline_instances(split=self.split)
-            self.offline_data_path = self.task.offline_data_path(split=self.split)
-            self.offline_output_path = self.task.offline_output_path(split=self.split)
+            self.task.prepare_offline_instances(base_dir=self.offline_dir, split=self.split)
+            self.offline_data_path = self.task.offline_data_path(
+                base_dir=self.offline_dir,
+                split=self.split
+            )
+            self.offline_output_path = self.task.offline_output_path(
+                base_dir=self.offline_dir,
+                split=self.split
+            )
             return
 
         instances: List[EfficiencyBenchmarkInstance] = self.task.get_scenario_instances(scenario=self.scenario, split=self.split)
@@ -143,12 +151,11 @@ class PredictStep():
     def run_offline(self) -> Tuple[Sequence[Any], Dict[str, Any]]:
         self.predictor.provide_offline_configs(
             offline_data_path=self.offline_data_path,
-            offline_output_file=self.task.offline_output_path(split=self.split),
+            offline_output_file=self.offline_output_path,
             limit=self.limit
         )
         self.profiler.start()
         self.predictor.block_for_prediction()
-        print("prediction done")
 
         efficiency_metrics = self.profiler.stop()
         self.predictor.block_for_outputs()
