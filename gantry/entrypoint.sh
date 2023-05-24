@@ -9,7 +9,7 @@ RESULTS_DIR="/results"
 CONDA_ENV_FILE="environment.yml"
 PIP_REQUIREMENTS_FILE="requirements.txt"
 PYTHON_VERSION=3.9 
-export HF_DATASETS_CACHE="/datasets"
+# OFFLINE_DIR="/datasets"
 
 # Ensure we have all the environment variables we need.
 for env_var in "$GITHUB_REPO" "$GIT_REF"; do
@@ -120,8 +120,8 @@ export PYTHONPATH
 
 # Create directory for results.
 # shellcheck disable=SC2296
-RESULTS_DIR="results"  # TODO
 mkdir -p "${RESULTS_DIR}/.gantry"
+mkdir -p "${RESULTS_DIR}/outputs"
 
 
 echo "
@@ -146,10 +146,30 @@ echo "
 
 # Execute the arguments to this script as commands themselves, piping output into a log file.
 # shellcheck disable=SC2296
-exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "accuracy" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/accuracy.log"
 
-exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "single_stream" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/single_stream.log"
+if [ -z "$LIMIT" ]
+then
+    echo "Accuracy"
+    exec efficiency-benchmark run --task "$TASK" --max_batch_size "$MAX_BATCH_SIZE" --scenario "accuracy" --output_file "${RESULTS_DIR}/outputs/accuracy.csv" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/accuracy.log"
 
-exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "random_batch" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/random_batch.log"
+    echo "Single Stream"
+    exec efficiency-benchmark run --task "$TASK" --max_batch_size "$MAX_BATCH_SIZE" --scenario "single_stream" --output_file "${RESULTS_DIR}/outputs/single_stream.csv" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/single_stream.log"
 
-exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "offline" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/offline.log"
+    echo "Random batch"
+    exec efficiency-benchmark run --task "$TASK"  --max_batch_size "$MAX_BATCH_SIZE" --scenario "random_batch" --output_file "${RESULTS_DIR}/outputs/random_batch.csv" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/random_batch.log"
+
+    echo "Offline"
+    exec efficiency-benchmark run --task "$TASK" --max_batch_size "$MAX_BATCH_SIZE" --scenario "offline" --output_file "${RESULTS_DIR}/outputs/offline.csv" --offline_dir "$RESULTS_DIR" -- "$@" --offline 2>&1 | tee "${RESULTS_DIR}/.gantry/offline.log"
+else
+    echo "Accuracy"
+    exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "accuracy" --output_file "${RESULTS_DIR}/outputs/accuracy.csv" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/accuracy.log"
+
+    echo "Single Stream"
+    exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "single_stream" --output_file "${RESULTS_DIR}/outputs/single_stream.csv" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/single_stream.log"
+
+    echo "Random batch"
+    exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "random_batch" --output_file "${RESULTS_DIR}/outputs/random_batch.csv" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/random_batch.log"
+
+    echo "Offline"
+    exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "offline" --output_file "${RESULTS_DIR}/outputs/offline.csv" --offline_dir "$RESULTS_DIR" -- "$@" --offline 2>&1 | tee "${RESULTS_DIR}/.gantry/offline.log"
+fi

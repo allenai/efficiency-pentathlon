@@ -61,6 +61,12 @@ def main():
     "--offline_dir",
     type=str,
     nargs=1,
+    help="""Offline dir.""",
+)
+@click.option(
+    "--output_file",
+    type=str,
+    nargs=1,
     help="""Output file.""",
 )
 @click.option(
@@ -78,6 +84,7 @@ def run(
     max_batch_size: int = 32,
     offline_dir: str = f"{os.getcwd()}/datasets/efficiency-beenchmark",
     limit: Optional[int] = None,
+    output_file: Optional[str] = None,
 ):
     metric_task_dict = {}
     prediction_step = PredictStep(
