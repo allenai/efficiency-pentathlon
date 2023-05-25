@@ -187,7 +187,7 @@ def submit(
         cluster=["efficiency-benchmark/elanding-rtx-8000"], # TODO
         beaker_image="haop/efficiency-benchmark",  # TODO
         workspace="efficiency-benchmark/efficiency-benchmark",
-        cpus=112.0,
+        cpus=cpus,
         gpus=2,  # hard code to 2 to make sure only one job runs at a time.
         allow_dirty=True,
         dataset=dataset
