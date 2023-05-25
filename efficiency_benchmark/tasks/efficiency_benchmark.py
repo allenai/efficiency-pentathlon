@@ -16,7 +16,7 @@ from efficiency_benchmark.tasks.huggingface import get_from_dict
 
 MIN_SINGLE_STREAM_INSTANCES = 1000
 MIN_RANDOM_BATCH_INSTANCES = 5000
-MIN_OFFLINE_INSTANCES = 32 * 10000
+MIN_OFFLINE_INSTANCES = 32 * 1000
 
 
 @dataclass
