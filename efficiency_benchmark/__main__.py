@@ -97,17 +97,18 @@ def run(
         limit=limit,
     )
     predictions, efficiency_metrics = prediction_step.run()
-    try:
-        os.makedirs(output_dir, exist_ok=True)
-        print("Output to: ", output_dir)
-    except OSError:
-        print(f"Failed to create output directory: {output_dir}")
-        output_dir = None
+    if output_dir:
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+            print("Output to: ", output_dir)
+        except OSError:
+            print(f"Failed to create output directory: {output_dir}")
+            output_dir = None
     if scenario == "accuracy":
         metric_step = CalculateMetricsStep(task=task)
         metrics = metric_step.calculate_metrics(predictions=predictions)
         metric_task_dict[task] = metrics
-        output_step = LogOutputStep(task=task, output_file=f"{output_dir}/{scenario}_scenario_outputs.json")
+        output_step = LogOutputStep(task=task, output_file=f"{output_dir}/{scenario}_scenario_outputs.json" if output_dir else None)
         output_step.run(predictions=predictions)
 
     table_step = TabulateMetricsStep()
@@ -148,10 +149,15 @@ def run(
     default=32,
     help="""Maximum batch size.""",
 )
+# @click.option(
+#     "--gpus",
+#     type=int,
+#     help="""Minimum number of GPUs (e.g. 1).""",
+# )
 @click.option(
-    "--gpus",
-    type=int,
-    help="""Minimum number of GPUs (e.g. 1).""",
+    "--cpus",
+    type=float,
+    help="""Minimum number of logical CPU cores (e.g. 4.0, 0.5).""",
 )
 @click.option(
     "--dataset",
@@ -166,7 +172,8 @@ def submit(
     split: str = "validation",
     limit: int = None,
     max_batch_size: int = 32,
-    gpus: int = 1,
+    cpus: Optional[float] = None,
+    # gpus: int = 2,
     dataset: Optional[Tuple[str, ...]] = None,
 ):
     gantry_run(
@@ -178,8 +185,8 @@ def submit(
         cluster=["efficiency-benchmark/elanding-rtx-8000"], # TODO
         beaker_image="haop/efficiency-benchmark",  # TODO
         workspace="efficiency-benchmark/efficiency-benchmark",
-        cpus= None,
-        gpus=gpus,
+        cpus=cpus,
+        gpus=2,  # hard code to 2 to make sure only one job runs at a time.
         allow_dirty=True,
         dataset=dataset
     )

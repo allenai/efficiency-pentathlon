@@ -160,4 +160,4 @@ echo "Random batch"
 exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "random_batch" --output_dir "$RESULTS_DIR" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/random_batch.log"
 
 echo "Offline"
-exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "offline" --offline_dir "$RESULTS_DIR" -- "$@" --offline 2>&1 | tee "${RESULTS_DIR}/.gantry/offline.log"
+exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "offline" --output_dir "$RESULTS_DIR" --offline_dir "$RESULTS_DIR" -- "$@" --offline 2>&1 | tee "${RESULTS_DIR}/.gantry/offline.log"
