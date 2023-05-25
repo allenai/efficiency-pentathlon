@@ -1,4 +1,4 @@
-import csv
+import json
 import itertools
 from collections import defaultdict
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
@@ -12,8 +12,7 @@ from efficiency_benchmark.efficiency.profiler import Profiler
 from efficiency_benchmark.stdio_wrapper import StdioWrapper
 from efficiency_benchmark.task import Task
 from efficiency_benchmark.tasks import TASKS, EfficiencyBenchmarkTask
-from efficiency_benchmark.tasks.efficiency_benchmark import (
-    MIN_OFFLINE_INSTANCES, EfficiencyBenchmarkInstance)
+from efficiency_benchmark.tasks.efficiency_benchmark import EfficiencyBenchmarkInstance
 
 EXPECTED_BATCH_SIZE = 128
 NUM_BATCHES = 1000
@@ -108,7 +107,8 @@ class PredictStep():
 
     def tabulate_efficiency_metrics(
         self,
-        efficiency_metrics: Dict[str, Any]
+        efficiency_metrics: Dict[str, Any],
+        output_file: Optional[str] = None,
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         print(f"Time Elapsed: {efficiency_metrics['time']:.2f} s")
         # print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .2f} GiB")
@@ -126,6 +126,13 @@ class PredictStep():
         if self.scenario != "offline":
             efficiency_metrics["latency"] = efficiency_metrics["time"] / self.num_batches
             print(f"Latency: {efficiency_metrics['latency'] * 1000: .2f} ms / batch.")
+
+        if output_file is not None:
+            try:
+                with open(output_file, "w") as fout:
+                    json.dump(efficiency_metrics, fout)
+            except:
+                print(f"Failed to write efficiency metrics to {output_file}.")
 
     def run(self) -> Tuple[Sequence[Any], Dict[str, Any]]:
         self.predictor.start()

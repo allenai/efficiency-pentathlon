@@ -26,7 +26,7 @@ class Profiler():
         self._start_time: Optional[float] = None
         self._emission_tracker = EmissionsTracker(
             measure_power_secs=interval,
-            log_level="warning",
+            log_level="error",
             # gpu_ids=gpu_ids
             **kwargs
         )
@@ -69,21 +69,21 @@ class Profiler():
         used_memory = sum(
             [
                 gpu_details["used_memory"]
-                for idx, gpu_details in enumerate(all_gpu_details)
+                for _, gpu_details in enumerate(all_gpu_details)
                 # if idx in self.gpu_ids
              ]
         )
         gpu_utilization = sum(
             [
                 gpu_details["gpu_utilization"]
-                for idx, gpu_details in enumerate(all_gpu_details)
+                for _, gpu_details in enumerate(all_gpu_details)
                 # if idx in self.gpu_ids
              ]
         )
         gpu_power = sum(
             [
                 gpu_details["power_usage"] * 1e-3
-                for idx, gpu_details in enumerate(all_gpu_details)
+                for _, gpu_details in enumerate(all_gpu_details)
                 # if idx in self.gpu_ids
              ]
         )

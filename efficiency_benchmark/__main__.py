@@ -73,7 +73,7 @@ def main():
     "-l",
     "--limit",
     type=int,
-    default=None,
+    default=-1,
     help="""Limit.""",
 )
 def run(
@@ -83,7 +83,7 @@ def run(
     scenario: str = "accuracy",
     max_batch_size: int = 32,
     offline_dir: str = f"{os.getcwd()}/datasets/efficiency-beenchmark",
-    limit: Optional[int] = None,
+    limit: Optional[int] = -1,
     output_dir: Optional[str] = None,
 ):
     metric_task_dict = {}
@@ -97,18 +97,27 @@ def run(
         limit=limit,
     )
     predictions, efficiency_metrics = prediction_step.run()
+    try:
+        os.makedirs(output_dir, exist_ok=True)
+        print("Output to: ", output_dir)
+    except OSError:
+        print(f"Failed to create output directory: {output_dir}")
+        output_dir = None
     if scenario == "accuracy":
         metric_step = CalculateMetricsStep(task=task)
         metrics = metric_step.calculate_metrics(predictions=predictions)
         metric_task_dict[task] = metrics
-        output_step = LogOutputStep(task=task, output_file=f"{output_dir}/{scenario}.json")
+        output_step = LogOutputStep(task=task, output_file=f"{output_dir}/{scenario}_scenario_outputs.json")
         output_step.run(predictions=predictions)
 
     table_step = TabulateMetricsStep()
     table_step_result = table_step.run(metrics=metric_task_dict)
 
     print("\n".join(table_step_result))
-    prediction_step.tabulate_efficiency_metrics(efficiency_metrics)
+    prediction_step.tabulate_efficiency_metrics(
+        efficiency_metrics,
+        output_file=f"{output_dir}/{scenario}_scenario_efficiency_metrics.json" if output_dir else None
+    )
 
 
 @main.command(**_CLICK_COMMAND_DEFAULTS)

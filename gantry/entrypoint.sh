@@ -143,32 +143,21 @@ echo "
 #############################
 "
 
+if [ -z "$LIMIT" ]; then
+    LIMIT=-1
+fi
+
+
 # Execute the arguments to this script as commands themselves, piping output into a log file.
 # shellcheck disable=SC2296
+echo "Accuracy"
+exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "accuracy" --output_dir "$RESULTS_DIR" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/accuracy.log"
 
-if [ -z "$LIMIT" ]
-then
-    echo "Accuracy"
-    exec efficiency-benchmark run --task "$TASK" --max_batch_size "$MAX_BATCH_SIZE" --scenario "accuracy" --output_dir "${RESULTS_DIR}" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/accuracy.log"
+echo "Single Stream"
+exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "single_stream" --output_dir "$RESULTS_DIR" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/single_stream.log"
 
-    echo "Single Stream"
-    exec efficiency-benchmark run --task "$TASK" --max_batch_size "$MAX_BATCH_SIZE" --scenario "single_stream" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/single_stream.log"
+echo "Random batch"
+exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "random_batch" --output_dir "$RESULTS_DIR" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/random_batch.log"
 
-    echo "Random batch"
-    exec efficiency-benchmark run --task "$TASK"  --max_batch_size "$MAX_BATCH_SIZE" --scenario "random_batch" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/random_batch.log"
-
-    echo "Offline"
-    exec efficiency-benchmark run --task "$TASK" --max_batch_size "$MAX_BATCH_SIZE" --scenario "offline" --offline_dir "$RESULTS_DIR" -- "$@" --offline 2>&1 | tee "${RESULTS_DIR}/.gantry/offline.log"
-else
-    echo "Accuracy"
-    exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "accuracy" --output_dir "${RESULTS_DIR}" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/accuracy.log"
-
-    echo "Single Stream"
-    exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "single_stream" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/single_stream.log"
-
-    echo "Random batch"
-    exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "random_batch" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/random_batch.log"
-
-    echo "Offline"
-    exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "offline" --offline_dir "$RESULTS_DIR" -- "$@" --offline 2>&1 | tee "${RESULTS_DIR}/.gantry/offline.log"
-fi
+echo "Offline"
+exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "offline" --offline_dir "$RESULTS_DIR" -- "$@" --offline 2>&1 | tee "${RESULTS_DIR}/.gantry/offline.log"
