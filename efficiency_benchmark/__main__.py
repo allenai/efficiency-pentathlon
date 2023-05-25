@@ -64,10 +64,10 @@ def main():
     help="""Offline dir.""",
 )
 @click.option(
-    "--output_file",
+    "--output_dir",
     type=str,
     nargs=1,
-    help="""Output file.""",
+    help="""Output folder.""",
 )
 @click.option(
     "-l",
@@ -84,7 +84,7 @@ def run(
     max_batch_size: int = 32,
     offline_dir: str = f"{os.getcwd()}/datasets/efficiency-beenchmark",
     limit: Optional[int] = None,
-    output_file: Optional[str] = None,
+    output_dir: Optional[str] = None,
 ):
     metric_task_dict = {}
     prediction_step = PredictStep(
@@ -101,7 +101,7 @@ def run(
         metric_step = CalculateMetricsStep(task=task)
         metrics = metric_step.calculate_metrics(predictions=predictions)
         metric_task_dict[task] = metrics
-        output_step = LogOutputStep(task=task, output_file=output_file)
+        output_step = LogOutputStep(task=task, output_file=f"{output_dir}/{scenario}.json")
         output_step.run(predictions=predictions)
 
     table_step = TabulateMetricsStep()
