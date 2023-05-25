@@ -49,14 +49,14 @@ class EfficiencyBenchmarkTask(Task):
     def has_split(self, split: str) -> bool:
         return split in datasets.get_dataset_split_names(self.dataset_path, self.dataset_name)
 
-    def base_dir(self, base_dir: str) -> str:
-        return os.path.join(base_dir, self.dataset_path, self.dataset_name)
+    def base_dir(self, base_dir: str, split: str) -> str:
+        return os.path.join(base_dir, self.dataset_path, self.dataset_name, split)
     
     def offline_data_path(self, base_dir: str, split: str) -> str:
-        return os.path.join(self.base_dir(base_dir), split, "offline.json")
+        return os.path.join(self.base_dir(base_dir, split), "offline", "data.json")
     
     def offline_output_path(self, base_dir: str, split: str) -> str:
-        return os.path.join(self.base_dir(base_dir), split, "offline_output.json")
+        return os.path.join(self.base_dir(base_dir, split), "offline", "outputs.json")
 
     def _convert_instances(
         self,

@@ -41,6 +41,7 @@ def main():
     "--split",
     type=str,
     help="""Split.""",
+    default="test",
 )
 @click.option(
     "-s",
@@ -79,7 +80,7 @@ def main():
 def run(
     cmd: Tuple[str, ...],
     task: str,
-    split: str = "validation",
+    split: str = "test",
     scenario: str = "accuracy",
     max_batch_size: int = 32,
     offline_dir: str = f"{os.getcwd()}/datasets/efficiency-beenchmark",
@@ -98,6 +99,7 @@ def run(
     )
     predictions, efficiency_metrics = prediction_step.run()
     if output_dir:
+        output_dir = prediction_step.task.base_dir(base_dir=output_dir, split=prediction_step.split)
         try:
             os.makedirs(output_dir, exist_ok=True)
             print("Output to: ", output_dir)
@@ -108,7 +110,7 @@ def run(
         metric_step = CalculateMetricsStep(task=task)
         metrics = metric_step.calculate_metrics(predictions=predictions)
         metric_task_dict[task] = metrics
-        output_step = LogOutputStep(task=task, output_file=f"{output_dir}/{scenario}_scenario_outputs.json" if output_dir else None)
+        output_step = LogOutputStep(task=task, output_file=f"{output_dir}/{scenario}/outputs.json" if output_dir else None)
         output_step.run(predictions=predictions)
 
     table_step = TabulateMetricsStep()
@@ -117,7 +119,7 @@ def run(
     print("\n".join(table_step_result))
     prediction_step.tabulate_efficiency_metrics(
         efficiency_metrics,
-        output_file=f"{output_dir}/{scenario}_scenario_efficiency_metrics.json" if output_dir else None
+        output_file=f"{output_dir}/{scenario}/efficiency_metrics.json" if output_dir else None
     )
 
 
@@ -185,7 +187,7 @@ def submit(
         cluster=["efficiency-benchmark/elanding-rtx-8000"], # TODO
         beaker_image="haop/efficiency-benchmark",  # TODO
         workspace="efficiency-benchmark/efficiency-benchmark",
-        cpus=cpus,
+        cpus=112.0,
         gpus=2,  # hard code to 2 to make sure only one job runs at a time.
         allow_dirty=True,
         dataset=dataset
