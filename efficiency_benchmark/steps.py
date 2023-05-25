@@ -60,7 +60,7 @@ class PredictStep():
             return
 
         instances: List[EfficiencyBenchmarkInstance] = self.task.get_scenario_instances(scenario=self.scenario, split=self.split)
-        if self.limit is not None and len(instances) > self.limit:
+        if self.limit is not None and self.limit > 0 and len(instances) > self.limit:
             indices = np.random.choice(
                 list(range(len(instances))), 
                 size=self.limit, 

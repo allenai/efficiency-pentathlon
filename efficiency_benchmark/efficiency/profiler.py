@@ -89,7 +89,10 @@ class Profiler():
         )
         self._max_used_gpu_memory = max(self._max_used_gpu_memory, used_memory)
         self._gpu_utilization += gpu_utilization
-        self._gpu_power += gpu_power
+        if isinstance(self._gpu_power, Power):
+            self._gpu_power = self._gpu_power + Power.from_watts(gpu_power)
+        else:
+            self._gpu_power += gpu_power
         self._gpu_reads += 1
 
     def start(self) -> None:
