@@ -35,7 +35,8 @@ class Profiler():
         self._gpu_scheduler: Optional[PeriodicScheduler] = None
         self._max_used_gpu_memory: Optional[float] = None
         self._gpu_utilization: Optional[float] = None
-        self._gpu_utilization_count: Optional[int] = None
+        self._gpu_reads: Optional[int] = None
+        self._gpu_power: Optional[float] = None
 
         if self._gpu_details_available:
             self._gpu_scheduler = PeriodicScheduler(
@@ -44,7 +45,8 @@ class Profiler():
             )
             self._max_used_gpu_memory = -1.0
             self._gpu_utilization = 0.0
-            self._gpu_utilization_count = 0
+            self._gpu_power = 0.0
+            self._gpu_reads = 0
 
     def _try_power_monitor(self):
         self._power_monitor_ser = PowerMonitor.try_open_serial_port()
@@ -78,9 +80,17 @@ class Profiler():
                 # if idx in self.gpu_ids
              ]
         )
+        gpu_power = sum(
+            [
+                gpu_details["power_usage"] * 1e-3
+                for idx, gpu_details in enumerate(all_gpu_details)
+                # if idx in self.gpu_ids
+             ]
+        )
         self._max_used_gpu_memory = max(self._max_used_gpu_memory, used_memory)
         self._gpu_utilization += gpu_utilization
-        self._gpu_utilization_count += 1
+        self._gpu_power += gpu_power
+        self._gpu_reads += 1
 
     def start(self) -> None:
         self._emission_tracker.start()
@@ -113,10 +123,10 @@ class Profiler():
             except:
                 pass
                 # raise RuntimeError("Failed to stop gpu scheduler.")
-        self._profile_gpu()
-
-        self._max_used_gpu_memory = self._max_used_gpu_memory / 2 ** 30
-        self._gpu_utilization /= self._gpu_utilization_count
+            self._profile_gpu()
+            self._max_used_gpu_memory = self._max_used_gpu_memory / 2 ** 30
+            self._gpu_utilization /= self._gpu_reads
+            self._gpu_power = Power.from_watts(self._gpu_power / self._gpu_reads)
         codecarbon_data = self._emission_tracker.final_emissions_data
 
         self.efficiency_metrics: Dict[str, Any] = {
@@ -125,6 +135,7 @@ class Profiler():
             "gpu_energy": codecarbon_data.gpu_energy,  # kWh
             "cpu_energy": codecarbon_data.cpu_energy,  # kWh
             "dram_energy": codecarbon_data.ram_energy,  # kWh
+            "avg_gpu_power": self._gpu_power.W,
             "avg_power": avg_power.W if self._use_power_monitor else codecarbon_data.cpu_power + codecarbon_data.gpu_power,
             "total_energy": codecarbon_data.energy_consumed,
             "carbon": codecarbon_data.emissions

@@ -117,6 +117,7 @@ class PredictStep():
         # print(f"GPU Energy: {efficiency_metrics['gpu_energy']:.2e} Wh")
         # print(f"CPU Energy: {efficiency_metrics['cpu_energy']: .2e} Wh")
         # print(f"Memory Energy: {efficiency_metrics['dram_energy']: .2e} Wh")
+        print(f"Average GPU power: {efficiency_metrics['avg_gpu_power']: .2e} W.")
         print(f"Average power: {efficiency_metrics['avg_power']: .2e} W.")
         print(f"Total energy: {efficiency_metrics['total_energy']: .2e} Wh.")
         print(f"CO2 emission: {efficiency_metrics['carbon']: .2e} grams.")
@@ -145,7 +146,6 @@ class PredictStep():
 
         efficiency_metrics["throughput"] = self.num_instances / efficiency_metrics["time"]
         efficiency_metrics["throughput_words"] = num_output_words / efficiency_metrics["time"]
-        # self.tabulate_efficiency_metrics(efficiency_metrics)
         return results, efficiency_metrics
 
     def run_offline(self) -> Tuple[Sequence[Any], Dict[str, Any]]:
@@ -300,29 +300,36 @@ class LogOutputStep():
 
     def __init__(self, task: Union[str, Task], output_file: Optional[str] = None):
         self.task = TASKS[task] if isinstance(task, str) else task
-        self.output_file = output_file
+        self.output_file: str = output_file
 
     def run(self, predictions: Sequence[Dict[str, Any]]) -> None:
-        predictions = self.remove_metrics(predictions)
-        if self.output_file is None:
-            # Log to stdout if no output file is specified.
+        predictions = self.remove_metrics(predictions, additional_fields=["target"])
+
+        def _log_to_stdout():
             for prediction in predictions:
                 print(prediction)
+        if self.output_file is not None:
+            try:
+                outputs = Dataset.from_list(predictions)
+                outputs.to_json(self.output_file)
+            except:
+                print("Failed to write output to file. Logging to stdout instead.")
+                _log_to_stdout()
         else:
-            field_names = predictions[0].keys()
-            with open(self.output_file, "w") as fout:
-                writer = csv.DictWriter(fout, fieldnames=field_names, delimiter="\t")
-                writer.writeheader()
-                for prediction in predictions:
-                    writer.writerow(prediction)
+            _log_to_stdout()
 
     def remove_metrics(
             self, 
-            predictions: Sequence[Dict[str, Any]]
+            predictions: Sequence[Dict[str, Any]],
+            additional_fields: Optional[Sequence[str]] = None
     ) -> Sequence[Dict[str, Any]]:
         # Remove metrics from the output.
         for prediction in predictions:
             for metric_name in self.task.metrics.keys():
                 prediction.pop(metric_name)
+        if additional_fields is not None:
+            for prediction in predictions:
+                for field in additional_fields:
+                    prediction.pop(field)
         return predictions
 

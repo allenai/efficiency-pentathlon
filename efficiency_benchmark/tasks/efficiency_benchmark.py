@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 
 import datasets
 import numpy as np
-import pandas as pd
 from datasets import Dataset
 
 from efficiency_benchmark.tango_utils import MappedSequence
