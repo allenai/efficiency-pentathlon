@@ -77,7 +77,7 @@ class StdioWrapper(ABC):
         input_batches: List[List[str]],
         max_batch_size: int
     ) -> Iterator[str]:
-        for input_batch in tqdm.tqdm(input_batches, desc="Making predictions"):
+        for input_batch in tqdm.tqdm(input_batches, desc="Making predictions", miniters=10):
 
             # Make sure the batch size does not exceed a user defined maximum.
             # Split into smaller batches if necessary.
