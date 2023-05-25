@@ -18,7 +18,7 @@ efficiency-benchmark run --task wmt16-en-ro  --max_batch_size 100 --scenario acc
 
 ## To submit to the dedicated machine
 ```
-efficiency-benchmark submit --task wmt16-en-ro  --max_batch_size 100  --gpus 1  -- python entrypoint.py --model mbart
+efficiency-benchmark submit --task wmt16-en-ro  --max_batch_size 100  -- python entrypoint.py --model mbart
 ```
 
 Please contact haop@ to get access to this machine.
