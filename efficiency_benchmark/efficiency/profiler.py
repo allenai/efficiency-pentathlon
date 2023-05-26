@@ -116,7 +116,6 @@ class Profiler():
                 powers.append(np.array([ float(r[f]) for f in POWER_FIELDS ]).sum())
             avg_power: Power = Power.from_watts(np.array(powers).mean())
             total_energy: Energy = Energy.from_power_and_time(power=avg_power, time=time_elapsed)
-            self._emission_tracker.final_emissions_data.energy_consumed = 0
             self._emission_tracker.final_emissions_data.energy_consumed = total_energy
             self._emission_tracker.final_emissions_data = self._emission_tracker._prepare_emissions_data()
                 
@@ -133,14 +132,14 @@ class Profiler():
         codecarbon_data = self._emission_tracker.final_emissions_data
 
         self.efficiency_metrics: Dict[str, Any] = {
-            "time": time_elapsed.seconds,
+            "time": time_elapsed.seconds,  # seconds
             "max_gpu_mem": self._max_used_gpu_memory,
             "gpu_energy": codecarbon_data.gpu_energy,  # kWh
             "cpu_energy": codecarbon_data.cpu_energy,  # kWh
             "dram_energy": codecarbon_data.ram_energy,  # kWh
-            "avg_gpu_power": self._gpu_power.W,
-            "avg_power": avg_power.W if self._use_power_monitor else codecarbon_data.cpu_power + codecarbon_data.gpu_power,
-            "total_energy": codecarbon_data.energy_consumed,
-            "carbon": codecarbon_data.emissions
+            "avg_gpu_power": self._gpu_power.W,  # W
+            "avg_power": avg_power.W if self._use_power_monitor else codecarbon_data.cpu_power + codecarbon_data.gpu_power,  # W
+            "total_energy": codecarbon_data.energy_consumed,  # kWh
+            "carbon": codecarbon_data.emissions  # grams
         }
         return self.efficiency_metrics

@@ -107,30 +107,30 @@ class PredictStep():
 
     def tabulate_efficiency_metrics(
         self,
-        efficiency_metrics: Dict[str, Any],
+        metrics: Dict[str, Any],
         output_file: Optional[str] = None,
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        print(f"Time Elapsed: {efficiency_metrics['time']:.2f} s")
+        print(f"Time Elapsed: {metrics['time']:.2f} s")
         # print(f"Max DRAM Memory Usage: {max_mem_util * total_memory: .2f} GiB")
         # print(f"Number of Parameters: {efficiency_metrics['num_params'] / 1e6: .2f} M")
-        print(f"Max GPU memory usage: {efficiency_metrics['max_gpu_mem']: .2f} GiB.")
-        # print(f"GPU Energy: {efficiency_metrics['gpu_energy']:.2e} Wh")
-        # print(f"CPU Energy: {efficiency_metrics['cpu_energy']: .2e} Wh")
-        # print(f"Memory Energy: {efficiency_metrics['dram_energy']: .2e} Wh")
-        print(f"Average GPU power: {efficiency_metrics['avg_gpu_power']: .2e} W.")
-        print(f"Average power: {efficiency_metrics['avg_power']: .2e} W.")
-        print(f"Total energy: {efficiency_metrics['total_energy']: .2e} Wh.")
-        print(f"CO2 emission: {efficiency_metrics['carbon']: .2e} grams.")
-        print(f"Throughput: {efficiency_metrics['throughput']: .2f} instances / s.")
-        print(f"Throughput: {efficiency_metrics['throughput_words']: .2f} words / s.")
+        print(f"Max GPU memory usage: {metrics['max_gpu_mem']: .2f} GiB.")
+        # print(f"GPU Energy: {metrics['gpu_energy']:.2e} Wh")
+        # print(f"CPU Energy: {metrics['cpu_energy']: .2e} Wh")
+        # print(f"Memory Energy: {metrics['dram_energy']: .2e} Wh")
+        print(f"Average GPU power: {metrics['avg_gpu_power']: .2e} W.")
+        print(f"Average power: {metrics['avg_power']: .2e} W.")
+        print(f"Total energy: {metrics['total_energy']: .2e} kWh.")
+        print(f"CO2 emission: {metrics['carbon']: .2e} kg.")
+        print(f"Throughput: {metrics['throughput']: .2f} instances / s.")
+        print(f"Throughput: {metrics['throughput_words']: .2f} words / s.")
         if self.scenario != "offline":
-            efficiency_metrics["latency"] = efficiency_metrics["time"] / self.num_batches
-            print(f"Latency: {efficiency_metrics['latency'] * 1000: .2f} ms / batch.")
+            metrics["latency"] = metrics["time"] / self.num_batches
+            print(f"Latency: {metrics['latency'] * 1000: .2f} ms / batch.")
 
         if output_file is not None:
             try:
                 with open(output_file, "w") as fout:
-                    json.dump(efficiency_metrics, fout)
+                    json.dump(metrics, fout)
             except:
                 print(f"Failed to write efficiency metrics to {output_file}.")
 
@@ -194,8 +194,7 @@ class PredictStep():
             }
             if self.scenario == "accuracy":
                 result.update(
-                    {metric_name: (output, target) for metric_name in self.task.metrics.keys()
-                     }
+                    {metric_name: (output, target) for metric_name in self.task.metrics.keys()}
                 )
             num_output_words += len(output.split())
             results.append(result)

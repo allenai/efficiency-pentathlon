@@ -97,7 +97,7 @@ def run(
         split=split,
         limit=limit,
     )
-    predictions, efficiency_metrics = prediction_step.run()
+    predictions, metrics = prediction_step.run()
     if output_dir:
         output_dir = prediction_step.task.base_dir(base_dir=output_dir, split=prediction_step.split)
         try:
@@ -108,8 +108,10 @@ def run(
             output_dir = None
     if scenario == "accuracy":
         metric_step = CalculateMetricsStep(task=task)
-        metrics = metric_step.calculate_metrics(predictions=predictions)
-        metric_task_dict[task] = metrics
+        acc_metrics = metric_step.calculate_metrics(predictions=predictions)
+        metric_task_dict[task] = acc_metrics
+        if len(acc_metrics.keys()) > 0:
+            metrics["accuracy"] = acc_metrics
         output_step = LogOutputStep(task=task, output_file=f"{output_dir}/{scenario}/outputs.json" if output_dir else None)
         output_step.run(predictions=predictions)
 
@@ -118,8 +120,8 @@ def run(
 
     print("\n".join(table_step_result))
     prediction_step.tabulate_efficiency_metrics(
-        efficiency_metrics,
-        output_file=f"{output_dir}/{scenario}/efficiency_metrics.json" if output_dir else None
+        metrics,
+        output_file=f"{output_dir}/{scenario}/metrics.json" if output_dir else None
     )
 
 
