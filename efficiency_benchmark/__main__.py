@@ -83,7 +83,7 @@ def run(
     split: str = "test",
     scenario: str = "accuracy",
     max_batch_size: int = 32,
-    offline_dir: str = f"{os.getcwd()}/datasets/efficiency-beenchmark",
+    offline_dir: str = f"{os.getcwd()}/datasets/efficiency-benchmark",
     limit: Optional[int] = -1,
     output_dir: Optional[str] = None,
 ):
@@ -170,6 +170,20 @@ def run(
     help="""An input dataset in the form of 'dataset-name:/mount/location' to attach to your experiment.
     You can specify this option more than once to attach multiple datasets.""",
 )
+
+@click.option(
+    "--beaker-image",
+    type=str,
+    help="""Custom Beaker Image for submission to attach to experiment"""  
+)
+
+@click.option(
+    "--venv",
+    type=str,
+    default="base",
+    help="""Environment to use within custom image"""
+)
+
 def submit(
     cmd: Tuple[str, ...],
     task: str,
@@ -179,7 +193,14 @@ def submit(
     cpus: Optional[float] = None,
     # gpus: int = 2,
     dataset: Optional[Tuple[str, ...]] = None,
+    beaker_image: Optional[str] = None,
+    venv: Optional[str] = None
 ):
+    if beaker_image:
+        submit_beaker_image = beaker_image
+        submit_venv = venv
+    else:
+        submit_beaker_image = "haop/efficiency-benchmark"
     gantry_run(
         arg=cmd,
         task=task,
@@ -187,12 +208,13 @@ def submit(
         limit=limit,
         max_batch_size=max_batch_size,
         cluster=["efficiency-benchmark/elanding-rtx-8000"], # TODO
-        beaker_image="haop/efficiency-benchmark",  # TODO
+        beaker_image=submit_beaker_image,  # TODO
         workspace="efficiency-benchmark/efficiency-benchmark",
         cpus=cpus,
         gpus=2,  # hard code to 2 to make sure only one job runs at a time.
         allow_dirty=True,
-        dataset=dataset
+        dataset=dataset,
+        venv=submit_venv
     )
 
 

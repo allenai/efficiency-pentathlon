@@ -1,4 +1,4 @@
-GITHUB_REPO="haopeng-nlp/submission.git"
+GITHUB_REPO="tomsherborne/submission.git"
 GIT_REF="main"
 RUNTIME_DIR="./gantry-runtime"
 RESULTS_DIR="./results"
