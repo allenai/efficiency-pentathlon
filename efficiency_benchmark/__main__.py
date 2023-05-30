@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import Optional, Tuple
 
 import click
@@ -87,6 +88,22 @@ def run(
     limit: Optional[int] = -1,
     output_dir: Optional[str] = None,
 ):
+    
+    if scenario == "offline":
+        try:
+            os.makedirs(offline_dir, exist_ok=True)
+        except:
+            sys.exit(f"Failed to write to offline directory: {offline_dir}.")
+    
+    if output_dir:
+        output_dir = prediction_step.task.base_dir(base_dir=output_dir, split=prediction_step.split)
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+            print("Output to: ", output_dir)
+        except OSError:
+            print(f"Failed to create output directory: {output_dir}. Logging to STDOUT.")
+            output_dir = None
+
     metric_task_dict = {}
     prediction_step = PredictStep(
         cmd=cmd,
@@ -98,14 +115,6 @@ def run(
         limit=limit,
     )
     predictions, metrics = prediction_step.run()
-    if output_dir:
-        output_dir = prediction_step.task.base_dir(base_dir=output_dir, split=prediction_step.split)
-        try:
-            os.makedirs(output_dir, exist_ok=True)
-            print("Output to: ", output_dir)
-        except OSError:
-            print(f"Failed to create output directory: {output_dir}")
-            output_dir = None
     if scenario == "accuracy":
         metric_step = CalculateMetricsStep(task=task)
         acc_metrics = metric_step.calculate_metrics(predictions=predictions)
