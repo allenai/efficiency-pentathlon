@@ -2,9 +2,11 @@ import json
 import os
 import subprocess
 from abc import ABC
+from subprocess import SubprocessError
 from typing import Any, Dict, Iterator, List, Sequence
-import tqdm
+
 import more_itertools
+import tqdm
 
 
 class StdioWrapper(ABC):
@@ -38,22 +40,12 @@ class StdioWrapper(ABC):
         while num_batches_yielded < block_until_read_num_batches:
             # output is bytes, decode to str
             # Also necessary to remove the \n from the end of the label.
+            output_batch = self._read_batch()
             try:
-                output_batch = self._read_batch()
-            except ValueError:
-                # Nothing in stdout
-                break
-
-            # Very annoyingly, docker socket sometimes attach the output with an 8-byte header,
-            # and sometimes not. 
-            try:
-                output_batch = json.loads(output_batch[8:].decode("utf-8").strip())
+                output_batch = json.loads(output_batch.decode("utf-8").strip())
             except:
-                try:
-                    output_batch = json.loads(output_batch.decode("utf-8").strip())
-                except:
-                    # Irrelavent output in stdout
-                    continue
+                # Irrelavent output in stdout
+                continue
             yield output_batch
             num_batches_yielded += 1
 
@@ -62,13 +54,20 @@ class StdioWrapper(ABC):
         os.set_blocking(self._process.stdout.fileno(), blocking)
 
     def _write_batch(self, batch: Sequence[Dict[str, Any]]) -> None:
-        self._process.stdin.write(f"{json.dumps(batch)}\n".encode("utf-8"))
-        self._process.stdin.flush()
-    
+        try:
+            self._process.stdin.write(f"{json.dumps(batch)}\n".encode("utf-8"))
+            self._process.stdin.flush()
+        except:
+            self.stop()
+            raise SubprocessError
+
     def _read_batch(self) -> str:
-        line = self._process.stdout.readline()
-        if line.decode("utf-8").strip() == "":
-            raise ValueError
+        try:
+            line = self._process.stdout.readline()
+            assert line.decode("utf-8").strip() != ""
+        except:
+            self.stop()
+            raise SubprocessError
         return line
 
     def predict(  # type: ignore
@@ -83,7 +82,7 @@ class StdioWrapper(ABC):
             # Split into smaller batches if necessary.
             splitted_batches = list(more_itertools.chunked(input_batch, max_batch_size))
             num_splitted_batches = len(splitted_batches)
-            num_batches_yielded = 0
+            num_batches_yielded, num_outputs_yielded = 0, 0
             for batch in splitted_batches:
                 self._write_batch(batch)
                 # Feed all splitted batches without blocking.
@@ -92,14 +91,16 @@ class StdioWrapper(ABC):
                     num_batches_yielded += 1
                     for output in output_batch:
                         yield output
+                        num_outputs_yielded += 1
 
             # Now read from stdout until we have hit the required number.
-            # Legacy code from non-blocking mode.
             num_batches_to_read = num_splitted_batches - num_batches_yielded
             if num_batches_to_read > 0:
                 for output_batch in self._exhaust_and_yield_stdout(num_batches_to_read):
                     for output in output_batch:
                         yield output
+                        num_outputs_yielded += 1
+            assert num_outputs_yielded == len(input_batch), "Number of outputs does not match number of inputs."
 
     def provide_offline_configs(
             self,
@@ -150,4 +151,7 @@ class StdioWrapper(ABC):
         return list(dummy_outputs)
     
     def stop(self):
-        pass
+        try:
+            self._process.kill()
+        except:
+            pass
