@@ -184,6 +184,13 @@ def run(
     help="""Environment to use within custom image"""
 )
 
+@click.option(
+    "--pip",
+    type=str,
+    default=None,
+    help="""Requirements file to attach to package installation process for submission"""
+)
+
 def submit(
     cmd: Tuple[str, ...],
     task: str,
@@ -194,13 +201,12 @@ def submit(
     # gpus: int = 2,
     dataset: Optional[Tuple[str, ...]] = None,
     beaker_image: Optional[str] = None,
-    venv: Optional[str] = None
+    venv: Optional[str] = None,
+    pip: Optional[str] = None
 ):
-    if beaker_image:
-        submit_beaker_image = beaker_image
-        submit_venv = venv
-    else:
-        submit_beaker_image = "haop/efficiency-benchmark"
+    submit_beaker_image = beaker_image if beaker_image else "haop/efficiency-benchmark"
+    
+    print(f"Submitting efficiency benchmark submission using image: {submit_beaker_image}")
     gantry_run(
         arg=cmd,
         task=task,
@@ -214,7 +220,8 @@ def submit(
         gpus=2,  # hard code to 2 to make sure only one job runs at a time.
         allow_dirty=True,
         dataset=dataset,
-        venv=submit_venv
+        venv=venv,
+        pip=pip
     )
 
 
