@@ -70,6 +70,11 @@ class StdioWrapper(ABC):
             raise ValueError
         elif line == "Efficiency benchmark exception: SubprocessError":
             self.stop()
+            print("Below is the traceback of the subprocess:")
+            print("=========================")
+            while line != "":
+                print(line)
+                line = self._process.stdout.readline().decode("utf-8").strip()
             raise SubprocessError
         return line
 
