@@ -40,9 +40,12 @@ class StdioWrapper(ABC):
         while num_batches_yielded < block_until_read_num_batches:
             # output is bytes, decode to str
             # Also necessary to remove the \n from the end of the label.
-            output_batch = self._read_batch()
             try:
-                output_batch = json.loads(output_batch.decode("utf-8").strip())
+                output_batch = self._read_batch()
+            except ValueError:
+                break
+            try:
+                output_batch = json.loads(output_batch)
             except:
                 # Irrelavent output in stdout
                 continue
@@ -62,10 +65,10 @@ class StdioWrapper(ABC):
             raise SubprocessError
 
     def _read_batch(self) -> str:
-        try:
-            line = self._process.stdout.readline()
-            assert line.decode("utf-8").strip() != ""
-        except:
+        line = self._process.stdout.readline().decode("utf-8").strip()
+        if line == "":
+            raise ValueError
+        elif line == "Efficiency benchmark exception: SubprocessError":
             self.stop()
             raise SubprocessError
         return line
@@ -73,11 +76,10 @@ class StdioWrapper(ABC):
     def predict(  # type: ignore
         self,
         *,
-        input_batches: List[List[str]],
+        input_batches: List[List[Dict[str, Any]]],
         max_batch_size: int
     ) -> Iterator[str]:
         for input_batch in tqdm.tqdm(input_batches, desc="Making predictions", miniters=10):
-
             # Make sure the batch size does not exceed a user defined maximum.
             # Split into smaller batches if necessary.
             splitted_batches = list(more_itertools.chunked(input_batch, max_batch_size))
@@ -145,9 +147,12 @@ class StdioWrapper(ABC):
     def start(self):
         self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
-    def dummy_predict(self, dummy_inputs: List[Dict[str, Any]]) -> List[str]:
-        self._write_batch(dummy_inputs)
-        dummy_outputs = self._exhaust_and_yield_stdout(1)
+    def dummy_predict(
+            self, 
+            dummy_inputs: List[Dict[str, Any]],
+            max_batch_size: int
+        ) -> List[str]:
+        dummy_outputs = self.predict(input_batches=[dummy_inputs], max_batch_size=max_batch_size)
         return list(dummy_outputs)
     
     def stop(self):

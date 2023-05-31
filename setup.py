@@ -72,7 +72,7 @@ setup(
     },
     entry_points={"console_scripts": [
         "efficiency-benchmark=efficiency_benchmark.__main__:main",
-        "gantry=gantry.__main__:main"
+        # "gantry=gantry.__main__:main"
     ]},
     install_requires=parse_requirements_file("requirements.txt"),
     extras_require={"dev": parse_requirements_file("dev-requirements.txt")},

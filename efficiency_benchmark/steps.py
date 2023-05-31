@@ -143,7 +143,7 @@ class PredictStep():
 
     def run_online(self) -> Tuple[Sequence[Any], Dict[str, Any]]:
         output_batches = []
-        self.predictor.dummy_predict(dummy_inputs=self.input_batches[-1])
+        _ = self.predictor.dummy_predict(dummy_inputs=self.input_batches[-1], max_batch_size=self.max_batch_size)
 
         self.profiler.start()
         for output_batch in self.predictor.predict(input_batches=self.input_batches, max_batch_size=self.max_batch_size):
