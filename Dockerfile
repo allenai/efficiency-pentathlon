@@ -106,11 +106,17 @@ RUN curl --silent \
 
 
 RUN mkdir -p /workspace
-COPY . /workspace/
+
+COPY profile.d /workspace/profile.d
+COPY requirements.txt /workspace/
+COPY README.md /workspace/
+RUN pip install -r /workspace/requirements.txt
+
+COPY gantry /workspace/gantry
+COPY efficiency_benchmark /workspace/efficiency_benchmark
+COPY setup.py /workspace/
+
 WORKDIR /workspace/
-# RUN conda create -n efficiency-benchmark python=3.9
 RUN pip install .
 
-# Shell customization including prompt and colors.
-COPY profile.d/ /etc/profile.d/
 ENTRYPOINT ["bash", "-l"]
