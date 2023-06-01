@@ -120,6 +120,7 @@ def run(
         metric_task_dict[task] = acc_metrics
         if len(acc_metrics.keys()) > 0:
             metrics["accuracy"] = acc_metrics
+        os.makedirs(f"{output_dir}/{scenario}/", exist_ok=True)
         output_step = LogOutputStep(task=task, output_file=f"{output_dir}/{scenario}/outputs.json" if output_dir else None)
         output_step.run(predictions=predictions)
 
