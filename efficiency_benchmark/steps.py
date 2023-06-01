@@ -23,7 +23,7 @@ class PredictStep():
         self,
         *,
         cmd: List[str],
-        task: Union[str, Task],
+        task: str,
         scenario: str,
         max_batch_size: int,
         offline_dir: str,
@@ -32,8 +32,14 @@ class PredictStep():
         **kwargs
     ):
         np.random.seed(42)
-        self.task: EfficiencyBenchmarkTask = TASKS[task] if isinstance(task, str) else task
-        self.split = split if split is not None else self.task.default_split
+        self.task: EfficiencyBenchmarkTask = TASKS[task]
+        if scenario == "offline" and "raft" not in task:
+            # We prefer training split for the offline scenario, which usually has more data
+            # RAFT's training data is tiny, thus we use the test split for the offline scenario
+            self.split = "train"
+        else:
+            self.split = split if split is not None else self.task.default_split
+            
         self.scenario = scenario
         self.max_batch_size = max_batch_size
         self.offline_dir = offline_dir
@@ -50,12 +56,10 @@ class PredictStep():
         if self.scenario == "offline":
             self.task.prepare_offline_instances(base_dir=self.offline_dir, split=self.split)
             self.offline_data_path = self.task.offline_data_path(
-                base_dir=self.offline_dir,
-                split=self.split
+                base_dir=self.offline_dir
             )
             self.offline_output_path = self.task.offline_output_path(
-                base_dir=self.offline_dir,
-                split=self.split
+                base_dir=self.offline_dir
             )
             return
 

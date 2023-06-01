@@ -9,6 +9,7 @@ from efficiency_benchmark.steps import (CalculateMetricsStep, LogOutputStep,
                                         PredictStep, TabulateMetricsStep)
 from gantry import run as gantry_run
 
+
 _CLICK_GROUP_DEFAULTS = {
     "cls": HelpColorsGroup,
     "help_options_color": "green",
@@ -106,10 +107,10 @@ def run(
         limit=limit,
     )
     if output_dir:
-        output_dir = prediction_step.task.base_dir(base_dir=output_dir, split=prediction_step.split)
+        output_dir = prediction_step.task.base_dir(base_dir=output_dir)
         try:
-            os.makedirs(output_dir, exist_ok=True)
-            print("Output to: ", output_dir)
+            os.makedirs(f"{output_dir}/{scenario}/", exist_ok=True)
+            print(f"Output to: {output_dir}/{scenario}/")
         except OSError:
             print(f"Failed to create output directory: {output_dir}. Logging to STDOUT.")
             output_dir = None
@@ -120,7 +121,6 @@ def run(
         metric_task_dict[task] = acc_metrics
         if len(acc_metrics.keys()) > 0:
             metrics["accuracy"] = acc_metrics
-        os.makedirs(f"{output_dir}/{scenario}/", exist_ok=True)
         output_step = LogOutputStep(task=task, output_file=f"{output_dir}/{scenario}/outputs.json" if output_dir else None)
         output_step.run(predictions=predictions)
 
@@ -162,11 +162,6 @@ def run(
     default=32,
     help="""Maximum batch size.""",
 )
-# @click.option(
-#     "--gpus",
-#     type=int,
-#     help="""Minimum number of GPUs (e.g. 1).""",
-# )
 @click.option(
     "--cpus",
     type=float,
@@ -186,7 +181,6 @@ def submit(
     limit: int = None,
     max_batch_size: int = 32,
     cpus: Optional[float] = None,
-    # gpus: int = 2,
     dataset: Optional[Tuple[str, ...]] = None,
 ):
     gantry_run(

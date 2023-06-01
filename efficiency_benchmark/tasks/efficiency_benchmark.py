@@ -13,9 +13,10 @@ from efficiency_benchmark.task import InstanceConversion, Task
 from efficiency_benchmark.tasks import InstanceFormat
 from efficiency_benchmark.tasks.huggingface import get_from_dict
 
-MIN_SINGLE_STREAM_INSTANCES = 1000
-MIN_RANDOM_BATCH_INSTANCES = 5000
-MIN_OFFLINE_INSTANCES = 8 * 1000
+
+NUM_SINGLE_STREAM_INSTANCES = 1000
+NUM_RANDOM_BATCH_INSTANCES = 4000
+NUM_OFFLINE_INSTANCES = 8000
 
 
 @dataclass
@@ -49,14 +50,14 @@ class EfficiencyBenchmarkTask(Task):
     def has_split(self, split: str) -> bool:
         return split in datasets.get_dataset_split_names(self.dataset_path, self.dataset_name)
 
-    def base_dir(self, base_dir: str, split: str) -> str:
-        return os.path.join(base_dir, self.dataset_path, self.dataset_name, split)
+    def base_dir(self, base_dir: str) -> str:
+        return os.path.join(base_dir, self.dataset_path, self.dataset_name)
     
-    def offline_data_path(self, base_dir: str, split: str) -> str:
-        return os.path.join(self.base_dir(base_dir, split), "offline", "data.json")
+    def offline_data_path(self, base_dir: str) -> str:
+        return os.path.join(self.base_dir(base_dir), "offline", "data.json")
     
-    def offline_output_path(self, base_dir: str, split: str) -> str:
-        return os.path.join(self.base_dir(base_dir, split), "offline", "outputs.json")
+    def offline_output_path(self, base_dir: str) -> str:
+        return os.path.join(self.base_dir(base_dir), "offline", "outputs.json")
 
     def _convert_instances(
         self,
@@ -76,8 +77,9 @@ class EfficiencyBenchmarkTask(Task):
     def get_instances(
             self, 
             split: str, 
-            min_num_instances: Optional[int] = None
+            num_instances: Optional[int] = None
     ) -> List[EfficiencyBenchmarkInstance]:
+        instances: List[EfficiencyBenchmarkInstance] = None
         if self.online_instances is not None:
             instances = self.online_instances
         else:
@@ -86,34 +88,36 @@ class EfficiencyBenchmarkTask(Task):
                 instances, InstanceFormat.EFFICIENCY_BENCHMARK)
             )
             self.online_instances = instances
-        def _maybe_extend_and_shuffle() -> List[EfficiencyBenchmarkInstance]:
-            if min_num_instances is not None:
-                while len(instances) < min_num_instances:
-                    instances.extend(self.online_instances)
-            Random(42).shuffle(instances)
-            return instances
-        return _maybe_extend_and_shuffle() 
+        def _maybe_extend_and_shuffle(_instances) -> List[EfficiencyBenchmarkInstance]:
+            if num_instances is not None:
+                while len(_instances) < num_instances:
+                    _instances.extend(self.online_instances)
+                if len(_instances) > num_instances:
+                    _instances = Random(0).sample(_instances, k=num_instances)
+            Random(42).shuffle(_instances)
+            return _instances
+        return _maybe_extend_and_shuffle(instances) 
 
     def get_single_stream_instances(self, split: str) -> List[EfficiencyBenchmarkInstance]:
         return self.get_instances(
             split=split,
-            min_num_instances=MIN_SINGLE_STREAM_INSTANCES
+            num_instances=NUM_SINGLE_STREAM_INSTANCES
         )
 
     def get_random_batch_instances(self, split: str) -> List[EfficiencyBenchmarkInstance]:
         return self.get_instances(
             split=split,
-            min_num_instances=MIN_RANDOM_BATCH_INSTANCES
+            num_instances=NUM_RANDOM_BATCH_INSTANCES
         )
 
     def prepare_offline_instances(self, base_dir: str, split: str, override: bool = True) -> None:
-        path: str = self.offline_data_path(base_dir, split)
+        path: str = self.offline_data_path(base_dir)
         if os.path.exists(path) and not override:
             print(f"Offline instances already exist: {path}. Skipping...")
             return
         instances = self.get_instances(
             split=split,
-            min_num_instances=MIN_OFFLINE_INSTANCES
+            num_instances=NUM_OFFLINE_INSTANCES
         )
         try:
             # Try to cache preprocessed instances to a file
