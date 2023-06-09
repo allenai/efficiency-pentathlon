@@ -144,6 +144,13 @@ def run(
     help="""Tasks.""",
 )
 @click.option(
+    "-n",
+    "--name",
+    type=str,
+    default=None,
+    help="""Name.""",
+)
+@click.option(
     "--split",
     type=str,
     help="""Split.""",
@@ -177,6 +184,7 @@ def run(
 def submit(
     cmd: Tuple[str, ...],
     task: str,
+    name: str,
     split: str = "validation",
     limit: int = None,
     max_batch_size: int = 32,
@@ -186,11 +194,12 @@ def submit(
     gantry_run(
         arg=cmd,
         task=task,
+        name=name,
         split=split,
         limit=limit,
         max_batch_size=max_batch_size,
         cluster=["efficiency-benchmark/elanding-rtx-8000"], # TODO
-        beaker_image="haop/efficiency-benchmark",  # TODO
+        beaker_image="haop/efficiency-benchmark",
         workspace="efficiency-benchmark/efficiency-benchmark",
         cpus=cpus,
         gpus=2,  # hard code to 2 to make sure only one job runs at a time.
