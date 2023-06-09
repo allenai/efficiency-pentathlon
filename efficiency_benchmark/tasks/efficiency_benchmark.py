@@ -297,3 +297,4 @@ def efficiency_benchmark_prompt_conversion(
 
     # We're doing this in this stupid way because this makes the conversion function picklable.
     return functools.partial(convert, **kwargs)
+
