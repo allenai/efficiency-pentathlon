@@ -173,8 +173,6 @@ class PredictStep():
         self.predictor.stop()
         results = Dataset.from_json(self.offline_output_path).to_list()
         print(f"Loading outputs from {self.offline_output_path}")
-        for r in results:
-            print(r)
         self.num_instances = len(results)
         efficiency_metrics["throughput"] = self.num_instances / efficiency_metrics["time"]
         num_output_words = sum([ len(result["output"].split()) for result in results])

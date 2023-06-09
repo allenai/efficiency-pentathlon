@@ -102,7 +102,7 @@ class StdioWrapper(ABC):
 
             # Now read from stdout until we have hit the required number.
             num_batches_to_read = num_splitted_batches - num_batches_yielded
-            if num_batches_to_read > 0:
+            if num_batches_to_read > 0: 
                 for output_batch in self._exhaust_and_yield_stdout(num_batches_to_read):
                     for output in output_batch:
                         yield output
