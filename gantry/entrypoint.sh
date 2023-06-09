@@ -102,10 +102,10 @@ if [[ -z "$INSTALL_CMD" ]]; then
     # Check for a 'requirements.txt' and/or 'setup.py' file.
     if [[ -f 'setup.py' ]] && [[ -f "$PIP_REQUIREMENTS_FILE" ]]; then
         echo "[GANTRY] Installing packages from 'setup.py' and '$PIP_REQUIREMENTS_FILE'..."
-        pip install . -r "$PIP_REQUIREMENTS_FILE"
+        pip install -e . -r "$PIP_REQUIREMENTS_FILE"
     elif [[ -f 'setup.py' ]]; then
         echo "[GANTRY] Installing packages from 'setup.py'..."
-        pip install .
+        pip install -e .
     elif [[ -f "$PIP_REQUIREMENTS_FILE" ]]; then
         echo "[GANTRY] Installing dependencies from '$PIP_REQUIREMENTS_FILE'..."
         pip install -r "$PIP_REQUIREMENTS_FILE"
@@ -152,6 +152,12 @@ fi
 # shellcheck disable=SC2296
 echo "Accuracy"
 exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "accuracy" --output_dir "$RESULTS_DIR" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/accuracy.log"
+
+if [[ "$TASK" == *"raft::"* ]]; then
+  echo "Only evaluating with the Accuracy scenario for RAFT tasks"
+  exit 0
+fi
+
 
 echo "Single Stream"
 exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "single_stream" --output_dir "$RESULTS_DIR" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/single_stream.log"
