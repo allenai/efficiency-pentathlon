@@ -5,7 +5,7 @@ from typing import Dict, List
 import json
 
 
-IDLE_POWER = 180.5  # Watts
+IDLE_POWER = 380  # Watts
 NUM_FIELDS = 18
 POWER_FIELDS = ["P1", "P2", "P3", "P4", "P5", "P6"]
 
