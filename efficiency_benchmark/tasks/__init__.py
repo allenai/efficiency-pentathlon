@@ -13,7 +13,6 @@ from efficiency_benchmark.tasks.efficiency_benchmark import (
     EfficiencyBenchmarkPromptTask,
     efficiency_benchmark_classification_conversion,
     efficiency_benchmark_mt_conversion,
-    efficiency_benchmark_raft_conversion,
     efficiency_benchmark_prompt_conversion)
 from efficiency_benchmark.tasks.eleuther import (
     EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits,
@@ -25,85 +24,27 @@ from efficiency_benchmark.tasks.metaicl import MetaICLTask
 from efficiency_benchmark.tasks.mrqa import MrqaTask
 from efficiency_benchmark.tasks.p3 import P3Task
 from efficiency_benchmark.tasks.t5 import t5_prompt_conversion
+from .raft import *
+
 
 TASKS: Dict[str, Task] = {
-    "wmt16-en-ro": EfficiencyBenchmarkTask("wmt16", "ro-en").add_instance_conversion(
-        InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_mt_conversion(
-            input_field="en",
-            target_field="ro"
-        )
-    ).add_metrics(MT_METRICS),  # TODO
-    "wmt16-ro-en": EfficiencyBenchmarkTask("wmt16", "ro-en").add_instance_conversion(
-        InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_mt_conversion(
-            input_field="ro",
-            target_field="en"
-        )
-    ).add_metrics(MT_METRICS),  # TODO
-    "wmt14-de-en": EfficiencyBenchmarkTask("wmt14", "de-en").add_instance_conversion(
-        InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_mt_conversion(
-            input_field="de",
-            target_field="en"
-        )
-    ).add_metrics(MT_METRICS),  # TODO
-    "wmt14-en-de": EfficiencyBenchmarkTask("wmt14", "de-en").add_instance_conversion(
-        InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_mt_conversion(
-            input_field="en",
-            target_field="de"
-        )
-    ).add_metrics(MT_METRICS), 
-    "wikitext-prompt": EfficiencyBenchmarkPromptTask("wikitext", "wikitext-103-raw-v1").add_instance_conversion(
-        InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_prompt_conversion(max_length=128)
-    ),
+    "wmt16-en-ro": EfficiencyBenchmarkTask("wmt16", "ro-en").add_metrics(MT_METRICS),  # TODO
+    "wmt16-ro-en": EfficiencyBenchmarkTask("wmt16", "ro-en").add_metrics(MT_METRICS),  # TODO
+    "wmt14-de-en": EfficiencyBenchmarkTask("wmt14", "de-en").add_metrics(MT_METRICS),  # TODO
+    "wmt14-en-de": EfficiencyBenchmarkTask("wmt14", "de-en").add_metrics(MT_METRICS), 
+    "wikitext-prompt": EfficiencyBenchmarkPromptTask("wikitext", "wikitext-103-raw-v1"),
     # RAFT
-    "raft::ade_corpus_v2": EfficiencyBenchmarkRaftTask("ade_corpus_v2").add_instance_conversion(
-        InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_raft_conversion(task_name="ade_corpus_v2")
-    ),
-    "raft::banking_77": EfficiencyBenchmarkRaftTask("banking_77").add_instance_conversion(
-        InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_raft_conversion(task_name="banking_77")
-    ),
-    "raft::neurips_impact_statement_risks": EfficiencyBenchmarkRaftTask("neurips_impact_statement_risks").add_instance_conversion(
-        InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_raft_conversion(task_name="neurips_impact_statement_risks")
-    ),
-    "raft::one_stop_english": EfficiencyBenchmarkRaftTask("one_stop_english").add_instance_conversion(
-        InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_raft_conversion(task_name="one_stop_english")
-    ),
-    "raft::overruling": EfficiencyBenchmarkRaftTask("overruling").add_instance_conversion(
-        InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_raft_conversion(task_name="overruling")
-    ),
-    "raft::semiconductor_org_types": EfficiencyBenchmarkRaftTask("semiconductor_org_types").add_instance_conversion(
-        InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_raft_conversion(task_name="semiconductor_org_types")
-    ),
-    "raft::systematic_review_inclusion": EfficiencyBenchmarkRaftTask("systematic_review_inclusion").add_instance_conversion(
-        InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_raft_conversion(task_name="systematic_review_inclusion")
-    ),
-    "raft::tai_safety_research": EfficiencyBenchmarkRaftTask("tai_safety_research").add_instance_conversion(
-        InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_raft_conversion(task_name="tai_safety_research")
-    ),
-    "raft::terms_of_service": EfficiencyBenchmarkRaftTask("terms_of_service").add_instance_conversion(
-        InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_raft_conversion(task_name="terms_of_service")
-    ),
-    "raft::tweet_eval_hate": EfficiencyBenchmarkRaftTask("tweet_eval_hate").add_instance_conversion(
-        InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_raft_conversion(task_name="tweet_eval_hate")
-    ),
-    "raft::twitter_complaints": EfficiencyBenchmarkRaftTask("twitter_complaints").add_instance_conversion(
-        InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_raft_conversion(task_name="twitter_complaints")
-    ),
+    "raft::ade_corpus_v2": EfficiencyBenchmarkRaftTask("ade_corpus_v2"),
+    "raft::banking_77": EfficiencyBenchmarkRaftTask("banking_77"),
+    "raft::neurips_impact_statement_risks": EfficiencyBenchmarkRaftTask("neurips_impact_statement_risks"),
+    "raft::one_stop_english": EfficiencyBenchmarkRaftTask("one_stop_english"),
+    "raft::overruling": EfficiencyBenchmarkRaftTask("overruling"),
+    "raft::semiconductor_org_types": EfficiencyBenchmarkRaftTask("semiconductor_org_types"),
+    "raft::systematic_review_inclusion": EfficiencyBenchmarkRaftTask("systematic_review_inclusion"),
+    "raft::tai_safety_research": EfficiencyBenchmarkRaftTask("tai_safety_research"),
+    "raft::terms_of_service": EfficiencyBenchmarkRaftTask("terms_of_service"),
+    "raft::tweet_eval_hate": EfficiencyBenchmarkRaftTask("tweet_eval_hate"),
+    "raft::twitter_complaints": EfficiencyBenchmarkRaftTask("twitter_complaints"),
 
     # from catwalk
     "wikitext": EleutherTask("wikitext").add_metrics(PERPLEXITY_METRICS),
