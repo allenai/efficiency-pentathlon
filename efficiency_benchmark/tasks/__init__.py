@@ -11,9 +11,7 @@ from efficiency_benchmark.tasks.efficiency_benchmark import (
     EfficiencyBenchmarkTask,
     EfficiencyBenchmarkRaftTask,
     EfficiencyBenchmarkPromptTask,
-    efficiency_benchmark_classification_conversion,
-    efficiency_benchmark_mt_conversion,
-    efficiency_benchmark_prompt_conversion)
+    efficiency_benchmark_classification_conversion)
 from efficiency_benchmark.tasks.eleuther import (
     EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits,
     EleutherTask, EleutherTaskWithRenamedSplits, RaceEleutherTask)
