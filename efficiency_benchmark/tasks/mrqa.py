@@ -2,7 +2,7 @@ import functools
 
 from datasets import load_dataset
 
-from efficiency_benchmark.tasks import HFDatasetsTask
+from efficiency_benchmark.tasks.huggingface import HFDatasetsTask
 
 
 class MrqaTask(HFDatasetsTask):
@@ -25,10 +25,8 @@ class MrqaTask(HFDatasetsTask):
         assert self.has_split(split), assert_message
         def filter_subset(example):
             return example["subset"].lower() == self.dataset_name
-        
         loaded_dataset = load_dataset(self.dataset_path, split=split).filter(
             filter_subset, load_from_cache_file=False) # caching results in wrong loading of cached dataset
-        
         # rename columns to match SQuAD format
         loaded_dataset = loaded_dataset.rename_column("qid", "id")
         loaded_dataset = loaded_dataset.remove_columns(["context_tokens", "question_tokens","answers"])

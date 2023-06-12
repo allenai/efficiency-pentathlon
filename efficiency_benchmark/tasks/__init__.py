@@ -11,6 +11,7 @@ from efficiency_benchmark.tasks.efficiency_benchmark import (
     EfficiencyBenchmarkTask,
     EfficiencyBenchmarkRaftTask,
     EfficiencyBenchmarkPromptTask,
+    EfficiencyBenchmarkMrqaTask,
     efficiency_benchmark_classification_conversion)
 from efficiency_benchmark.tasks.eleuther import (
     EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits,
@@ -44,6 +45,22 @@ TASKS: Dict[str, Task] = {
     "raft::tweet_eval_hate": EfficiencyBenchmarkRaftTask("tweet_eval_hate"),
     "raft::twitter_complaints": EfficiencyBenchmarkRaftTask("twitter_complaints"),
 
+
+
+    "mrqa::race": EfficiencyBenchmarkMrqaTask("mrqa", "race").add_metrics(QA_METRICS),
+    "mrqa::newsqa": EfficiencyBenchmarkMrqaTask("mrqa", "newsqa").add_metrics(QA_METRICS),
+    "mrqa::triviaqa": EfficiencyBenchmarkMrqaTask("mrqa", "triviaqa-web").add_metrics(QA_METRICS),
+    "mrqa::searchqa": EfficiencyBenchmarkMrqaTask("mrqa", "searchqa").add_metrics(QA_METRICS),
+    "mrqa::hotpotqa": EfficiencyBenchmarkMrqaTask("mrqa", "hotpotqa").add_metrics(QA_METRICS),
+    "mrqa::naturalquestions": EfficiencyBenchmarkMrqaTask("mrqa", "naturalquestionsshort").add_metrics(QA_METRICS),
+    "mrqa::bioasq": EfficiencyBenchmarkMrqaTask("mrqa", "bioasq").add_metrics(QA_METRICS),
+    "mrqa::drop": EfficiencyBenchmarkMrqaTask("mrqa", "drop").add_metrics(QA_METRICS),
+    "mrqa::relationextraction": EfficiencyBenchmarkMrqaTask("mrqa", "relationextraction").add_metrics(QA_METRICS),
+    "mrqa::textbookqa": EfficiencyBenchmarkMrqaTask("mrqa", "textbookqa").add_metrics(QA_METRICS),
+    "mrqa::duorc.paraphraserc": EfficiencyBenchmarkMrqaTask("mrqa", "duorc.paraphraserc").add_metrics(QA_METRICS),
+
+
+
     # from catwalk
     "wikitext": EleutherTask("wikitext").add_metrics(PERPLEXITY_METRICS),
     "piqa": EleutherTask("piqa", ranked_classification=True).add_instance_conversion(
@@ -74,50 +91,6 @@ TASKS: Dict[str, Task] = {
     "squadshifts-new-wiki": HFDatasetsTask("squadshifts", "new_wiki").add_instance_conversion(
         InstanceFormat.HF_QA,
         hfqa_conversion()   
-    ).add_metrics(QA_METRICS),
-    "mrqa::race": MrqaTask("mrqa", "race").add_instance_conversion(
-        InstanceFormat.HF_QA,
-        hfqa_conversion()   
-    ).add_metrics(QA_METRICS),
-    "mrqa::newsqa": MrqaTask("mrqa", "newsqa").add_instance_conversion(
-        InstanceFormat.HF_QA,
-        hfqa_conversion()   
-    ).add_metrics(QA_METRICS),
-    "mrqa::triviaqa": MrqaTask("mrqa", "triviaqa-web").add_instance_conversion(
-        InstanceFormat.HF_QA,
-        hfqa_conversion()
-    ).add_metrics(QA_METRICS),
-    "mrqa::searchqa": MrqaTask("mrqa", "searchqa").add_instance_conversion(
-        InstanceFormat.HF_QA,
-        hfqa_conversion()
-    ).add_metrics(QA_METRICS),
-    "mrqa::hotpotqa": MrqaTask("mrqa", "hotpotqa").add_instance_conversion(
-        InstanceFormat.HF_QA,
-        hfqa_conversion()
-    ).add_metrics(QA_METRICS),
-    "mrqa::naturalquestions": MrqaTask("mrqa", "naturalquestionsshort").add_instance_conversion(
-        InstanceFormat.HF_QA,
-        hfqa_conversion()
-    ).add_metrics(QA_METRICS),
-    "mrqa::bioasq": MrqaTask("mrqa", "bioasq").add_instance_conversion(
-        InstanceFormat.HF_QA,
-        hfqa_conversion()
-    ).add_metrics(QA_METRICS),
-    "mrqa::drop": MrqaTask("mrqa", "drop").add_instance_conversion(
-        InstanceFormat.HF_QA,
-        hfqa_conversion()
-    ).add_metrics(QA_METRICS),
-    "mrqa::relationextraction": MrqaTask("mrqa", "relationextraction").add_instance_conversion(
-        InstanceFormat.HF_QA,
-        hfqa_conversion()
-    ).add_metrics(QA_METRICS),
-    "mrqa::textbookqa": MrqaTask("mrqa", "textbookqa").add_instance_conversion(
-        InstanceFormat.HF_QA,
-        hfqa_conversion()
-    ).add_metrics(QA_METRICS),
-    "mrqa::duorc.paraphraserc": MrqaTask("mrqa", "duorc.paraphraserc").add_instance_conversion(
-        InstanceFormat.HF_QA,
-        hfqa_conversion()
     ).add_metrics(QA_METRICS),
     "squad2": EleutherTask("squad2").add_metrics(QA_METRICS),
     "rte": EleutherClassificationTask(

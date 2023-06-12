@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 from efficiency_benchmark.task import (InstanceFormat,
                                        RankClassificationInstance,
                                        classification_metrics)
-from efficiency_benchmark.tasks import HFDatasetsTask
+from efficiency_benchmark.tasks.huggingface import HFDatasetsTask
 
 _FIELD_ORDERING = {"ade_corpus_v2": ["Sentence"], "banking_77": ["Query"], "terms_of_service": ["Sentence"],
                    "tai_safety_research": ["Title", "Abstract Note", "Publication Title", "Item Type",

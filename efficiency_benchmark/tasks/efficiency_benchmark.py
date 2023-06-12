@@ -12,6 +12,7 @@ from efficiency_benchmark.tango_utils import MappedSequence
 from efficiency_benchmark.task import InstanceConversion, Task
 from efficiency_benchmark.tasks import InstanceFormat
 from efficiency_benchmark.tasks.raft import RaftTask
+from efficiency_benchmark.tasks.mrqa import MrqaTask
 from efficiency_benchmark.tasks.huggingface import get_from_dict
 
 
@@ -136,6 +137,7 @@ class EfficiencyBenchmarkTask(Task):
         return funcs[scenario](split=split)
         
     def dataset(self, split: str):
+        print(self.dataset_path, self.dataset_name, split)
         return datasets.load_dataset(self.dataset_path, self.dataset_name, split=split)
 
     def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
@@ -184,15 +186,15 @@ class EfficiencyBenchmarkTranslationTask(EfficiencyBenchmarkTask):
         return functools.partial(convert, **kwargs)
 
 
-# class EfficiencyBenchmarkClassificationTask(EfficiencyBenchmarkTask):
-#     def __init__(
-#         self,
-#         dataset_path: str,
-#         dataset_name: Optional[str] = None,
-#         *,
-#         version_override: Optional[str] = None
-#     ):
-#         EfficiencyBenchmarkTask.__init__(self, dataset_path, dataset_name, version_override=version_override)
+class EfficiencyBenchmarkClassificationTask(EfficiencyBenchmarkTask):
+    def __init__(
+        self,
+        dataset_path: str,
+        dataset_name: Optional[str] = None,
+        *,
+        version_override: Optional[str] = None
+    ):
+        EfficiencyBenchmarkTask.__init__(self, dataset_path, dataset_name, version_override=version_override)
 
 
 class EfficiencyBenchmarkPromptTask(EfficiencyBenchmarkTask):
@@ -282,7 +284,39 @@ class EfficiencyBenchmarkRaftTask(EfficiencyBenchmarkTask, RaftTask):
         return functools.partial(convert, **kwargs)
 
 
+class EfficiencyBenchmarkMrqaTask(MrqaTask, EfficiencyBenchmarkTask):
+    def __init__(
+        self,
+        dataset_path: str,
+        dataset_name: Optional[str] = None,
+        *,
+        version_override: Optional[str] = None
+    ):
+        MrqaTask.__init__(self, dataset_path, dataset_name, version_override=version_override)
+        EfficiencyBenchmarkTask.__init__(self, dataset_path, dataset_name, version_override=version_override)
+        self.add_instance_conversion(
+            InstanceFormat.EFFICIENCY_BENCHMARK,
+            EfficiencyBenchmarkMrqaTask._conversion()
+        )
 
+    @staticmethod
+    def _conversion(
+        *,
+        context_field: str="context",
+        question_field: str="question",
+        answers_field: str="answers",
+        id_field: str="id",
+    ) -> InstanceConversion:
+        def convert(instance: Dict[str, Any]) -> EfficiencyBenchmarkInstance:
+            return EfficiencyBenchmarkInstance(
+                id=get_from_dict(instance, id_field),
+                input={
+                    "context": get_from_dict(instance, context_field),
+                    "question": get_from_dict(instance, question_field).strip(),
+                },
+                target=get_from_dict(instance, answers_field)
+            )
+        return convert
 
 
 def efficiency_benchmark_classification_conversion(
