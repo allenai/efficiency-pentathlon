@@ -11,7 +11,8 @@ from datasets import Dataset
 from efficiency_benchmark.efficiency.profiler import Profiler
 from efficiency_benchmark.stdio_wrapper import StdioWrapper
 from efficiency_benchmark.task import Task
-from efficiency_benchmark.tasks import TASKS, EfficiencyBenchmarkTask
+from efficiency_benchmark.tasks import TASKS
+from efficiency_benchmark.tasks.efficiency_benchmark import EfficiencyBenchmarkWrapper
 from efficiency_benchmark.tasks.efficiency_benchmark import EfficiencyBenchmarkInstance
 
 EXPECTED_BATCH_SIZE = 128
@@ -32,7 +33,7 @@ class PredictStep():
         **kwargs
     ):
         np.random.seed(42)
-        self.task: EfficiencyBenchmarkTask = TASKS[task]
+        self.task: EfficiencyBenchmarkWrapper = TASKS[task]
         if scenario == "offline" and "raft" not in task:
             # We prefer training split for the offline scenario, which usually has more data
             # RAFT's training data is tiny, thus we use the test split for the offline scenario

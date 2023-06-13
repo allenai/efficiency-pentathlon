@@ -13,6 +13,7 @@ from efficiency_benchmark.task import InstanceConversion, Task
 from efficiency_benchmark.tasks import InstanceFormat
 from efficiency_benchmark.tasks.raft import RaftTask
 from efficiency_benchmark.tasks.mrqa import MrqaTask
+from efficiency_benchmark.tasks.metaicl import MetaICLTask
 from efficiency_benchmark.tasks.huggingface import get_from_dict
 
 
@@ -36,17 +37,9 @@ class EfficiencyBenchmarkInstance:
         return d
 
 
-class EfficiencyBenchmarkTask(Task):
-    def __init__(
-        self,
-        dataset_path: str,
-        dataset_name: Optional[str] = None,
-        *,
-        version_override: Optional[str] = None
-    ):
-        Task.__init__(self, version_override=version_override)
-        self.dataset_path = dataset_path
-        self.dataset_name = dataset_name
+class EfficiencyBenchmarkWrapper():
+    def __init__(self):
+        Task.__init__(self)
         self.online_instances: List[EfficiencyBenchmarkInstance] = None
 
     def has_split(self, split: str) -> bool:
@@ -137,7 +130,6 @@ class EfficiencyBenchmarkTask(Task):
         return funcs[scenario](split=split)
         
     def dataset(self, split: str):
-        print(self.dataset_path, self.dataset_name, split)
         return datasets.load_dataset(self.dataset_path, self.dataset_name, split=split)
 
     def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
@@ -148,15 +140,18 @@ class EfficiencyBenchmarkTask(Task):
         return ds
 
 
-class EfficiencyBenchmarkTranslationTask(EfficiencyBenchmarkTask):
+class EfficiencyBenchmarkTranslationTask(Task, EfficiencyBenchmarkWrapper):
     def __init__(
         self,
         dataset_path: str,
         dataset_name: Optional[str] = None,
         *,
         version_override: Optional[str] = None
-    ):
-        EfficiencyBenchmarkTask.__init__(self, dataset_path, dataset_name, version_override=version_override)
+    ):  
+        Task.__init__(self, version_override=version_override)
+        EfficiencyBenchmarkWrapper.__init__(self)
+        self.dataset_path = dataset_path
+        self.dataset_name = dataset_name
         input_field, target_field = dataset_name.split("-")
         self.add_instance_conversion(
             InstanceFormat.EFFICIENCY_BENCHMARK,
@@ -186,7 +181,21 @@ class EfficiencyBenchmarkTranslationTask(EfficiencyBenchmarkTask):
         return functools.partial(convert, **kwargs)
 
 
-class EfficiencyBenchmarkClassificationTask(EfficiencyBenchmarkTask):
+class EfficiencyBenchmarkClassificationTask(Task, EfficiencyBenchmarkWrapper):
+    def __init__(
+        self,
+        dataset_path: str,
+        dataset_name: Optional[str] = None,
+        *,
+        version_override: Optional[str] = None
+    ):  
+        Task.__init__(self, version_override=version_override)
+        EfficiencyBenchmarkWrapper.__init__(self)
+        self.dataset_path = dataset_path
+        self.dataset_name = dataset_name
+
+
+class EfficiencyBenchmarkPromptTask(Task, EfficiencyBenchmarkWrapper):
     def __init__(
         self,
         dataset_path: str,
@@ -194,16 +203,10 @@ class EfficiencyBenchmarkClassificationTask(EfficiencyBenchmarkTask):
         *,
         version_override: Optional[str] = None
     ):
-        EfficiencyBenchmarkTask.__init__(self, dataset_path, dataset_name, version_override=version_override)
-
-
-class EfficiencyBenchmarkPromptTask(EfficiencyBenchmarkTask):
-    def __init__(
-        self,
-        dataset_path: str,
-        dataset_name: Optional[str] = None,
-    ):
-        EfficiencyBenchmarkTask.__init__(self, dataset_path, dataset_name)
+        Task.__init__(self, version_override=version_override)
+        EfficiencyBenchmarkWrapper.__init__(self)
+        self.dataset_path = dataset_path
+        self.dataset_name = dataset_name
         self.add_instance_conversion(
             InstanceFormat.EFFICIENCY_BENCHMARK,
             EfficiencyBenchmarkPromptTask._conversion(max_length=128)
@@ -244,12 +247,14 @@ class EfficiencyBenchmarkPromptTask(EfficiencyBenchmarkTask):
         return functools.partial(convert, **kwargs)
 
 
-class EfficiencyBenchmarkRaftTask(EfficiencyBenchmarkTask, RaftTask):
+class EfficiencyBenchmarkRaftTask(RaftTask, EfficiencyBenchmarkWrapper):
     def __init__(
         self,
         subset: str
-    ):
-        EfficiencyBenchmarkTask.__init__(self, "ought/raft", subset)
+    ):  
+        self.dataset_path = "ought/raft"
+        self.dataset_name = subset
+        EfficiencyBenchmarkWrapper.__init__(self)
         RaftTask.__init__(self, subset)
         self.add_instance_conversion(
             InstanceFormat.EFFICIENCY_BENCHMARK,
@@ -284,7 +289,7 @@ class EfficiencyBenchmarkRaftTask(EfficiencyBenchmarkTask, RaftTask):
         return functools.partial(convert, **kwargs)
 
 
-class EfficiencyBenchmarkMrqaTask(MrqaTask, EfficiencyBenchmarkTask):
+class EfficiencyBenchmarkMrqaTask(MrqaTask, EfficiencyBenchmarkWrapper):
     def __init__(
         self,
         dataset_path: str,
@@ -293,7 +298,7 @@ class EfficiencyBenchmarkMrqaTask(MrqaTask, EfficiencyBenchmarkTask):
         version_override: Optional[str] = None
     ):
         MrqaTask.__init__(self, dataset_path, dataset_name, version_override=version_override)
-        EfficiencyBenchmarkTask.__init__(self, dataset_path, dataset_name, version_override=version_override)
+        EfficiencyBenchmarkWrapper.__init__(self)
         self.add_instance_conversion(
             InstanceFormat.EFFICIENCY_BENCHMARK,
             EfficiencyBenchmarkMrqaTask._conversion()
@@ -315,6 +320,39 @@ class EfficiencyBenchmarkMrqaTask(MrqaTask, EfficiencyBenchmarkTask):
                     "question": get_from_dict(instance, question_field).strip(),
                 },
                 target=get_from_dict(instance, answers_field)
+            )
+        return convert
+
+
+class EfficiencyBenchmarkMetaICLTask(MetaICLTask, EfficiencyBenchmarkWrapper):
+    def __init__(
+        self,
+        dataset_name: Optional[str] = None,
+        *,
+        version_override: Optional[str] = None
+    ):
+        self.dataset_path = "allenai/metaicl-data"
+        MetaICLTask.__init__(self, dataset_name, version_override=version_override)
+        EfficiencyBenchmarkWrapper.__init__(self)
+        self.add_instance_conversion(
+            InstanceFormat.EFFICIENCY_BENCHMARK,
+            EfficiencyBenchmarkMetaICLTask._conversion()
+        )
+
+    @staticmethod
+    def _conversion(
+        *,
+        id_field: str="id",
+    ) -> InstanceConversion:
+        def convert(instance: Dict[str, Any]) -> EfficiencyBenchmarkInstance:
+            try:
+                output = instance.pop("output")
+            except:
+                output = None
+            return EfficiencyBenchmarkInstance(
+                id=get_from_dict(instance, id_field, missing_ok=True),
+                input=instance,
+                target=output
             )
         return convert
 
