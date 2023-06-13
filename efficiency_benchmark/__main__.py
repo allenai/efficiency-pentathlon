@@ -49,8 +49,8 @@ def main():
     "-s",
     "--scenario",
     type=str,
-    default="single_stream",
-    help="""Evaluation scenario [single_stream, random_batch, offline].""",
+    default="accuracy",
+    help="""Evaluation scenario [accuracy, single_stream, random_batch, offline].""",
 )
 @click.option(
     "-b",
@@ -201,10 +201,10 @@ def submit(
         cluster=["efficiency-benchmark/elanding-rtx-8000"], # TODO
         beaker_image="haop/efficiency-benchmark",
         workspace="efficiency-benchmark/efficiency-benchmark",
+        mount=["/hf_datasets:/hf_datasets"],
         cpus=cpus,
         gpus=2,  # hard code to 2 to make sure only one job runs at a time.
-        allow_dirty=True,
-        dataset=dataset
+        allow_dirty=True
     )
 
 

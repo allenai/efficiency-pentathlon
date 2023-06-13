@@ -10,7 +10,6 @@ CONDA_ENV_FILE="environment.yml"
 PIP_REQUIREMENTS_FILE="requirements.txt"
 PYTHON_VERSION=3.9 
 export HF_DATASETS_CACHE="/hf_datasets"
-# OFFLINE_DIR="/datasets"
 
 # Ensure we have all the environment variables we need.
 for env_var in "$GITHUB_REPO" "$GIT_REF"; do
