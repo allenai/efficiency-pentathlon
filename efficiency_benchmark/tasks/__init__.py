@@ -104,38 +104,7 @@ TASKS: Dict[str, Task] = {
         InstanceFormat.EFFICIENCY_BENCHMARK,
         efficiency_benchmark_raft_conversion(task_name="twitter_complaints")
     ),
-
-    # from catwalk
-    "wikitext": EleutherTask("wikitext").add_metrics(PERPLEXITY_METRICS),
-    "piqa": EleutherTask("piqa", ranked_classification=True).add_instance_conversion(
-        InstanceFormat.HF_MC,
-        hfmc_conversion(
-            context_field=None,
-            question_field="goal",
-            answer_choices_fields=["sol1", "sol2"],
-            correct_answer_index_field="label"
-        )
-    ).add_metrics(mc_metrics(2)),
-    "squad": HFDatasetsTask("squad").add_instance_conversion(
-        InstanceFormat.HF_QA,
-        hfqa_conversion()
-    ).add_metrics(QA_METRICS),
-    "squadshifts-reddit": HFDatasetsTask("squadshifts", "reddit").add_instance_conversion(
-        InstanceFormat.HF_QA,
-        hfqa_conversion()   
-    ).add_metrics(QA_METRICS),
-    "squadshifts-amazon": HFDatasetsTask("squadshifts", "amazon").add_instance_conversion(
-        InstanceFormat.HF_QA,
-        hfqa_conversion()   
-    ).add_metrics(QA_METRICS),
-    "squadshifts-nyt": HFDatasetsTask("squadshifts", "nyt").add_instance_conversion(
-        InstanceFormat.HF_QA,
-        hfqa_conversion()   
-    ).add_metrics(QA_METRICS),
-    "squadshifts-new-wiki": HFDatasetsTask("squadshifts", "new_wiki").add_instance_conversion(
-        InstanceFormat.HF_QA,
-        hfqa_conversion()   
-    ).add_metrics(QA_METRICS),
+    """MRQA"""
     "mrqa::race": MrqaTask("mrqa", "race").add_instance_conversion(
         InstanceFormat.HF_QA,
         hfqa_conversion()   
@@ -180,6 +149,39 @@ TASKS: Dict[str, Task] = {
         InstanceFormat.HF_QA,
         hfqa_conversion()
     ).add_metrics(QA_METRICS),
+
+    # from catwalk
+    "wikitext": EleutherTask("wikitext").add_metrics(PERPLEXITY_METRICS),
+    "piqa": EleutherTask("piqa", ranked_classification=True).add_instance_conversion(
+        InstanceFormat.HF_MC,
+        hfmc_conversion(
+            context_field=None,
+            question_field="goal",
+            answer_choices_fields=["sol1", "sol2"],
+            correct_answer_index_field="label"
+        )
+    ).add_metrics(mc_metrics(2)),
+    "squad": HFDatasetsTask("squad").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion()
+    ).add_metrics(QA_METRICS),
+    "squadshifts-reddit": HFDatasetsTask("squadshifts", "reddit").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion()   
+    ).add_metrics(QA_METRICS),
+    "squadshifts-amazon": HFDatasetsTask("squadshifts", "amazon").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion()   
+    ).add_metrics(QA_METRICS),
+    "squadshifts-nyt": HFDatasetsTask("squadshifts", "nyt").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion()   
+    ).add_metrics(QA_METRICS),
+    "squadshifts-new-wiki": HFDatasetsTask("squadshifts", "new_wiki").add_instance_conversion(
+        InstanceFormat.HF_QA,
+        hfqa_conversion()   
+    ).add_metrics(QA_METRICS),
+    
     "squad2": EleutherTask("squad2").add_metrics(QA_METRICS),
     "rte": EleutherClassificationTask(
         "rte",
