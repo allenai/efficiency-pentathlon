@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from efficiency_benchmark.efficiency.power_monitor import PowerMonitor
 from efficiency_benchmark.efficiency.power_monitor import POWER_FIELDS
+from efficiency_benchmark.efficiency.power_monitor import IDLE_POWER
 from codecarbon import EmissionsTracker
 from codecarbon.core.gpu import get_gpu_details, is_gpu_details_available
 from codecarbon.external.scheduler import PeriodicScheduler
@@ -114,7 +115,7 @@ class Profiler():
             powers = []
             for r in self._power_monitor_reads:
                 powers.append(np.array([ float(r[f]) for f in POWER_FIELDS ]).sum())
-            avg_power: Power = Power.from_watts(np.array(powers).mean())
+            avg_power: Power = Power.from_watts(np.array(powers).mean() - IDLE_POWER)
             total_energy: Energy = Energy.from_power_and_time(power=avg_power, time=time_elapsed)
             self._emission_tracker.final_emissions_data.energy_consumed = total_energy
             self._emission_tracker.final_emissions_data = self._emission_tracker._prepare_emissions_data()
