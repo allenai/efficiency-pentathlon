@@ -152,10 +152,6 @@ TASKS: Dict[str, Task] = {
         InstanceFormat.HF_QA,
         hfqa_conversion()   
     ).add_metrics(QA_METRICS),
-<<<<<<< HEAD
-    
-=======
->>>>>>> 6172a89fa46b7bfc7cb7b5ffc4587af04cce90a1
     "squad2": EleutherTask("squad2").add_metrics(QA_METRICS),
     "rte": EleutherClassificationTask(
         "rte",
