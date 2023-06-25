@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
     git \
+    git-lfs \
     jq \
     language-pack-en \
     make \
@@ -112,7 +113,7 @@ COPY requirements.txt /workspace/
 COPY README.md /workspace/
 RUN pip install -r /workspace/requirements.txt
 
-COPY gantry /workspace/gantry
+COPY eb_gantry /workspace/eb_gantry
 COPY efficiency_benchmark /workspace/efficiency_benchmark
 COPY setup.py /workspace/
 
