@@ -8,11 +8,9 @@ from efficiency_benchmark.task import (BINARY_CLASSIFICATION_METRICS,
                                        InstanceFormat, Task,
                                        classification_metrics, mc_metrics)
 from efficiency_benchmark.tasks.efficiency_benchmark import (
+    EfficiencyBenchmarkMetaICLTask, EfficiencyBenchmarkMrqaTask,
+    EfficiencyBenchmarkPromptTask, EfficiencyBenchmarkRaftTask,
     EfficiencyBenchmarkTranslationTask,
-    EfficiencyBenchmarkRaftTask,
-    EfficiencyBenchmarkPromptTask,
-    EfficiencyBenchmarkMrqaTask,
-    EfficiencyBenchmarkMetaICLTask,
     efficiency_benchmark_classification_conversion)
 from efficiency_benchmark.tasks.eleuther import (
     EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits,
@@ -22,7 +20,6 @@ from efficiency_benchmark.tasks.huggingface import (
     hfqa_conversion)
 from efficiency_benchmark.tasks.p3 import P3Task
 from efficiency_benchmark.tasks.t5 import t5_prompt_conversion
-
 
 TASKS: Dict[str, Task] = {
     "wmt16-en-ro": EfficiencyBenchmarkTranslationTask("wmt16", "ro-en").add_metrics(MT_METRICS),  # TODO
