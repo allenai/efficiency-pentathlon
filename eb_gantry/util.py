@@ -124,13 +124,13 @@ def ensure_entrypoint_dataset(beaker: Beaker) -> Dataset:
     import hashlib
     from importlib.resources import read_binary
 
-    import gantry
+    import eb_gantry
 
     workspace_id = beaker.workspace.get().id
 
     # Get hash of the local entrypoint source file.
     sha256_hash = hashlib.sha256()
-    contents = read_binary(gantry, constants.ENTRYPOINT)
+    contents = read_binary(eb_gantry, constants.ENTRYPOINT)
     tag_start = contents.find(b"${{")
     while tag_start != -1:
         tag_end = contents.find(b"}}") + 2
