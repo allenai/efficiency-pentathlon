@@ -7,7 +7,7 @@ from click_help_colors import HelpColorsCommand, HelpColorsGroup
 
 from efficiency_benchmark.steps import (CalculateMetricsStep, LogOutputStep,
                                         PredictStep, TabulateMetricsStep)
-from gantry import run as gantry_run
+from eb_gantry.__main__ import run as gantry_run
 
 
 _CLICK_GROUP_DEFAULTS = {
@@ -204,7 +204,7 @@ def submit(
         mount=["/hf_datasets:/hf_datasets"],
         cpus=cpus,
         gpus=2,  # hard code to 2 to make sure only one job runs at a time.
-        allow_dirty=True
+        allow_dirty=True,
     )
 
 
