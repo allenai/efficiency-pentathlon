@@ -128,19 +128,9 @@ class EfficiencyBenchmarkWrapper():
             "accuracy": self.get_instances,
         }
         return funcs[scenario](split=split)
-        
-    def dataset(self, split: str):
-        return datasets.load_dataset(self.dataset_path, self.dataset_name, split=split)
-
-    def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
-        ds = self.dataset(split=split)
-        # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack
-        # to make them act like sequences.
-        ds = MappedSequence(lambda x: x, ds)
-        return ds
 
 
-class EfficiencyBenchmarkTranslationTask(Task, EfficiencyBenchmarkWrapper):
+class EfficiencyBenchmarkTranslationTask(EfficiencyBenchmarkWrapper, Task):
     def __init__(
         self,
         dataset_path: str,
@@ -157,6 +147,16 @@ class EfficiencyBenchmarkTranslationTask(Task, EfficiencyBenchmarkWrapper):
             InstanceFormat.EFFICIENCY_BENCHMARK,
             EfficiencyBenchmarkTranslationTask._conversion(input_field=input_field, target_field=target_field)
         )
+
+    def dataset(self, split: str):
+        return datasets.load_dataset(self.dataset_path, self.dataset_name, split=split)
+
+    def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
+        ds = self.dataset(split=split)
+        # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack
+        # to make them act like sequences.
+        ds = MappedSequence(lambda x: x, ds)
+        return ds
 
     @staticmethod
     def _conversion(
@@ -181,7 +181,7 @@ class EfficiencyBenchmarkTranslationTask(Task, EfficiencyBenchmarkWrapper):
         return functools.partial(convert, **kwargs)
 
 
-class EfficiencyBenchmarkClassificationTask(Task, EfficiencyBenchmarkWrapper):
+class EfficiencyBenchmarkClassificationTask(EfficiencyBenchmarkWrapper, Task):
     def __init__(
         self,
         dataset_path: str,
@@ -193,9 +193,19 @@ class EfficiencyBenchmarkClassificationTask(Task, EfficiencyBenchmarkWrapper):
         EfficiencyBenchmarkWrapper.__init__(self)
         self.dataset_path = dataset_path
         self.dataset_name = dataset_name
+    
+    def dataset(self, split: str):
+        return datasets.load_dataset(self.dataset_path, self.dataset_name, split=split)
+
+    def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
+        ds = self.dataset(split=split)
+        # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack
+        # to make them act like sequences.
+        ds = MappedSequence(lambda x: x, ds)
+        return ds
 
 
-class EfficiencyBenchmarkPromptTask(Task, EfficiencyBenchmarkWrapper):
+class EfficiencyBenchmarkPromptTask(EfficiencyBenchmarkWrapper, Task):
     def __init__(
         self,
         dataset_path: str,
@@ -225,6 +235,9 @@ class EfficiencyBenchmarkPromptTask(Task, EfficiencyBenchmarkWrapper):
         ds = MappedSequence(lambda x: x, ds)
         return ds
     
+    def dataset(self, split: str):
+        return datasets.load_dataset(self.dataset_path, self.dataset_name, split=split)
+    
     @staticmethod
     def _conversion(
         **kwargs,
@@ -247,7 +260,7 @@ class EfficiencyBenchmarkPromptTask(Task, EfficiencyBenchmarkWrapper):
         return functools.partial(convert, **kwargs)
 
 
-class EfficiencyBenchmarkRaftTask(RaftTask, EfficiencyBenchmarkWrapper):
+class EfficiencyBenchmarkRaftTask(EfficiencyBenchmarkWrapper, RaftTask):
     def __init__(
         self,
         subset: str
@@ -289,7 +302,7 @@ class EfficiencyBenchmarkRaftTask(RaftTask, EfficiencyBenchmarkWrapper):
         return functools.partial(convert, **kwargs)
 
 
-class EfficiencyBenchmarkMrqaTask(MrqaTask, EfficiencyBenchmarkWrapper):
+class EfficiencyBenchmarkMrqaTask(EfficiencyBenchmarkWrapper, MrqaTask):
     def __init__(
         self,
         dataset_path: str,
@@ -324,7 +337,7 @@ class EfficiencyBenchmarkMrqaTask(MrqaTask, EfficiencyBenchmarkWrapper):
         return convert
 
 
-class EfficiencyBenchmarkMetaICLTask(MetaICLTask, EfficiencyBenchmarkWrapper):
+class EfficiencyBenchmarkMetaICLTask(EfficiencyBenchmarkWrapper, MetaICLTask):
     def __init__(
         self,
         dataset_name: Optional[str] = None,

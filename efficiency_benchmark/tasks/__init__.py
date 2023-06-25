@@ -120,9 +120,6 @@ TASKS: Dict[str, Task] = {
     "metaicl::race-high": EfficiencyBenchmarkMetaICLTask("race-high").add_metrics(mc_metrics(4)),
     "metaicl::commonsense_qa": EfficiencyBenchmarkMetaICLTask("commonsense_qa").add_metrics(mc_metrics(5)),
 
-
-    # from catwalk
-    "wikitext": EleutherTask("wikitext").add_metrics(PERPLEXITY_METRICS),
     "piqa": EleutherTask("piqa", ranked_classification=True).add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
@@ -520,15 +517,14 @@ TASKS: Dict[str, Task] = {
     "arithmetic_5ds": EleutherTask("arithmetic_5ds").add_metrics(QA_METRICS),
     "arithmetic_2dm": EleutherTask("arithmetic_2dm").add_metrics(QA_METRICS),
     "arithmetic_1dc": EleutherTask("arithmetic_1dc").add_metrics(QA_METRICS),
-    #"iwslt17-en-ar": EleutherTask("iwslt17-en-ar"),    # no support for translations tasks for now
-    #"iwslt17-ar-en": EleutherTask("iwslt17-ar-en"),    # no support for translations tasks for now
     "anagrams1": EleutherTask("anagrams1").add_metrics(QA_METRICS),
     "anagrams2": EleutherTask("anagrams2").add_metrics(QA_METRICS),
     "cycle_letters": EleutherTask("cycle_letters").add_metrics(QA_METRICS),
     "random_insertion": EleutherTask("random_insertion").add_metrics(QA_METRICS),
     "reversed_words": EleutherTask("reversed_words").add_metrics(QA_METRICS),
 
-    
+    # from catwalk
+    "wikitext": EleutherTask("wikitext").add_metrics(PERPLEXITY_METRICS),
 }
 
 for config in datasets.get_dataset_config_names("bigscience/P3"):
