@@ -21,7 +21,7 @@ NUM_RANDOM_BATCH_INSTANCES = 4000
 NUM_OFFLINE_INSTANCES = 8000
 
 
-def _identity_conversion(
+def identity_conversion(
     **kwargs
 ) -> InstanceConversion:
     def convert(
@@ -152,11 +152,11 @@ class EfficiencyBenchmarkTranslationTask(EfficiencyBenchmarkWrapper, Task):
         EfficiencyBenchmarkWrapper.__init__(self)
         self.dataset_path = dataset_path
         self.dataset_name = dataset_name
-        input_field, target_field = dataset_name.split("-")
+        # input_field, target_field = dataset_name.split("-")
         self.add_instance_conversion(
             InstanceFormat.EFFICIENCY_BENCHMARK,
             # EfficiencyBenchmarkTranslationTask._conversion(input_field=input_field, target_field=target_field)
-            _identity_conversion()
+            identity_conversion()
         )
 
     def dataset(self, split: str):
@@ -206,7 +206,7 @@ class EfficiencyBenchmarkClassificationTask(EfficiencyBenchmarkWrapper, Task):
         self.dataset_name = dataset_name
         self.add_instance_conversion(
             InstanceFormat.EFFICIENCY_BENCHMARK,
-            _identity_conversion()
+            identity_conversion()
         )
     
     def dataset(self, split: str):
@@ -319,7 +319,7 @@ class EfficiencyBenchmarkRaftTask(EfficiencyBenchmarkWrapper, RaftTask):
         self.add_instance_conversion(
             InstanceFormat.EFFICIENCY_BENCHMARK,
             # EfficiencyBenchmarkRaftTask._conversion(task_name="subset")
-            _identity_conversion()
+            identity_conversion()
         )
 
     @staticmethod
@@ -363,7 +363,7 @@ class EfficiencyBenchmarkMrqaTask(EfficiencyBenchmarkWrapper, MrqaTask):
         self.add_instance_conversion(
             InstanceFormat.EFFICIENCY_BENCHMARK,
             # EfficiencyBenchmarkMrqaTask._conversion()
-            _identity_conversion()
+            identity_conversion()
         )
 
     @staticmethod
@@ -398,7 +398,7 @@ class EfficiencyBenchmarkMetaICLTask(EfficiencyBenchmarkWrapper, MetaICLTask):
         EfficiencyBenchmarkWrapper.__init__(self)
         self.add_instance_conversion(
             InstanceFormat.EFFICIENCY_BENCHMARK,
-            _identity_conversion()
+            identity_conversion()
             # EfficiencyBenchmarkMetaICLTask._conversion()
         )
 
