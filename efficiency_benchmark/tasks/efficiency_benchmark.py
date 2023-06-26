@@ -2,18 +2,24 @@ import functools
 import os
 from dataclasses import dataclass
 from random import Random
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import datasets
 import numpy as np
 from datasets import Dataset
 
+from efficiency_benchmark.dependencies.lm_eval.base import Task as EAITask
 from efficiency_benchmark.tango_utils import MappedSequence
 from efficiency_benchmark.task import InstanceConversion, Task
 from efficiency_benchmark.tasks import InstanceFormat
-from efficiency_benchmark.tasks.huggingface import get_from_dict
+from efficiency_benchmark.tasks.eleuther import (
+    EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits,
+    EleutherTask, EleutherTaskWithRenamedSplits, RaceEleutherTask)
+from efficiency_benchmark.tasks.huggingface import (HFDatasetsTask,
+                                                    get_from_dict)
 from efficiency_benchmark.tasks.metaicl import MetaICLTask
 from efficiency_benchmark.tasks.mrqa import MrqaTask
+from efficiency_benchmark.tasks.p3 import P3Task
 from efficiency_benchmark.tasks.raft import RaftTask
 
 NUM_SINGLE_STREAM_INSTANCES = 1000
@@ -50,9 +56,6 @@ class EfficiencyBenchmarkWrapper():
     def __init__(self):
         Task.__init__(self)
         self.online_instances: List[EfficiencyBenchmarkInstance] = None
-
-    def has_split(self, split: str) -> bool:
-        return split in datasets.get_dataset_split_names(self.dataset_path, self.dataset_name)
 
     def base_dir(self, base_dir: str) -> str:
         return os.path.join(base_dir, self.dataset_path, self.dataset_name)
@@ -162,6 +165,9 @@ class EfficiencyBenchmarkTranslationTask(EfficiencyBenchmarkWrapper, Task):
     def dataset(self, split: str):
         return datasets.load_dataset(self.dataset_path, self.dataset_name, split=split)
 
+    def has_split(self, split: str) -> bool:
+        return split in datasets.get_dataset_split_names(self.dataset_path, self.dataset_name)
+    
     def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
         ds = self.dataset(split=split)
         # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack
@@ -212,6 +218,9 @@ class EfficiencyBenchmarkClassificationTask(EfficiencyBenchmarkWrapper, Task):
     def dataset(self, split: str):
         return datasets.load_dataset(self.dataset_path, self.dataset_name, split=split)
 
+    def has_split(self, split: str) -> bool:
+        return split in datasets.get_dataset_split_names(self.dataset_path, self.dataset_name)
+    
     def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
         ds = self.dataset(split=split)
         # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack
@@ -269,6 +278,9 @@ class EfficiencyBenchmarkPromptTask(EfficiencyBenchmarkWrapper, Task):
             EfficiencyBenchmarkPromptTask._conversion(max_length=128)
         )
 
+    def has_split(self, split: str) -> bool:
+        return split in datasets.get_dataset_split_names(self.dataset_path, self.dataset_name)
+    
     def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
         ds = self.dataset(split=split)
         cleaned_data = []
@@ -386,6 +398,139 @@ class EfficiencyBenchmarkMrqaTask(EfficiencyBenchmarkWrapper, MrqaTask):
         return convert
 
 
+class EfficiencyBenchmarkEleutherTask(EfficiencyBenchmarkWrapper, EleutherTask):
+    def __init__(
+        self,
+        eleuther_task: Union[str, Callable[[], EAITask]],
+        *,
+        version_override: Optional[str] = None
+    ):
+        EleutherTask.__init__(self, eleuther_task=eleuther_task, version_override=version_override)
+        EfficiencyBenchmarkWrapper.__init__(self)
+        self.add_instance_conversion(
+            InstanceFormat.EFFICIENCY_BENCHMARK,
+            # EfficiencyBenchmarkMrqaTask._conversion()
+            identity_conversion()
+        )
+
+
+class EfficiencyBenchmarkEleutherTask(EfficiencyBenchmarkWrapper, EleutherTask):
+    def __init__(
+        self,
+        eleuther_task: Union[str, Callable[[], EAITask]],
+        *,
+        version_override: Optional[str] = None
+    ):
+        EleutherTask.__init__(self, eleuther_task=eleuther_task, version_override=version_override)
+        EfficiencyBenchmarkWrapper.__init__(self)
+        self.add_instance_conversion(
+            InstanceFormat.EFFICIENCY_BENCHMARK,
+            # EfficiencyBenchmarkMrqaTask._conversion()
+            identity_conversion()
+        )
+
+
+class EfficiencyBenchmarkEleutherClassificationTask(EfficiencyBenchmarkWrapper, EleutherClassificationTask):
+    def __init__(
+        self,
+        eleuther_task: Union[str, Callable[[], EAITask]],
+        *,
+        answer_options: Sequence[str],
+        version_override: Optional[str] = None
+    ):
+        EleutherClassificationTask.__init__(
+            self, 
+            eleuther_task=eleuther_task, 
+            answer_options=answer_options, 
+            version_override=version_override
+        )
+        EfficiencyBenchmarkWrapper.__init__(self)
+        self.add_instance_conversion(
+            InstanceFormat.EFFICIENCY_BENCHMARK,
+            # EfficiencyBenchmarkMrqaTask._conversion()
+            identity_conversion()
+        )
+
+        
+class EfficiencyBenchmarkRaceEleutherTask(EfficiencyBenchmarkWrapper, RaceEleutherTask):
+    def __init__(
+        self,
+        *,
+        version_override: Optional[str] = None
+    ):
+        RaceEleutherTask.__init__(
+            self,
+            version_override=version_override
+        )
+        EfficiencyBenchmarkWrapper.__init__(self)
+        self.add_instance_conversion(
+            InstanceFormat.EFFICIENCY_BENCHMARK,
+            # EfficiencyBenchmarkMrqaTask._conversion()
+            identity_conversion()
+        )
+
+
+class EfficiencyBenchmarkEleutherTaskWithRenamedSplits(EfficiencyBenchmarkWrapper, EleutherTaskWithRenamedSplits):
+    def __init__(
+        self,
+        eleuther_task: Union[str, Callable[[], EAITask]],
+        *,
+        version_override: Optional[str] = None
+    ):
+        EleutherTaskWithRenamedSplits.__init__(self, eleuther_task=eleuther_task, version_override=version_override)
+        EfficiencyBenchmarkWrapper.__init__(self)
+        self.add_instance_conversion(
+            InstanceFormat.EFFICIENCY_BENCHMARK,
+            # EfficiencyBenchmarkMrqaTask._conversion()
+            identity_conversion()
+        )
+
+
+class EfficiencyBenchmarkEleutherClassificationTaskWithRenamedSplits(
+    EfficiencyBenchmarkWrapper, EleutherClassificationTaskWithRenamedSplits):
+    def __init__(
+        self,
+        eleuther_task: Union[str, Callable[[], EAITask]],
+        *,
+        answer_options: Sequence[str],
+        version_override: Optional[str] = None
+    ):
+        EleutherClassificationTaskWithRenamedSplits.__init__(
+            self, 
+            eleuther_task=eleuther_task, 
+            answer_options=answer_options, 
+            version_override=version_override
+        )
+        EfficiencyBenchmarkWrapper.__init__(self)
+        self.add_instance_conversion(
+            InstanceFormat.EFFICIENCY_BENCHMARK,
+            # EfficiencyBenchmarkMrqaTask._conversion()
+            identity_conversion()
+        )
+
+
+class EfficiencyBenchmarkHFDatasetsTask(EfficiencyBenchmarkWrapper, HFDatasetsTask):
+    def __init__(
+        self,
+        dataset_path: str,
+        dataset_name: Optional[str] = None,
+        *,
+        version_override: Optional[str] = None
+    ):
+        HFDatasetsTask.__init__(
+            self, 
+            dataset_path=dataset_path, 
+            dataset_name=dataset_name, 
+            version_override=version_override
+        )
+        EfficiencyBenchmarkWrapper.__init__(self)
+        self.add_instance_conversion(
+            InstanceFormat.EFFICIENCY_BENCHMARK,
+            # EfficiencyBenchmarkMrqaTask._conversion()
+            identity_conversion()
+        )
+
+
 class EfficiencyBenchmarkMetaICLTask(EfficiencyBenchmarkWrapper, MetaICLTask):
     def __init__(
         self,
@@ -418,5 +563,20 @@ class EfficiencyBenchmarkMetaICLTask(EfficiencyBenchmarkWrapper, MetaICLTask):
                 target=output
             )
         return convert
+    
 
+class EfficiencyBenchmarkP3Task(EfficiencyBenchmarkWrapper, P3Task):
+    def __init__(
+        self,
+        dataset_name: Optional[str] = None,
+        *,
+        version_override: Optional[str] = None
+    ):
+        self.dataset_path = "bigscience/P3"
+        P3Task.__init__(self, dataset_name, version_override=version_override)
+        EfficiencyBenchmarkWrapper.__init__(self)
+        self.add_instance_conversion(
+            InstanceFormat.EFFICIENCY_BENCHMARK,
+            identity_conversion()
+        )
 
