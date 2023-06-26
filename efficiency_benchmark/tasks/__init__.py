@@ -10,8 +10,7 @@ from efficiency_benchmark.task import (BINARY_CLASSIFICATION_METRICS,
 from efficiency_benchmark.tasks.efficiency_benchmark import (
     EfficiencyBenchmarkMetaICLTask, EfficiencyBenchmarkMrqaTask,
     EfficiencyBenchmarkPromptTask, EfficiencyBenchmarkRaftTask,
-    EfficiencyBenchmarkTranslationTask,
-    efficiency_benchmark_classification_conversion)
+    EfficiencyBenchmarkTranslationTask, EfficiencyBenchmarkClassificationTask)
 from efficiency_benchmark.tasks.eleuther import (
     EleutherClassificationTask, EleutherClassificationTaskWithRenamedSplits,
     EleutherTask, EleutherTaskWithRenamedSplits, RaceEleutherTask)
@@ -167,7 +166,7 @@ TASKS: Dict[str, Task] = {
         )
     ).add_instance_conversion(
         InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_classification_conversion(
+        EfficiencyBenchmarkClassificationTask.conversion(
             task_name="rte",
             label_map={0: "entailment", 1: "not_entailment"},
             premise_field="sentence1",
@@ -193,7 +192,7 @@ TASKS: Dict[str, Task] = {
         )
     ).add_instance_conversion(
         InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_classification_conversion(
+        EfficiencyBenchmarkClassificationTask.conversion(
             task_name="cola",
             label_map={0: "unacceptable", 1: "acceptable"},
             premise_field="sentence",
@@ -213,7 +212,7 @@ TASKS: Dict[str, Task] = {
         )
     ).add_instance_conversion(
         InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_classification_conversion(
+        EfficiencyBenchmarkClassificationTask.conversion(
             task_name="mnli",
             label_map={0: "entailment", 1: "neutral", 2: "contradiction"},
             id_field='idx'
@@ -230,7 +229,7 @@ TASKS: Dict[str, Task] = {
             id_field='idx')
     ).add_instance_conversion(
         InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_classification_conversion(
+        EfficiencyBenchmarkClassificationTask.conversion(
             task_name="mnli",
             label_map={0: "entailment", 1: "neutral", 2: "contradiction"},
             id_field='idx')
@@ -246,7 +245,7 @@ TASKS: Dict[str, Task] = {
         )
     ).add_instance_conversion(
         InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_classification_conversion(
+        EfficiencyBenchmarkClassificationTask.conversion(
             task_name="mrpc",
             label_map={0: "not_equivalent", 1: "equivalent"},
             premise_field="sentence1",
@@ -265,7 +264,7 @@ TASKS: Dict[str, Task] = {
         )
     ).add_instance_conversion(
         InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_classification_conversion(
+        EfficiencyBenchmarkClassificationTask.conversion(
             task_name="qnli",
             label_map={0: "entailment", 1: "not_entailment"},
             premise_field="question",
@@ -284,7 +283,7 @@ TASKS: Dict[str, Task] = {
         )
     ).add_instance_conversion(
         InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_classification_conversion(
+        EfficiencyBenchmarkClassificationTask.conversion(
             task_name="qqp",
             label_map={0: "not_duplicate", 1: "duplicate"},
             premise_field="question1",
@@ -303,7 +302,7 @@ TASKS: Dict[str, Task] = {
         )
     ).add_instance_conversion(
         InstanceFormat.EFFICIENCY_BENCHMARK,
-        efficiency_benchmark_classification_conversion(
+        EfficiencyBenchmarkClassificationTask.conversion(
             task_name="sst",
             label_map={0: "negative", 1: "positive"},
             premise_field="sentence",
@@ -311,6 +310,7 @@ TASKS: Dict[str, Task] = {
             id_field='idx'
         )
     ),
+    
     "wnli": EleutherTask("wnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
     "boolq": EleutherTask("boolq", ranked_classification=True).add_metrics(classification_metrics(2)),
     "cb": EleutherTask("cb", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),

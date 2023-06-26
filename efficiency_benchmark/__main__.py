@@ -49,8 +49,8 @@ def main():
     "-s",
     "--scenario",
     type=str,
-    default="accuracy",
-    help="""Evaluation scenario [accuracy, single_stream, random_batch, offline].""",
+    default="fixed_batch",
+    help="""Evaluation scenario [single_stream, fixed_batch, random_batch, offline].""",
 )
 @click.option(
     "-b",
@@ -83,7 +83,7 @@ def run(
     cmd: Tuple[str, ...],
     task: str,
     split: str = "test",
-    scenario: str = "accuracy",
+    scenario: str = "fixed_batch",
     max_batch_size: int = 32,
     offline_dir: str = f"{os.getcwd()}/datasets/efficiency-beenchmark",
     limit: Optional[int] = -1,

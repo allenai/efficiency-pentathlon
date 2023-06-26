@@ -81,10 +81,10 @@ class StdioWrapper(ABC):
     def predict(  # type: ignore
         self,
         *,
-        input_batches: List[List[Dict[str, Any]]],
+        batches: List[List[Dict[str, Any]]],
         max_batch_size: int
     ) -> Iterator[str]:
-        for input_batch in tqdm.tqdm(input_batches, desc="Making predictions", miniters=10):
+        for input_batch in tqdm.tqdm(batches, desc="Making predictions", miniters=10):
             # Make sure the batch size does not exceed a user defined maximum.
             # Split into smaller batches if necessary.
             splitted_batches = list(more_itertools.chunked(input_batch, max_batch_size))
@@ -157,7 +157,7 @@ class StdioWrapper(ABC):
             dummy_inputs: List[Dict[str, Any]],
             max_batch_size: int
         ) -> List[str]:
-        dummy_outputs = self.predict(input_batches=[dummy_inputs], max_batch_size=max_batch_size)
+        dummy_outputs = self.predict(batches=[dummy_inputs], max_batch_size=max_batch_size)
         return list(dummy_outputs)
     
     def stop(self):

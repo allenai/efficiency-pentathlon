@@ -74,7 +74,7 @@ class PredictStep():
             instances = [ instances[i] for i in indices]
         self.num_instances = len(instances)
 
-        if self.scenario == "accuracy":
+        if self.scenario in ["fixed_batch", "accuracy"]:
             batches = list(more_itertools.chunked(instances, self.max_batch_size))
         elif self.scenario == "single_stream":
             batches = list(more_itertools.chunked(instances, 1))
@@ -92,12 +92,13 @@ class PredictStep():
                 if idx >= len(instances):
                     break
         else:
-            raise ValueError(f"Unknown scenario: {self.scenario}. Choose from 'single_stream', 'random_batch', 'offline'")
+            raise ValueError(f"Unknown scenario: {self.scenario}. Choose from 'single_stream', 'fixed_batch', 'random_batch', 'offline'")
 
         self.num_batches = len(batches)
         assert self.num_instances == sum(len(batch) for batch in batches)
 
-        self.input_batches = [ [instance.input for instance in batch] for batch in batches]
+        self.batches = batches
+        # self.input_batches = [ [instance.input for instance in batch] for batch in batches]
         if self.scenario == "accuracy":
             target_batches = [ [instance.target for instance in batch] for batch in batches]
             self.targets = list(itertools.chain(*target_batches))
@@ -148,10 +149,10 @@ class PredictStep():
 
     def run_online(self) -> Tuple[Sequence[Any], Dict[str, Any]]:
         output_batches = []
-        _ = self.predictor.dummy_predict(dummy_inputs=self.input_batches[-1], max_batch_size=self.max_batch_size)
+        _ = self.predictor.dummy_predict(dummy_inputs=self.batches[-1], max_batch_size=self.max_batch_size)
 
         self.profiler.start()
-        for output_batch in self.predictor.predict(input_batches=self.input_batches, max_batch_size=self.max_batch_size):
+        for output_batch in self.predictor.predict(batches=self.batches, max_batch_size=self.max_batch_size):
             output_batches.append(output_batch)
         efficiency_metrics = self.profiler.stop()
         results, num_output_words = self.process(output_batches)

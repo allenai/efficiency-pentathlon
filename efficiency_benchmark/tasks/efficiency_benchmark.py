@@ -21,18 +21,28 @@ NUM_RANDOM_BATCH_INSTANCES = 4000
 NUM_OFFLINE_INSTANCES = 8000
 
 
+def _identity_conversion(
+    **kwargs
+) -> InstanceConversion:
+    def convert(
+        instance: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        return instance
+    # We're doing this in this stupid way because this makes the conversion function picklable.
+    return functools.partial(convert, **kwargs)
+
+
 @dataclass
 class EfficiencyBenchmarkInstance:
-    input: Union[str, Dict[str, Any]]
-    target: Optional[str]
-    id: Optional[str]
+    # A wrapper of an instance
+    instance: Union[str, Dict[str, Any]]
+    target: Optional[str] = None
+    id: Optional[int] = None
 
     def to_dict(self) -> Dict[str, Any]:
         d = {"input": self.input}
         if self.target is not None:
             d["target"] = self.target
-        if self.id is not None:
-            d["id"] = self.id
         return d
 
 
@@ -124,6 +134,7 @@ class EfficiencyBenchmarkWrapper():
         funcs = {
             "single_stream": self.get_single_stream_instances,
             "random_batch": self.get_random_batch_instances,
+            "fixed_batch": self.get_instances,
             "accuracy": self.get_instances,
         }
         return funcs[scenario](split=split)
@@ -144,7 +155,8 @@ class EfficiencyBenchmarkTranslationTask(EfficiencyBenchmarkWrapper, Task):
         input_field, target_field = dataset_name.split("-")
         self.add_instance_conversion(
             InstanceFormat.EFFICIENCY_BENCHMARK,
-            EfficiencyBenchmarkTranslationTask._conversion(input_field=input_field, target_field=target_field)
+            # EfficiencyBenchmarkTranslationTask._conversion(input_field=input_field, target_field=target_field)
+            _identity_conversion()
         )
 
     def dataset(self, split: str):
@@ -173,7 +185,7 @@ class EfficiencyBenchmarkTranslationTask(EfficiencyBenchmarkWrapper, Task):
             target = get_from_dict(instance, target_field)
             return EfficiencyBenchmarkInstance(
                 id=str(get_from_dict(instance, id_field)) if id_field else None,
-                input=input,
+                instance=input,
                 target=target
             )
         # We're doing this in this stupid way because this makes the conversion function picklable.
@@ -192,6 +204,10 @@ class EfficiencyBenchmarkClassificationTask(EfficiencyBenchmarkWrapper, Task):
         EfficiencyBenchmarkWrapper.__init__(self)
         self.dataset_path = dataset_path
         self.dataset_name = dataset_name
+        self.add_instance_conversion(
+            InstanceFormat.EFFICIENCY_BENCHMARK,
+            _identity_conversion()
+        )
     
     def dataset(self, split: str):
         return datasets.load_dataset(self.dataset_path, self.dataset_name, split=split)
@@ -202,6 +218,38 @@ class EfficiencyBenchmarkClassificationTask(EfficiencyBenchmarkWrapper, Task):
         # to make them act like sequences.
         ds = MappedSequence(lambda x: x, ds)
         return ds
+
+    @staticmethod
+    def conversion(
+        **kwargs,
+    ) -> InstanceConversion:
+
+        def convert(
+            instance: Dict[str, Any],
+            *,
+            label_map: Dict[int, str],
+            premise_field: str = "premise",
+            hypothesis_field: Optional[str] = "hypothesis",
+            label_field: str = "label",
+            id_field: Optional[str] = None,
+            task_name: Optional[str] = None,
+        ) -> EfficiencyBenchmarkInstance:
+            input = {premise_field: get_from_dict(instance, premise_field)}
+            if hypothesis_field is not None:
+                input[hypothesis_field] = get_from_dict(instance, hypothesis_field)
+            if task_name:
+                input["task_name"] = task_name
+
+            label_id = int(get_from_dict(instance, label_field))
+            target = label_map[label_id]
+            return EfficiencyBenchmarkInstance(
+                input=input,
+                target=target,
+                id=str(get_from_dict(instance, id_field)) if id_field else None
+            )
+
+        # We're doing this in this stupid way because this makes the conversion function picklable.
+        return functools.partial(convert, **kwargs)
 
 
 class EfficiencyBenchmarkPromptTask(EfficiencyBenchmarkWrapper, Task):
@@ -270,7 +318,8 @@ class EfficiencyBenchmarkRaftTask(EfficiencyBenchmarkWrapper, RaftTask):
         RaftTask.__init__(self, subset)
         self.add_instance_conversion(
             InstanceFormat.EFFICIENCY_BENCHMARK,
-            EfficiencyBenchmarkRaftTask._conversion(task_name="subset")
+            # EfficiencyBenchmarkRaftTask._conversion(task_name="subset")
+            _identity_conversion()
         )
 
     @staticmethod
@@ -313,7 +362,8 @@ class EfficiencyBenchmarkMrqaTask(EfficiencyBenchmarkWrapper, MrqaTask):
         EfficiencyBenchmarkWrapper.__init__(self)
         self.add_instance_conversion(
             InstanceFormat.EFFICIENCY_BENCHMARK,
-            EfficiencyBenchmarkMrqaTask._conversion()
+            # EfficiencyBenchmarkMrqaTask._conversion()
+            _identity_conversion()
         )
 
     @staticmethod
@@ -348,7 +398,8 @@ class EfficiencyBenchmarkMetaICLTask(EfficiencyBenchmarkWrapper, MetaICLTask):
         EfficiencyBenchmarkWrapper.__init__(self)
         self.add_instance_conversion(
             InstanceFormat.EFFICIENCY_BENCHMARK,
-            EfficiencyBenchmarkMetaICLTask._conversion()
+            _identity_conversion()
+            # EfficiencyBenchmarkMetaICLTask._conversion()
         )
 
     @staticmethod
@@ -368,35 +419,4 @@ class EfficiencyBenchmarkMetaICLTask(EfficiencyBenchmarkWrapper, MetaICLTask):
             )
         return convert
 
-
-def efficiency_benchmark_classification_conversion(
-    **kwargs,
-) -> InstanceConversion:
-
-    def convert(
-        instance: Dict[str, Any],
-        *,
-        label_map: Dict[int, str],
-        premise_field: str = "premise",
-        hypothesis_field: Optional[str] = "hypothesis",
-        label_field: str = "label",
-        id_field: Optional[str] = None,
-        task_name: Optional[str] = None,
-    ) -> EfficiencyBenchmarkInstance:
-        input = {premise_field: get_from_dict(instance, premise_field)}
-        if hypothesis_field is not None:
-            input[hypothesis_field] = get_from_dict(instance, hypothesis_field)
-        if task_name:
-            input["task_name"] = task_name
-
-        label_id = int(get_from_dict(instance, label_field))
-        target = label_map[label_id]
-        return EfficiencyBenchmarkInstance(
-            input=input,
-            target=target,
-            id=str(get_from_dict(instance, id_field)) if id_field else None
-        )
-
-    # We're doing this in this stupid way because this makes the conversion function picklable.
-    return functools.partial(convert, **kwargs)
 
