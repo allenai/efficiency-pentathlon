@@ -37,8 +37,8 @@ def parse_requirements_file(path):
 
 
 setup(
-    name="efficiency-benchmark",
-    version=0.0,
+    name="efficiency-pentathlon",
+    version=1.0,
     description="A toolkits for measuring the inference efficiency of NLP models.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
@@ -67,15 +67,13 @@ setup(
         ],
     ),
     package_data={
-        "efficiency-benchmark": ["py.typed"],
-        "gantry": ["py.typed", "*.sh"]
+        "efficiency-benchmark": ["py.typed"]
     },
     entry_points={"console_scripts": [
         "efficiency-benchmark=efficiency_benchmark.__main__:main",
-        # "gantry=gantry.__main__:main"
+        "eb=efficiency_benchmark.__main__:main"
     ]},
     install_requires=parse_requirements_file("requirements.txt"),
-    # extras_require={"dev": parse_requirements_file("dev-requirements.txt")},
     include_package_data=True,
     python_requires=">=3.8.0",
 )
