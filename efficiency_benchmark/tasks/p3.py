@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from efficiency_benchmark.task import (InstanceFormat,
                                        RankClassificationInstance)
-from efficiency_benchmark.tasks import HFDatasetsTask
+from efficiency_benchmark.tasks.huggingface import HFDatasetsTask
 
 
 class P3Task(HFDatasetsTask):
