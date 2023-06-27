@@ -13,12 +13,12 @@ pip install .
 https://github.com/haopeng-nlp/submission.git
 cd submission
 pip install -r requirements.txt
-efficiency-benchmark run --task wmt16-en-ro  --max_batch_size 100 --scenario accuracy  -- python entrypoint.py --model mbart
+efficiency-benchmark run --task wmt16-ro-en -- python entrypoint.py --model facebook/mbart-large-50-many-to-many-mmt --task wmt16-ro-en
 ```
 
 ## To submit to the dedicated machine
 ```
-efficiency-benchmark submit --task wmt16-en-ro  --max_batch_size 100  -- python entrypoint.py --model mbart
+efficiency-benchmark submit --task wmt16-ro-en -- python entrypoint.py --model facebook/mbart-large-50-many-to-many-mmt --task wmt16-ro-en
 ```
 
 Please contact haop@ to get access to this machine.
