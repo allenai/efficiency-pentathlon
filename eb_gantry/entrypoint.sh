@@ -150,20 +150,14 @@ fi
 
 # Execute the arguments to this script as commands themselves, piping output into a log file.
 # shellcheck disable=SC2296
-echo "Accuracy"
-exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "accuracy" --output_dir "$RESULTS_DIR" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/accuracy.log"
-echo "Only evaluating with the Accuracy scenario for debugging"
-exit 0
-if [[ "$TASK" == *"raft::"* ]]; then
-  echo "Only evaluating with the Accuracy scenario for RAFT tasks"
-  exit 0
-fi
-
 
 echo "Single Stream"
 exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "single_stream" --output_dir "$RESULTS_DIR" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/single_stream.log"
 
-echo "Random batch"
+echo "Fixed Batching"
+exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "fixed_batch" --output_dir "$RESULTS_DIR" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/fixed_batch.log"
+
+echo "Random Batching"
 exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "random_batch" --output_dir "$RESULTS_DIR" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/random_batch.log"
 
 echo "Offline"
