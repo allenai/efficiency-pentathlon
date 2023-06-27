@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import datasets
 import numpy as np
-from datasets import Dataset
+from datasets import Dataset, DatasetDict
 
 from efficiency_benchmark.dependencies.lm_eval.base import Task as EAITask
 from efficiency_benchmark.tango_utils import MappedSequence
@@ -38,18 +38,19 @@ def identity_conversion(
     return functools.partial(convert, **kwargs)
 
 
-@dataclass
-class EfficiencyBenchmarkInstance:
-    # A wrapper of an instance
-    instance: Union[str, Dict[str, Any]]
-    target: Optional[str] = None
-    id: Optional[int] = None
+# @dataclass
+# class EfficiencyBenchmarkInstance:
+#     # A wrapper of an instance
+#     instance: Union[str, Dict[str, Any]]
+#     target: Optional[str] = None
+#     id: Optional[int] = None
 
-    def to_dict(self) -> Dict[str, Any]:
-        d = {"input": self.input}
-        if self.target is not None:
-            d["target"] = self.target
-        return d
+#     def to_dict(self) -> Dict[str, Any]:
+#         d = {"input": self.input}
+#         if self.target is not None:
+#             d["target"] = self.target
+#         return d
+EfficiencyBenchmarkInstance = Dict[str, Any]
 
 
 class EfficiencyBenchmarkWrapper():
@@ -142,6 +143,41 @@ class EfficiencyBenchmarkWrapper():
         }
         return funcs[scenario](split=split)
 
+
+class EfficiencyBenchmarkHuggingfaceTask(EfficiencyBenchmarkWrapper, Task):
+    """A wrapper for huggingface datasets."""
+    def __init__(
+        self,
+        hf_dataset_args: Dict[str, Any],
+        *,
+        version_override: Optional[str] = None
+    ):  
+        EfficiencyBenchmarkWrapper.__init__(self)
+        self.hf_dataset_args = hf_dataset_args
+        self.add_instance_conversion(
+            InstanceFormat.EFFICIENCY_BENCHMARK,
+            identity_conversion()
+        )
+    
+    def dataset(self):
+        return datasets.load_dataset(**self.hf_dataset_args)
+
+    def has_split(self, split: str) -> bool:
+        return split in datasets.get_dataset_split_names(**self.hf_dataset_args)
+    
+    def get_split(self, split: str) -> Sequence[Dict[str, Any]]:
+        ds = self.dataset()
+        if "split" in self.hf_dataset_args.keys():
+            print(f"Using {self.hf_dataset_args['split']} split specified in hf_dataset_args")
+            assert isinstance(ds, Dataset)
+        else:
+            assert isinstance(ds, DatasetDict)
+            ds = ds[split]
+        # HF datasets are not sequences, even though they sometimes pretend they are. So we apply this hack
+        # to make them act like sequences.
+        ds = MappedSequence(lambda x: x, ds)
+        return ds
+    
 
 class EfficiencyBenchmarkTranslationTask(EfficiencyBenchmarkWrapper, Task):
     def __init__(

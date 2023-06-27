@@ -11,7 +11,6 @@ from datasets import Dataset
 from efficiency_benchmark.efficiency.profiler import Profiler
 from efficiency_benchmark.stdio_wrapper import StdioWrapper
 from efficiency_benchmark.task import Task
-from efficiency_benchmark.tasks import TASKS
 from efficiency_benchmark.tasks.efficiency_benchmark import EfficiencyBenchmarkWrapper
 from efficiency_benchmark.tasks.efficiency_benchmark import EfficiencyBenchmarkInstance
 
@@ -24,7 +23,7 @@ class PredictStep():
         self,
         *,
         cmd: List[str],
-        task: str,
+        task: EfficiencyBenchmarkWrapper,
         scenario: str,
         max_batch_size: int,
         offline_dir: str,
@@ -33,13 +32,8 @@ class PredictStep():
         **kwargs
     ):
         np.random.seed(42)
-        self.task: EfficiencyBenchmarkWrapper = TASKS[task]
-        if scenario == "offline" and "raft" not in task:
-            # We prefer training split for the offline scenario, which usually has more data
-            # RAFT's training data is tiny, thus we use the test split for the offline scenario
-            self.split = "train"
-        else:
-            self.split = split if split is not None else self.task.default_split
+        self.task = task
+        self.split = split if split is not None else self.task.default_split
             
         self.scenario = scenario
         self.max_batch_size = max_batch_size
@@ -105,8 +99,6 @@ class PredictStep():
             assert len(self.targets) == self.num_instances
 
     def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        if isinstance(kwargs["task"], str):
-            kwargs["task"] = TASKS[kwargs["task"]]
         if kwargs["split"] is None:
             kwargs["split"] = kwargs["task"].default_split
         return kwargs
@@ -210,13 +202,8 @@ class CalculateMetricsStep():
     _TorchmetricsResult = Union[torch.Tensor, Dict[str, '_TorchmetricsResult']]
     _CatwalkResult = Union[float, Dict[str, '_CatwalkResult']]
 
-    def __init__(self, task: Union[str, Task]):
-        self.task = TASKS[task] if isinstance(task, str) else task
-
-    def massage_kwargs(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        if isinstance(kwargs["task"], str):
-            kwargs["task"] = TASKS[kwargs["task"]]
-        return kwargs
+    def __init__(self, task: EfficiencyBenchmarkWrapper):
+        self.task = task
 
     def _tensor_args(self, args: Tuple[Any]) -> Tuple[Any, ...]:
         """
@@ -309,7 +296,7 @@ class TabulateMetricsStep():
 class LogOutputStep():
 
     def __init__(self, task: Union[str, Task], output_file: Optional[str] = None):
-        self.task = TASKS[task] if isinstance(task, str) else task
+        self.task = task
         self.output_file: str = output_file
 
     def run(self, predictions: Sequence[Dict[str, Any]]) -> None:

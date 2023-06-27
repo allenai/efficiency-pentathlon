@@ -15,16 +15,18 @@ from efficiency_benchmark.tasks.efficiency_benchmark import (
     EfficiencyBenchmarkHFDatasetsTask, EfficiencyBenchmarkMetaICLTask,
     EfficiencyBenchmarkMrqaTask, EfficiencyBenchmarkPromptTask,
     EfficiencyBenchmarkRaceEleutherTask, EfficiencyBenchmarkRaftTask,
-    EfficiencyBenchmarkTranslationTask)
+    EfficiencyBenchmarkTranslationTask, EfficiencyBenchmarkHuggingfaceTask, EfficiencyBenchmarkP3Task)
 from efficiency_benchmark.tasks.huggingface import (
     hfclassification_conversion, hfmc_conversion, hfqa_conversion)
 from efficiency_benchmark.tasks.t5 import t5_prompt_conversion
 
 TASKS: Dict[str, Task] = {
-    "wmt16-en-ro": EfficiencyBenchmarkTranslationTask("wmt16", "ro-en").add_metrics(MT_METRICS),  # TODO
-    "wmt16-ro-en": EfficiencyBenchmarkTranslationTask("wmt16", "ro-en").add_metrics(MT_METRICS),  # TODO
-    "wmt14-de-en": EfficiencyBenchmarkTranslationTask("wmt14", "de-en").add_metrics(MT_METRICS),  # TODO
+    "huggingface": EfficiencyBenchmarkHuggingfaceTask,
+    "wmt16-en-ro": EfficiencyBenchmarkTranslationTask("wmt16", "ro-en").add_metrics(MT_METRICS),
+    "wmt16-ro-en": EfficiencyBenchmarkTranslationTask("wmt16", "ro-en").add_metrics(MT_METRICS),
+    "wmt14-de-en": EfficiencyBenchmarkTranslationTask("wmt14", "de-en").add_metrics(MT_METRICS),
     "wmt14-en-de": EfficiencyBenchmarkTranslationTask("wmt14", "de-en").add_metrics(MT_METRICS), 
+
     "wikitext-prompt": EfficiencyBenchmarkPromptTask("wikitext", "wikitext-103-raw-v1"),
     # RAFT
     "raft::ade_corpus_v2": EfficiencyBenchmarkRaftTask("ade_corpus_v2"),
@@ -116,7 +118,7 @@ TASKS: Dict[str, Task] = {
     "metaicl::race-high": EfficiencyBenchmarkMetaICLTask("race-high").add_metrics(mc_metrics(4)),
     "metaicl::commonsense_qa": EfficiencyBenchmarkMetaICLTask("commonsense_qa").add_metrics(mc_metrics(5)),
 
-    "piqa": EfficiencyBenchmarkEleutherTask("piqa", ranked_classification=True).add_instance_conversion(
+    "piqa": EfficiencyBenchmarkEleutherTask("piqa").add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
             context_field=None,
@@ -245,10 +247,10 @@ TASKS: Dict[str, Task] = {
         )
     ),
     
-    "wnli": EfficiencyBenchmarkEleutherTask("wnli", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "boolq": EfficiencyBenchmarkEleutherTask("boolq", ranked_classification=True).add_metrics(classification_metrics(2)),
-    "cb": EfficiencyBenchmarkEleutherTask("cb", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "copa": EfficiencyBenchmarkEleutherTask("copa", ranked_classification=True).add_instance_conversion(
+    "wnli": EfficiencyBenchmarkEleutherTask("wnli").add_metrics(ENTAILMENT_METRICS),
+    "boolq": EfficiencyBenchmarkEleutherTask("boolq").add_metrics(classification_metrics(2)),
+    "cb": EfficiencyBenchmarkEleutherTask("cb").add_metrics(ENTAILMENT_METRICS),
+    "copa": EfficiencyBenchmarkEleutherTask("copa").add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
             context_field=None,
@@ -258,13 +260,10 @@ TASKS: Dict[str, Task] = {
             id_field="idx"
         )
     ).add_metrics(mc_metrics(2)),
-    "multirc": EfficiencyBenchmarkEleutherTask("multirc", ranked_classification=True).add_metrics(QA_METRICS),
+    "multirc": EfficiencyBenchmarkEleutherTask("multirc").add_metrics(QA_METRICS),
     #"record": EfficiencyBenchmarkEleutherTask("record"),    # record doesn't have a 1:1 correspondence between HF instances and EAI instances
-    "wic": EfficiencyBenchmarkEleutherTask("wic", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "wsc": EfficiencyBenchmarkEleutherTask(
-        "wsc",
-        ranked_classification=True
-    ).add_metrics(mc_metrics(2)),
+    "wic": EfficiencyBenchmarkEleutherTask("wic").add_metrics(ENTAILMENT_METRICS),
+    "wsc": EfficiencyBenchmarkEleutherTask("wsc").add_metrics(mc_metrics(2)),
     #"coqa": EfficiencyBenchmarkEleutherTask("coqa"),  # currently broken in the datasets library
     "drop": EfficiencyBenchmarkEleutherTask("drop").add_metrics(QA_METRICS),
     "lambada": EfficiencyBenchmarkEleutherTask("lambada_standard"),
@@ -274,10 +273,10 @@ TASKS: Dict[str, Task] = {
     "lambada_mt_de": EfficiencyBenchmarkEleutherTask("lambada_openai_mt_de"),
     "lambada_mt_it": EfficiencyBenchmarkEleutherTask("lambada_openai_mt_it"),
     "lambada_mt_es": EfficiencyBenchmarkEleutherTask("lambada_openai_mt_es"),
-    "prost": EfficiencyBenchmarkEleutherTask("prost", ranked_classification=True).add_metrics(mc_metrics(4)),
-    "mc_taco": EfficiencyBenchmarkEleutherTask("mc_taco", ranked_classification=True).add_metrics(BINARY_CLASSIFICATION_METRICS),
+    "prost": EfficiencyBenchmarkEleutherTask("prost").add_metrics(mc_metrics(4)),
+    "mc_taco": EfficiencyBenchmarkEleutherTask("mc_taco").add_metrics(BINARY_CLASSIFICATION_METRICS),
     "pubmedqa": EfficiencyBenchmarkEleutherTaskWithRenamedSplits("pubmedqa").add_metrics(BINARY_CLASSIFICATION_METRICS),
-    "sciq": EfficiencyBenchmarkEleutherTask("sciq", ranked_classification=True).add_instance_conversion(
+    "sciq": EfficiencyBenchmarkEleutherTask("sciq").add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
             context_field=None,
@@ -286,7 +285,7 @@ TASKS: Dict[str, Task] = {
             correct_answer_field="correct_answer"
         )
     ).add_metrics(mc_metrics(4)),
-    "qa4mre_2011": EfficiencyBenchmarkEleutherTask("qa4mre_2011", ranked_classification=True).add_instance_conversion(
+    "qa4mre_2011": EfficiencyBenchmarkEleutherTask("qa4mre_2011").add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
             context_field="document_str",
@@ -296,7 +295,7 @@ TASKS: Dict[str, Task] = {
             answer_mappings={'1': 0, '2': 1, '3': 2, '4': 3, '5': 4}
         )
     ).add_metrics(mc_metrics(5)),
-    "qa4mre_2012": EfficiencyBenchmarkEleutherTask("qa4mre_2012", ranked_classification=True).add_instance_conversion(
+    "qa4mre_2012": EfficiencyBenchmarkEleutherTask("qa4mre_2012").add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
             context_field="document_str",
@@ -306,7 +305,7 @@ TASKS: Dict[str, Task] = {
             answer_mappings={'1': 0, '2': 1, '3': 2, '4': 3, '5': 4}
         )
     ).add_metrics(mc_metrics(5)),
-    "qa4mre_2013": EfficiencyBenchmarkEleutherTask("qa4mre_2013", ranked_classification=True).add_instance_conversion(
+    "qa4mre_2013": EfficiencyBenchmarkEleutherTask("qa4mre_2013").add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
             context_field="document_str",
@@ -319,7 +318,7 @@ TASKS: Dict[str, Task] = {
     "triviaqa": EfficiencyBenchmarkEleutherTask(
         "triviaqa"
     ).add_metrics(QA_METRICS),
-    "arc_easy": EfficiencyBenchmarkEleutherTask("arc_easy", ranked_classification=True).add_instance_conversion(
+    "arc_easy": EfficiencyBenchmarkEleutherTask("arc_easy").add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
             context_field=None,
@@ -330,7 +329,7 @@ TASKS: Dict[str, Task] = {
             answer_mappings={'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, '1': 0, '2': 1, '3': 2, '4': 3}
         )
     ).add_metrics(mc_metrics(4)),
-    "arc_challenge": EfficiencyBenchmarkEleutherTask("arc_challenge", ranked_classification=True).add_instance_conversion(
+    "arc_challenge": EfficiencyBenchmarkEleutherTask("arc_challenge").add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
             context_field=None,
@@ -341,7 +340,7 @@ TASKS: Dict[str, Task] = {
             answer_mappings={'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, '1': 0, '2': 1, '3': 2, '4': 3}
         )
     ).add_metrics(mc_metrics(4)),
-    "logiqa": EfficiencyBenchmarkEleutherTask("logiqa", ranked_classification=True).add_instance_conversion(
+    "logiqa": EfficiencyBenchmarkEleutherTask("logiqa").add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
             context_field="context",
@@ -350,7 +349,7 @@ TASKS: Dict[str, Task] = {
             correct_answer_index_field="label"
         )
     ).add_metrics(mc_metrics(4)),
-    "hellaswag": EfficiencyBenchmarkEleutherTask("hellaswag", ranked_classification=True).add_instance_conversion(
+    "hellaswag": EfficiencyBenchmarkEleutherTask("hellaswag").add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
             context_field=None,
@@ -360,7 +359,7 @@ TASKS: Dict[str, Task] = {
             answer_mappings={'0': 0, '1': 1, '2': 2, '3': 3}
         )
     ).add_metrics(mc_metrics(4)),
-    "openbookqa": EfficiencyBenchmarkEleutherTask("openbookqa", ranked_classification=True).add_instance_conversion(
+    "openbookqa": EfficiencyBenchmarkEleutherTask("openbookqa").add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
             context_field=None,
@@ -372,7 +371,7 @@ TASKS: Dict[str, Task] = {
     ).add_metrics(mc_metrics(4)),
     "race": EfficiencyBenchmarkHFDatasetsTask("race", "high").add_metrics(mc_metrics(4)),
     "eleuther::race": EfficiencyBenchmarkRaceEleutherTask().add_metrics(mc_metrics(4)),
-    "headqa_es": EfficiencyBenchmarkEleutherTask("headqa_es", ranked_classification=True).add_instance_conversion(
+    "headqa_es": EfficiencyBenchmarkEleutherTask("headqa_es").add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
             context_field=None,
@@ -388,7 +387,7 @@ TASKS: Dict[str, Task] = {
             answer_mappings={1: 0, 2: 1, 3: 2, 4: 3, 5: 4}
         )
     ).add_metrics(mc_metrics(5)),
-    "headqa_en": EfficiencyBenchmarkEleutherTask("headqa_en", ranked_classification=True).add_instance_conversion(
+    "headqa_en": EfficiencyBenchmarkEleutherTask("headqa_en").add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
             context_field=None,
@@ -404,10 +403,10 @@ TASKS: Dict[str, Task] = {
             answer_mappings={1: 0, 2: 1, 3: 2, 4: 3, 5: 4}
         )
     ).add_metrics(mc_metrics(5)),
-    "mathqa": EfficiencyBenchmarkEleutherTask("mathqa", ranked_classification=True).add_metrics(mc_metrics(5)),
+    "mathqa": EfficiencyBenchmarkEleutherTask("mathqa").add_metrics(mc_metrics(5)),
     "webqs": EfficiencyBenchmarkEleutherTask("webqs").add_metrics(QA_METRICS),
-    "wsc273": EfficiencyBenchmarkEleutherTask("wsc273", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "winogrande": EfficiencyBenchmarkEleutherTask("winogrande", ranked_classification=True).add_instance_conversion(
+    "wsc273": EfficiencyBenchmarkEleutherTask("wsc273").add_metrics(ENTAILMENT_METRICS),
+    "winogrande": EfficiencyBenchmarkEleutherTask("winogrande").add_instance_conversion(
         InstanceFormat.HF_MC,
         hfmc_conversion(
             context_field=None,
@@ -417,16 +416,16 @@ TASKS: Dict[str, Task] = {
             answer_mappings={'1': 0, '2': 1}
         )
     ).add_metrics(mc_metrics(2)),
-    "anli_r1": EfficiencyBenchmarkEleutherTask("anli_r1", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "anli_r2": EfficiencyBenchmarkEleutherTask("anli_r2", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
-    "anli_r3": EfficiencyBenchmarkEleutherTask("anli_r3", ranked_classification=True).add_metrics(ENTAILMENT_METRICS),
+    "anli_r1": EfficiencyBenchmarkEleutherTask("anli_r1").add_metrics(ENTAILMENT_METRICS),
+    "anli_r2": EfficiencyBenchmarkEleutherTask("anli_r2").add_metrics(ENTAILMENT_METRICS),
+    "anli_r3": EfficiencyBenchmarkEleutherTask("anli_r3").add_metrics(ENTAILMENT_METRICS),
     "ethics_cm": EfficiencyBenchmarkEleutherTask("ethics_cm").add_metrics(BINARY_CLASSIFICATION_METRICS),
     "ethics_deontology": EfficiencyBenchmarkEleutherTask("ethics_deontology").add_metrics(BINARY_CLASSIFICATION_METRICS),
     "ethics_justice": EfficiencyBenchmarkEleutherTask("ethics_justice").add_metrics(BINARY_CLASSIFICATION_METRICS),
     "ethics_utilitarianism_original": EfficiencyBenchmarkEleutherTask("ethics_utilitarianism_original").add_metrics(BINARY_CLASSIFICATION_METRICS),
     "ethics_utilitarianism": EfficiencyBenchmarkEleutherTask("ethics_utilitarianism").add_metrics(BINARY_CLASSIFICATION_METRICS),
     "ethics_virtue": EfficiencyBenchmarkEleutherTask("ethics_virtue").add_metrics(BINARY_CLASSIFICATION_METRICS),
-    # "truthfulqa_mc": EfficiencyBenchmarkEleutherTask("truthfulqa_mc", ranked_classification=True),
+    # "truthfulqa_mc": EfficiencyBenchmarkEleutherTask("truthfulqa_mc"),
     "truthfulqa_gen": EfficiencyBenchmarkEleutherTask("truthfulqa_gen"),
     "mutual": EfficiencyBenchmarkEleutherTask("mutual"),
     "mutual_plus": EfficiencyBenchmarkEleutherTask("mutual_plus"),

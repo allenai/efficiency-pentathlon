@@ -1,13 +1,16 @@
 import os
 import sys
 from typing import Optional, Tuple
-
+import json
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
 
 from efficiency_benchmark.steps import (CalculateMetricsStep, LogOutputStep,
                                         PredictStep, TabulateMetricsStep)
 from eb_gantry.__main__ import run as gantry_run
+from efficiency_benchmark.tasks import TASKS
+from efficiency_benchmark.tasks.efficiency_benchmark import EfficiencyBenchmarkWrapper
+from efficiency_benchmark.tasks.efficiency_benchmark import EfficiencyBenchmarkHuggingfaceTask
 
 
 _CLICK_GROUP_DEFAULTS = {
@@ -32,6 +35,14 @@ def main():
 
 @main.command(**_CLICK_COMMAND_DEFAULTS)
 @click.argument("cmd", nargs=-1)
+@click.option(
+    "-h",
+    "--hf_dataset_args",
+    type=str,
+    nargs=1,
+    help="""Args for Huggingface load_dataset.""",
+    default=None
+)
 @click.option(
     "-t",
     "--task",
@@ -81,7 +92,8 @@ def main():
 )
 def run(
     cmd: Tuple[str, ...],
-    task: str,
+    task: Optional[str] = None,
+    hf_dataset_args: Optional[str] = None,
     split: str = "test",
     scenario: str = "fixed_batch",
     max_batch_size: int = 32,
@@ -89,13 +101,20 @@ def run(
     limit: Optional[int] = -1,
     output_dir: Optional[str] = None,
 ):
-    
+    assert task or hf_dataset_args, "The evaluation data should be specified by either --task or --hf_dataset_args"
     if scenario == "offline":
         try:
             os.makedirs(offline_dir, exist_ok=True)
         except:
             sys.exit(f"Failed to write to offline directory: {offline_dir}.")
 
+    if hf_dataset_args is not None:
+        hf_dataset_args = json.loads(hf_dataset_args)
+        if task is not None:
+            print(f"--task is {task}, but is overwritten by --hf_dataset_args: {hf_dataset_args}")
+        task: EfficiencyBenchmarkWrapper = EfficiencyBenchmarkHuggingfaceTask(hf_dataset_args)
+    else:
+        task: EfficiencyBenchmarkWrapper = TASKS[task]
     metric_task_dict = {}
     prediction_step = PredictStep(
         cmd=cmd,
@@ -142,6 +161,15 @@ def run(
     type=str,
     nargs=1,
     help="""Tasks.""",
+    default=None
+)
+@click.option(
+    "-h",
+    "--hf_dataset_args",
+    type=str,
+    nargs=1,
+    help="""Args for Huggingface load_dataset.""",
+    default=None
 )
 @click.option(
     "-n",
@@ -183,8 +211,9 @@ def run(
 )
 def submit(
     cmd: Tuple[str, ...],
-    task: str,
-    name: str,
+    task: Optional[str] = None,
+    hf_dataset_args: Optional[str] = None,
+    name: Optional[str] = None,
     split: str = "validation",
     limit: int = None,
     max_batch_size: int = 32,
@@ -194,6 +223,7 @@ def submit(
     gantry_run(
         arg=cmd,
         task=task,
+        hf_dataset_args=hf_dataset_args,
         name=name,
         split=split,
         limit=limit,
