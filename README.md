@@ -14,9 +14,9 @@ conda create -n efficiency-pentathlon python=3.8
 conda activate efficiency-pentathlon
 ```
 
-2. **Clone [this repository](https://github.com/allenai/efficiency-pentathlon)**
+2. **Clone this repository**
 ```bash
-git clone https://github.com/haopeng-nlp/efficiency-pentathlon.git
+git clone https://github.com/allenai/efficiency-pentathlon.git
 cd efficiency-pentathlon/
 ```
 
