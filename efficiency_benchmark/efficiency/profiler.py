@@ -25,6 +25,7 @@ class Profiler():
             # gpu_ids: Optional[Iterable[int]] = None,
             **kwargs):
         # self.gpu_ids = gpu_ids
+        self.interval = interval
         self._is_submission = is_submission
         self._start_time: Optional[float] = None
         self._emission_tracker = EmissionsTracker(
@@ -40,6 +41,7 @@ class Profiler():
         self._gpu_utilization: Optional[float] = None
         self._gpu_reads: Optional[int] = None
         self._gpu_power: Optional[float] = None
+        self.idle_power = self.get_idle_power()
 
         if self._gpu_details_available:
             self._gpu_scheduler = PeriodicScheduler(
@@ -59,7 +61,7 @@ class Profiler():
                 stop_event = threading.Event()
                 self._power_monitor = PowerMonitor(
                     stop_event=stop_event,
-                    target=PowerMonitor.read_power_monitor, 
+                    target=PowerMonitor.read_power_monitor,
                     args=(self._power_monitor_ser, stop_event, self._power_monitor_reads)
                 )
                 self._use_power_monitor = True
@@ -99,6 +101,25 @@ class Profiler():
             self._gpu_power += gpu_power
         self._gpu_reads += 1
 
+    def get_idle_power(self) -> float:
+        if self._is_submission:
+            # We know the Idle power of the dedicated machine.
+            return IDLE_POWER
+        else:
+            # Evaluating locally. Profile the idling power.
+            idle_power_profiler = EmissionsTracker(
+                measure_power_secs=self.interval,
+                log_level="error",
+                # gpu_ids=gpu_ids
+            )
+            idle_power_profiler.start()
+            print("Profiling the idling power consumption with codecarbon ...")
+            time.sleep(5)
+            idle_power_profiler.stop()
+            data = idle_power_profiler.final_emissions_data
+            idle_power = data.cpu_power + data.gpu_power + data.ram_power
+            return idle_power
+
     def start(self) -> None:
         self._emission_tracker.start()
         if self._gpu_details_available:
@@ -110,7 +131,7 @@ class Profiler():
     def stop(self) -> Dict[str, Any]:
         time_elapsed = Time.from_seconds(time.time() - self._start_time)
         self._emission_tracker.stop()
-        
+
         if self._use_power_monitor:
             self._power_monitor.stop()
             self._power_monitor.join()
@@ -118,7 +139,7 @@ class Profiler():
             powers = []
             for r in self._power_monitor_reads:
                 powers.append(np.array([ float(r[f]) for f in POWER_FIELDS ]).sum())
-            avg_power: Power = Power.from_watts(np.array(powers).mean() - IDLE_POWER)
+            avg_power: Power = Power.from_watts(np.array(powers).mean() - self.idle_power)
             total_energy: Energy = Energy.from_power_and_time(power=avg_power, time=time_elapsed)
             self._emission_tracker.final_emissions_data.energy_consumed = total_energy
             self._emission_tracker.final_emissions_data = self._emission_tracker._prepare_emissions_data()

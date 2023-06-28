@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 import json
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
@@ -90,6 +90,12 @@ def main():
     default=-1,
     help="""Limit.""",
 )
+@click.option(
+    "--gpus",
+    type=int,
+    multiple=True,
+    help="""IDs of the GPUs to use.""",
+)
 def run(
     cmd: Tuple[str, ...],
     task: Optional[str] = None,
@@ -100,7 +106,8 @@ def run(
     offline_dir: str = f"{os.getcwd()}/datasets/efficiency-beenchmark",
     limit: Optional[int] = -1,
     output_dir: Optional[str] = None,
-    is_submission: Optional[bool] = False
+    is_submission: Optional[bool] = False,
+    gpus: Optional[List[int]] = None
 ):
     assert task or hf_dataset_args, "The evaluation data should be specified by either --task or --hf_dataset_args"
     if scenario == "offline":
