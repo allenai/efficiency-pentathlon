@@ -12,9 +12,6 @@ from codecarbon.external.scheduler import PeriodicScheduler
 from codecarbon.core.units import Energy, Power, Time
 
 
-NUM_POWER_MONITOR_FIELDS = 18
-
-
 """A wrapper of codecarbon EmissionsTracker aiming to provide GPU memory and untilization data."""
 class Profiler():
 
