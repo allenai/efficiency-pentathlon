@@ -11,6 +11,7 @@ from eb_gantry.__main__ import run as gantry_run
 from efficiency_benchmark.tasks import TASKS
 from efficiency_benchmark.tasks.efficiency_benchmark import EfficiencyBenchmarkWrapper
 from efficiency_benchmark.tasks.efficiency_benchmark import EfficiencyBenchmarkHuggingfaceTask
+from efficiency_benchmark.utils import parse_gpu_ids
 
 
 _CLICK_GROUP_DEFAULTS = {
@@ -92,9 +93,8 @@ def main():
 )
 @click.option(
     "--gpus",
-    type=int,
-    multiple=True,
-    help="""IDs of the GPUs to use.""",
+    type=str,
+    help="""The IDs of the GPUs to use. Example: `--gpus 0,1`. If not specified, all GPUs will be profiled by default.""",
 )
 def run(
     cmd: Tuple[str, ...],
@@ -109,6 +109,7 @@ def run(
     is_submission: Optional[bool] = False,
     gpus: Optional[List[int]] = None
 ):
+    gpus = parse_gpu_ids(gpus) if gpus else None
     assert task or hf_dataset_args, "The evaluation data should be specified by either --task or --hf_dataset_args"
     if scenario == "offline":
         try:
@@ -132,7 +133,8 @@ def run(
         offline_dir=offline_dir,
         split=split,
         limit=limit,
-        is_submission=is_submission
+        is_submission=is_submission,
+        gpus=gpus
     )
     if output_dir:
         output_dir = prediction_step.task.base_dir(base_dir=output_dir)

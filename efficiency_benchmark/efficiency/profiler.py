@@ -19,16 +19,16 @@ class Profiler():
             self,
             interval: float = 0.1,
             is_submission: bool = False,
-            # gpu_ids: Optional[Iterable[int]] = None,
+            gpus: Optional[List[int]] = None,
             **kwargs):
-        # self.gpu_ids = gpu_ids
+        self.gpu_ids = gpus
         self.interval = interval
         self._is_submission = is_submission
         self._start_time: Optional[float] = None
         self._emission_tracker = EmissionsTracker(
             measure_power_secs=interval,
             log_level="error",
-            # gpu_ids=gpu_ids
+            gpu_ids=self.gpu_ids,
             **kwargs
         )
         self._try_power_monitor()
@@ -72,22 +72,22 @@ class Profiler():
         used_memory = sum(
             [
                 gpu_details["used_memory"]
-                for _, gpu_details in enumerate(all_gpu_details)
-                # if idx in self.gpu_ids
+                for idx, gpu_details in enumerate(all_gpu_details)
+                if self.gpu_ids is None or idx in self.gpu_ids
              ]
         )
         gpu_utilization = sum(
             [
                 gpu_details["gpu_utilization"]
-                for _, gpu_details in enumerate(all_gpu_details)
-                # if idx in self.gpu_ids
+                for idx, gpu_details in enumerate(all_gpu_details)
+                if self.gpu_ids is None or idx in self.gpu_ids
              ]
         )
         gpu_power = sum(
             [
                 gpu_details["power_usage"] * 1e-3
-                for _, gpu_details in enumerate(all_gpu_details)
-                # if idx in self.gpu_ids
+                for idx, gpu_details in enumerate(all_gpu_details)
+                if self.gpu_ids is None or idx in self.gpu_ids
              ]
         )
         self._max_used_gpu_memory = max(self._max_used_gpu_memory, used_memory)
@@ -107,7 +107,7 @@ class Profiler():
             idle_power_profiler = EmissionsTracker(
                 measure_power_secs=self.interval,
                 log_level="error",
-                # gpu_ids=gpu_ids
+                gpu_ids=self.gpu_ids
             )
             idle_power_profiler.start()
             print("Profiling the idling power consumption with codecarbon ...")

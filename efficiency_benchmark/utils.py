@@ -1,5 +1,5 @@
 from collections import abc
-from typing import Any, Callable, Sequence
+from typing import Callable, List, Sequence
 
 
 class MappedSequence(abc.Sequence):
@@ -42,3 +42,24 @@ class MappedSequence(abc.Sequence):
 
     def __contains__(self, item):
         return any(e == item for e in self)
+
+
+def parse_gpu_ids(gpu_ids_str: str) -> List[int]:
+    """
+    Transforms the potential gpu_ids string into a list of int values.
+    From https://github.com/mlco2/codecarbon/blob/master/codecarbon/core/config.py
+
+    Args:
+        gpu_ids_str (str): The config file or environment variable value for `gpu_ids`
+        which is read as a string and should be parsed into a list of ints
+
+    Returns:
+        list[int]: The list of GPU ids available declared by the user.
+            Potentially empty.
+    """
+    if not isinstance(gpu_ids_str, str):
+        return gpu_ids_str
+
+    gpu_ids_str = "".join(c for c in gpu_ids_str if (c.isalnum() or c == ","))
+    str_ids = [gpu_id for gpu_id in gpu_ids_str.split(",") if gpu_id]
+    return list(map(int, str_ids))
