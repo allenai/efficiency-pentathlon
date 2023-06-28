@@ -119,7 +119,7 @@ class Profiler():
             total_energy: Energy = Energy.from_power_and_time(power=avg_power, time=time_elapsed)
             self._emission_tracker.final_emissions_data.energy_consumed = total_energy
             self._emission_tracker.final_emissions_data = self._emission_tracker._prepare_emissions_data()
-                
+        self._gpu_power: Power = Power.from_watts(0.0)
         if self._gpu_details_available:
             try:
                 self._gpu_scheduler.stop()
