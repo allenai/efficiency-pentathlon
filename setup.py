@@ -50,7 +50,7 @@ setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     keywords="",
-    url="https://github.com/allenai/efficiency-benchmark",
+    url="https://github.com/allenai/efficiency-pentathlon",
     author="Allen Institute for Artificial Intelligence",
     author_email="contact@allenai.org",
     license="Apache",
@@ -70,8 +70,10 @@ setup(
         "efficiency-benchmark": ["py.typed"]
     },
     entry_points={"console_scripts": [
-        "efficiency-benchmark=efficiency_benchmark.__main__:main",
-        "eb=efficiency_benchmark.__main__:main"
+        # "efficiency-benchmark=efficiency_benchmark.__main__:main",
+        # "eb=efficiency_benchmark.__main__:main",
+        "efficiency-pentathlon=efficiency_benchmark.__main__:main",
+        "ep=efficiency_benchmark.__main__:main"
     ]},
     install_requires=parse_requirements_file("requirements.txt"),
     include_package_data=True,
