@@ -1,7 +1,7 @@
 # Efficiency Pentathlon
 Efficiency Pentathlon is a standardized benchmark to evaluate the inference efficiency of NLP models.
 It offers a controlled hardware platform, and is designed to mirror real-world applications scenarios. 
-It provides a suite of metrics that target different aspects of efficiency, including latency, throughput, memory overhead, number of parameters, and energy consumption.
+It provides a suite of metrics that target different aspects of efficiency, including latency, throughput, memory overhead, and energy consumption.
 
 ## Installing
 
