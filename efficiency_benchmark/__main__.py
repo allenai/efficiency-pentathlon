@@ -100,6 +100,7 @@ def run(
     offline_dir: str = f"{os.getcwd()}/datasets/efficiency-beenchmark",
     limit: Optional[int] = -1,
     output_dir: Optional[str] = None,
+    is_submission: Optional[bool] = False
 ):
     assert task or hf_dataset_args, "The evaluation data should be specified by either --task or --hf_dataset_args"
     if scenario == "offline":
@@ -124,6 +125,7 @@ def run(
         offline_dir=offline_dir,
         split=split,
         limit=limit,
+        is_submission=is_submission
     )
     if output_dir:
         output_dir = prediction_step.task.base_dir(base_dir=output_dir)
@@ -235,6 +237,7 @@ def submit(
         cpus=cpus,
         gpus=2,  # hard code to 2 to make sure only one job runs at a time.
         allow_dirty=True,
+        is_submission=True
     )
 
 

@@ -21,9 +21,11 @@ class Profiler():
     def __init__(
             self,
             interval: float = 0.1,
+            is_submission: bool = False,
             # gpu_ids: Optional[Iterable[int]] = None,
             **kwargs):
         # self.gpu_ids = gpu_ids
+        self._is_submission = is_submission
         self._start_time: Optional[float] = None
         self._emission_tracker = EmissionsTracker(
             measure_power_secs=interval,
@@ -50,20 +52,21 @@ class Profiler():
             self._gpu_reads = 0
 
     def _try_power_monitor(self):
-        self._power_monitor_ser = PowerMonitor.try_open_serial_port()
-        if self._power_monitor_ser is not None:
-            self._power_monitor_reads: List = []
-            stop_event = threading.Event()
-            self._power_monitor = PowerMonitor(
-                stop_event=stop_event,
-                target=PowerMonitor.read_power_monitor, 
-                args=(self._power_monitor_ser, stop_event, self._power_monitor_reads)
-            )
-            self._use_power_monitor = True
-            print("Power monitor is available.")
-        else:
-            self._use_power_monitor = False
-            print("Power monitor is not available; using codecarbon estimation.")
+        if self._is_submission:
+            self._power_monitor_ser = PowerMonitor.try_open_serial_port()
+            if self._power_monitor_ser is not None:
+                self._power_monitor_reads: List = []
+                stop_event = threading.Event()
+                self._power_monitor = PowerMonitor(
+                    stop_event=stop_event,
+                    target=PowerMonitor.read_power_monitor, 
+                    args=(self._power_monitor_ser, stop_event, self._power_monitor_reads)
+                )
+                self._use_power_monitor = True
+                print("Power monitor is available.")
+                return
+        self._use_power_monitor = False
+        print("Power monitor is not available; using codecarbon estimation.")
 
     def _profile_gpu(self):
         all_gpu_details: List[Dict] = get_gpu_details()

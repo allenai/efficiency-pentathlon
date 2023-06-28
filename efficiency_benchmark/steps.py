@@ -29,19 +29,20 @@ class PredictStep():
         offline_dir: str,
         split: Optional[str] = None,
         limit: Optional[int] = None,
+        is_submission: Optional[bool] = False,
         **kwargs
     ):
         np.random.seed(42)
+        self.is_submission = is_submission
         self.task = task
         self.split = split if split is not None else self.task.default_split
-            
         self.scenario = scenario
         self.max_batch_size = max_batch_size
         self.offline_dir = offline_dir
         self.limit = limit
         self.cmd = cmd
         self.predictor = StdioWrapper(cmd=cmd)
-        self.profiler = Profiler(interval=0.1)
+        self.profiler = Profiler(interval=0.1, is_submission=is_submission)
         self.targets = None
 
         self._prepare_data()
