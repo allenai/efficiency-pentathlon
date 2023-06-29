@@ -8,7 +8,7 @@ RUNTIME_DIR="/gantry-runtime"
 RESULTS_DIR="/results"
 CONDA_ENV_FILE="environment.yml"
 PIP_REQUIREMENTS_FILE="requirements.txt"
-PYTHON_VERSION=3.9 
+PYTHON_VERSION=3.9
 export HF_DATASETS_CACHE="/hf_datasets"
 
 # Ensure we have all the environment variables we need.
@@ -152,13 +152,13 @@ fi
 # shellcheck disable=SC2296
 
 echo "Single Stream"
-exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "single_stream" --output_dir "$RESULTS_DIR" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/single_stream.log"
+exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --hf_dataset_args "$HF_DATASET_ARGS" --scenario "single_stream" --output_dir "$RESULTS_DIR" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/single_stream.log"
 
 echo "Fixed Batching"
-exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "fixed_batch" --output_dir "$RESULTS_DIR" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/fixed_batch.log"
+exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --hf_dataset_args "$HF_DATASET_ARGS" --scenario "fixed_batch" --output_dir "$RESULTS_DIR" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/fixed_batch.log"
 
 echo "Random Batching"
-exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "random_batch" --output_dir "$RESULTS_DIR" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/random_batch.log"
+exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --hf_dataset_args "$HF_DATASET_ARGS" --scenario "random_batch" --output_dir "$RESULTS_DIR" -- "$@" 2>&1 | tee "${RESULTS_DIR}/.gantry/random_batch.log"
 
 echo "Offline"
-exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --max_batch_size "$MAX_BATCH_SIZE" --scenario "offline" --output_dir "$RESULTS_DIR" --offline_dir "$RESULTS_DIR" -- "$@" --offline 2>&1 | tee "${RESULTS_DIR}/.gantry/offline.log"
+exec efficiency-benchmark run --task "$TASK" --limit "$LIMIT" --hf_dataset_args "$HF_DATASET_ARGS" --scenario "offline" --output_dir "$RESULTS_DIR" --offline_dir "$RESULTS_DIR" -- "$@" --offline 2>&1 | tee "${RESULTS_DIR}/.gantry/offline.log"
