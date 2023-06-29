@@ -19,9 +19,9 @@ class Profiler():
             self,
             interval: float = 0.1,
             is_submission: bool = False,
-            gpus: Optional[List[int]] = None,
+            gpu_ids: Optional[List[int]] = [],
             **kwargs):
-        self.gpu_ids = gpus
+        self.gpu_ids = gpu_ids
         self.interval = interval
         self._is_submission = is_submission
         self._start_time: Optional[float] = None
