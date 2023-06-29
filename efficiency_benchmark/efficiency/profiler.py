@@ -123,10 +123,10 @@ class Profiler():
             self._gpu_scheduler.start()
         if self._use_power_monitor:
             self._power_monitor.start()
-        self._start_time = time.time()
+        self._start_time = time.monotonic()
 
     def stop(self) -> Dict[str, Any]:
-        time_elapsed = Time.from_seconds(time.time() - self._start_time)
+        time_elapsed = Time.from_seconds(time.monotonic() - self._start_time)
         self._emission_tracker.stop()
 
         if self._use_power_monitor:
