@@ -4,9 +4,11 @@ import subprocess
 from abc import ABC
 from subprocess import SubprocessError
 from typing import Any, Dict, Iterator, List, Sequence
-
-import more_itertools
+import time
 import tqdm
+
+
+TIMEOUT = 1800
 
 
 class StdioWrapper(ABC):
@@ -18,7 +20,7 @@ class StdioWrapper(ABC):
         """
         binary_cmd: the command to start the inference binary
         """
-        self._cmd = cmd
+        self._cmd = ("timeout", f"{TIMEOUT}") + cmd
 
     def _exhaust_and_yield_stdout(self, block_until_read_num_batches: int = None):
         """
@@ -79,14 +81,22 @@ class StdioWrapper(ABC):
         return line
 
     def predict(self, batches: List[List[Dict[str, Any]]]) -> Iterator[str]:
-        for batch in tqdm.tqdm(batches, desc="Making predictions", miniters=10):
-            num_outputs_yielded = 0
-            self._write_batch(batch)
-            output_batch = self._exhaust_and_yield_stdout(1)
-            for output in output_batch:
-                yield output
-                num_outputs_yielded += 1
-            assert num_outputs_yielded == len(batch), "Number of outputs does not match number of inputs."
+        num_total_outputs = 0
+        start_time = time.monotonic()
+        try:
+            for batch in tqdm.tqdm(batches, desc="Making predictions", miniters=10):
+                num_outputs_yielded = 0
+                self._write_batch(batch)
+                output_batch = self._exhaust_and_yield_stdout(1)
+                for output in output_batch:
+                    yield output
+                    num_outputs_yielded += 1
+                    num_total_outputs += 1
+                assert num_outputs_yielded == len(batch), "Number of outputs does not match number of inputs."
+        except:
+            if time.monotonic() - start_time > TIMEOUT:
+                print(f"Job did not finish within {TIMEOUT} seconds.")
+        assert num_total_outputs == sum([len(b) for b in batches]), "Number of outputs does not match number of inputs."
             # Make sure the batch size does not exceed a user defined maximum.
             # Split into smaller batches if necessary.
             # splitted_batches = list(more_itertools.chunked(input_batch, max_batch_size))
@@ -141,9 +151,7 @@ class StdioWrapper(ABC):
             if line.decode("utf-8").strip() == "Offiline prediction done. Stop the timer.":
                 break
 
-    def block_for_outputs(
-            self
-    ) -> bool:
+    def block_for_outputs(self) -> bool:
         os.set_blocking(self._process.stdout.fileno(), True)
 
         while True:
@@ -152,8 +160,10 @@ class StdioWrapper(ABC):
                 break
 
     def start(self):
-        self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-
+        try:
+            self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        except:
+            print('1!!!!!!!!!')
     def dummy_predict(self, dummy_inputs: List[Dict[str, Any]]) -> List[str]:
         dummy_outputs = self.predict(batches=[dummy_inputs])
         return list(dummy_outputs)
