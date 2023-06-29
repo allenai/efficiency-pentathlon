@@ -24,17 +24,17 @@ class PowerMonitor(threading.Thread):
     @property
     def stopped(self):
         return self._stop_event.is_set()
-    
+
     @staticmethod
-    def try_open_serial_port( 
-            serial_port: str = '/dev/ttyUSB0', 
+    def try_open_serial_port(
+            serial_port: str = '/dev/ttyUSB0',
             baud_rate: int = 115200
     ) -> bool:
         try:
             return Serial(serial_port, baud_rate)
         except:
             return None
-        
+
     @staticmethod
     def try_close_serial_port(ser: Serial):
         try:
@@ -57,11 +57,6 @@ class PowerMonitor(threading.Thread):
                     power_readings.append(json.loads(output))
                 except json.JSONDecodeError:
                     continue
-
-                # content = output.strip().split(",")
-                # if len(content) != NUM_FIELDS:
-                #     continue
-                # power_readings.append({x.split(":")[0]: x.split(":")[1] for x in content})
 
         while not stop_event.is_set():
             try:
