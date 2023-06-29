@@ -25,7 +25,6 @@ class PredictStep():
         cmd: List[str],
         task: EfficiencyBenchmarkWrapper,
         scenario: str,
-        max_batch_size: int,
         offline_dir: str,
         split: Optional[str] = None,
         limit: Optional[int] = None,
@@ -35,7 +34,6 @@ class PredictStep():
         self.task = task
         self.split = split if split is not None else self.task.default_split
         self.scenario = scenario
-        self.max_batch_size = max_batch_size
         self.offline_dir = offline_dir
         self.limit = limit
         self.cmd = cmd
@@ -68,7 +66,7 @@ class PredictStep():
         self.num_instances = len(instances)
 
         if self.scenario in ["fixed_batch", "accuracy"]:
-            batches = list(more_itertools.chunked(instances, self.max_batch_size))
+            batches = list(more_itertools.chunked(instances, EXPECTED_BATCH_SIZE))
         elif self.scenario == "single_stream":
             batches = list(more_itertools.chunked(instances, 1))
         elif self.scenario == "random_batch":
@@ -140,10 +138,10 @@ class PredictStep():
 
     def run_online(self) -> Tuple[Sequence[Any], Dict[str, Any]]:
         output_batches = []
-        _ = self.predictor.dummy_predict(dummy_inputs=self.batches[-1], max_batch_size=self.max_batch_size)
+        _ = self.predictor.dummy_predict(dummy_inputs=self.batches[-1])
 
         self.profiler.start()
-        for output_batch in self.predictor.predict(batches=self.batches, max_batch_size=self.max_batch_size):
+        for output_batch in self.predictor.predict(batches=self.batches):
             output_batches.append(output_batch)
         efficiency_metrics = self.profiler.stop()
         results, num_output_words = self.process(output_batches)

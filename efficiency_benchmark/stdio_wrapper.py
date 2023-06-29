@@ -78,36 +78,38 @@ class StdioWrapper(ABC):
             raise SubprocessError
         return line
 
-    def predict(  # type: ignore
-        self,
-        *,
-        batches: List[List[Dict[str, Any]]],
-        max_batch_size: int
-    ) -> Iterator[str]:
-        for input_batch in tqdm.tqdm(batches, desc="Making predictions", miniters=10):
+    def predict(self, batches: List[List[Dict[str, Any]]]) -> Iterator[str]:
+        for batch in tqdm.tqdm(batches, desc="Making predictions", miniters=10):
+            num_outputs_yielded = 0
+            self._write_batch(batch)
+            output_batch = self._exhaust_and_yield_stdout(1)
+            for output in output_batch:
+                yield output
+                num_outputs_yielded += 1
+            assert num_outputs_yielded == len(batch), "Number of outputs does not match number of inputs."
             # Make sure the batch size does not exceed a user defined maximum.
             # Split into smaller batches if necessary.
-            splitted_batches = list(more_itertools.chunked(input_batch, max_batch_size))
-            num_splitted_batches = len(splitted_batches)
-            num_batches_yielded, num_outputs_yielded = 0, 0
-            for batch in splitted_batches:
-                self._write_batch(batch)
-                # Feed all splitted batches without blocking.
-                output_batches = self._exhaust_and_yield_stdout(None)
-                for output_batch in output_batches:
-                    num_batches_yielded += 1
-                    for output in output_batch:
-                        yield output
-                        num_outputs_yielded += 1
+            # splitted_batches = list(more_itertools.chunked(input_batch, max_batch_size))
+            # num_splitted_batches = len(splitted_batches)
+            # num_batches_yielded, num_outputs_yielded = 0, 0
+            # for batch in splitted_batches:
+            #     self._write_batch(batch)
+            #     # Feed all splitted batches without blocking.
+            #     output_batches = self._exhaust_and_yield_stdout(None)
+            #     for output_batch in output_batches:
+            #         num_batches_yielded += 1
+            #         for output in output_batch:
+            #             yield output
+            #             num_outputs_yielded += 1
 
-            # Now read from stdout until we have hit the required number.
-            num_batches_to_read = num_splitted_batches - num_batches_yielded
-            if num_batches_to_read > 0: 
-                for output_batch in self._exhaust_and_yield_stdout(num_batches_to_read):
-                    for output in output_batch:
-                        yield output
-                        num_outputs_yielded += 1
-            assert num_outputs_yielded == len(input_batch), "Number of outputs does not match number of inputs."
+            # # Now read from stdout until we have hit the required number.
+            # num_batches_to_read = num_splitted_batches - num_batches_yielded
+            # if num_batches_to_read > 0:
+            #     for output_batch in self._exhaust_and_yield_stdout(num_batches_to_read):
+            #         for output in output_batch:
+            #             yield output
+            #             num_outputs_yielded += 1
+            # assert num_outputs_yielded == len(input_batch), "Number of outputs does not match number of inputs."
 
     def provide_offline_configs(
             self,
@@ -138,7 +140,7 @@ class StdioWrapper(ABC):
             line = self._process.stdout.readline()
             if line.decode("utf-8").strip() == "Offiline prediction done. Stop the timer.":
                 break
-    
+
     def block_for_outputs(
             self
     ) -> bool:
@@ -152,14 +154,10 @@ class StdioWrapper(ABC):
     def start(self):
         self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
-    def dummy_predict(
-            self, 
-            dummy_inputs: List[Dict[str, Any]],
-            max_batch_size: int
-        ) -> List[str]:
-        dummy_outputs = self.predict(batches=[dummy_inputs], max_batch_size=max_batch_size)
+    def dummy_predict(self, dummy_inputs: List[Dict[str, Any]]) -> List[str]:
+        dummy_outputs = self.predict(batches=[dummy_inputs])
         return list(dummy_outputs)
-    
+
     def stop(self):
         try:
             self._process.kill()
