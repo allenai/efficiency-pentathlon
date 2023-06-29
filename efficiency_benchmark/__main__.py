@@ -8,6 +8,7 @@ from click_help_colors import HelpColorsCommand, HelpColorsGroup
 from efficiency_benchmark.steps import (CalculateMetricsStep, LogOutputStep,
                                         PredictStep, TabulateMetricsStep)
 from eb_gantry.__main__ import run as gantry_run
+from eb_gantry.constants import GITHUB_TOKEN_SECRET
 from efficiency_benchmark.tasks import TASKS
 from efficiency_benchmark.tasks.efficiency_benchmark import EfficiencyBenchmarkWrapper
 from efficiency_benchmark.tasks.efficiency_benchmark import EfficiencyBenchmarkHuggingfaceTask
@@ -65,13 +66,6 @@ def main():
     help="""Evaluation scenario [single_stream, fixed_batch, random_batch, offline].""",
 )
 @click.option(
-    "-b",
-    "--max_batch_size",
-    type=int,
-    default=32,
-    help="""Maximum batch size.""",
-)
-@click.option(
     "-o",
     "--offline_dir",
     type=str,
@@ -92,9 +86,13 @@ def main():
     help="""Limit.""",
 )
 @click.option(
-    "--gpus",
+    "--gpu_ids",
+    "-g",
     type=str,
-    help="""The IDs of the GPUs to use. Example: `--gpus 0,1`. If not specified, all GPUs will be profiled by default.""",
+    help="""The IDs of the GPUs to use. Example: `--gpus 0,1`. 
+    If not specified, the environment variable `CUDA_VISIBLE_DEVICES` will be used.
+    Otherwise GPUs will not be profiled.""",
+    default=""
 )
 def run(
     cmd: Tuple[str, ...],
@@ -102,14 +100,15 @@ def run(
     hf_dataset_args: Optional[str] = None,
     split: str = "test",
     scenario: str = "fixed_batch",
-    max_batch_size: int = 32,
     offline_dir: str = f"{os.getcwd()}/datasets/efficiency-beenchmark",
     limit: Optional[int] = -1,
     output_dir: Optional[str] = None,
     is_submission: Optional[bool] = False,
-    gpus: Optional[List[int]] = None
+    gpu_ids: str = ""
 ):
-    gpus = parse_gpu_ids(gpus) if gpus else None
+    if not gpu_ids and "CUDA_VISIBLE_DEVICES" in os.environ:
+        gpu_ids = os.environ["CUDA_VISIBLE_DEVICES"]
+    gpu_ids = parse_gpu_ids(gpu_ids) # if gpus else None
     assert task or hf_dataset_args, "The evaluation data should be specified by either --task or --hf_dataset_args"
     if scenario == "offline":
         try:
@@ -129,12 +128,11 @@ def run(
         cmd=cmd,
         task=task,
         scenario=scenario,
-        max_batch_size=max_batch_size,
         offline_dir=offline_dir,
         split=split,
         limit=limit,
         is_submission=is_submission,
-        gpus=gpus
+        gpu_ids=gpu_ids
     )
     if output_dir:
         output_dir = prediction_step.task.base_dir(base_dir=output_dir)
@@ -201,24 +199,27 @@ def run(
     default=None,
     help="""Limit.""",
 )
+# @click.option(
+#     "--gpus",
+#     type=int,
+#     help="""Number of GPUs (e.g. 1).""",
+# )
 @click.option(
-    "-b",
-    "--max_batch_size",
-    type=int,
-    default=32,
-    help="""Maximum batch size.""",
+    "--allow-dirty",
+    is_flag=True,
+    help="""Allow submitting the experiment with a dirty working directory.""",
 )
 @click.option(
-    "--cpus",
-    type=float,
-    help="""Minimum number of logical CPU cores (e.g. 4.0, 0.5).""",
-)
-@click.option(
-    "--dataset",
+    "--install",
     type=str,
-    multiple=True,
-    help="""An input dataset in the form of 'dataset-name:/mount/location' to attach to your experiment.
-    You can specify this option more than once to attach multiple datasets.""",
+    help="""Override the default installation command, e.g. '--install "python setup.py install"'""",
+)
+@click.option(
+    "--gh-token-secret",
+    type=str,
+    help="""The name of the Beaker secret that contains your GitHub token.""",
+    default=GITHUB_TOKEN_SECRET,
+    show_default=True,
 )
 def submit(
     cmd: Tuple[str, ...],
@@ -227,10 +228,12 @@ def submit(
     name: Optional[str] = None,
     split: str = "validation",
     limit: int = None,
-    max_batch_size: int = 32,
-    cpus: Optional[float] = None,
-    dataset: Optional[Tuple[str, ...]] = None,
+    gpus: Optional[int] = None,
+    allow_dirty: bool = False,
+    gh_token_secret: str = GITHUB_TOKEN_SECRET,
+    install: Optional[str] = None,
 ):
+    # bsz
     gantry_run(
         arg=cmd,
         task=task,
@@ -238,15 +241,17 @@ def submit(
         name=name,
         split=split,
         limit=limit,
-        max_batch_size=max_batch_size,
         cluster=["efficiency-benchmark/elanding-rtx-8000"], # TODO
         beaker_image="haop/efficiency-benchmark",
         workspace="efficiency-benchmark/efficiency-benchmark",
         mount=["/hf_datasets:/hf_datasets"],
-        cpus=cpus,
-        gpus=2,  # hard code to 2 to make sure only one job runs at a time.
-        allow_dirty=True,
-        is_submission=True
+        allow_dirty=allow_dirty,
+        gh_token_secret=gh_token_secret,
+        install=install,
+        # Hardcode number of GPUs and CPUs to the max available amount below,
+        # to make sure that only one job runs at a time.
+        cpus=108,
+        gpus=2,
     )
 
 
