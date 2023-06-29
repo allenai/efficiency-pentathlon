@@ -17,3 +17,5 @@ RESULTS_DIR = "/results"
 METRICS_FILE = f"{RESULTS_DIR}/metrics.json"
 
 NFS_MOUNT = "/net/nfs.cirrascale"
+
+TIMEOUT: int = 3600

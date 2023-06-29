@@ -18,6 +18,7 @@ from beaker import (
 )
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
 from rich import pretty, print, prompt, traceback
+from .constants import TIMEOUT
 
 from . import constants, util
 from .aliases import PathOrStr
@@ -215,15 +216,6 @@ def main():
 #     This only takes effect when --timeout is non-zero.""",
 # )
 # @click.option(
-#     "--timeout",
-#     type=int,
-#     default=0,
-#     help="""Time to wait (in seconds) for the experiment to finish.
-#     A timeout of -1 means wait indefinitely.
-#     A timeout of 0 means don't wait at all.""",
-#     show_default=True,
-# )
-# @click.option(
 #     "--allow-dirty",
 #     is_flag=True,
 #     help="""Allow submitting the experiment with a dirty working directory.""",
@@ -281,6 +273,7 @@ def main():
 def run(
     task: str,
     arg: Tuple[str, ...],
+    hf_dataset_args: Optional[str] = None,
     name: Optional[str] = None,
     description: Optional[str] = None,
     task_name: str = "main",
@@ -299,7 +292,6 @@ def run(
     venv: Optional[str] = None,
     env: Optional[Tuple[str, ...]] = None,
     env_secret: Optional[Tuple[str, ...]] = None,
-    timeout: int = 0,
     show_logs: bool = True,
     allow_dirty: bool = False,
     dry_run: bool = False,
@@ -381,7 +373,12 @@ def run(
     # Validate the input datasets.
     datasets_to_use = util.ensure_datasets(beaker, *dataset) if dataset else []
 
-    env_vars = [("TASK", task), ("LIMIT", limit), ("MAX_BATCH_SIZE", max_batch_size), ("SPLIT", split)]
+    env_vars = [
+        ("TASK", task), ("LIMIT", limit),
+        ("MAX_BATCH_SIZE", max_batch_size),
+        ("SPLIT", split),
+        ("HF_DATASET_ARGS", hf_dataset_args)
+    ]
     for e in env or []:
         try:
             env_name, val = e.split("=")
@@ -482,7 +479,7 @@ def run(
     print(f"Experiment submitted, see progress at {beaker.experiment.url(experiment)}")
 
     # Can return right away if timeout is 0.
-    if timeout == 0:
+    if TIMEOUT == 0:
         return
 
     job: Optional[Job] = None
@@ -512,14 +509,14 @@ def run(
                     ignore_timestamp=last_timestamp,
                 )
                 time.sleep(2.0)
-                if timeout > 0 and time.monotonic() - start >= timeout:
-                    raise JobTimeoutError(f"Job did not finish within {timeout} seconds")
+                if TIMEOUT > 0 and time.monotonic() - start >= TIMEOUT:
+                    raise JobTimeoutError(f"Job did not finish within {TIMEOUT} seconds")
 
             rich.get_console().rule("End logs")
             print()
         else:
             experiment = beaker.experiment.wait_for(
-                experiment, timeout=timeout if timeout > 0 else None
+                experiment, timeout=TIMEOUT if TIMEOUT > 0 else None
             )[0]
             job = beaker.experiment.tasks(experiment)[0].latest_job  # type: ignore
             assert job is not None
