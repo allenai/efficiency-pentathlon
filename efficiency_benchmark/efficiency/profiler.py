@@ -92,10 +92,8 @@ class Profiler():
         )
         self._max_used_gpu_memory = max(self._max_used_gpu_memory, used_memory)
         self._gpu_utilization += gpu_utilization
-        if isinstance(self._gpu_power, Power):
-            self._gpu_power = self._gpu_power + Power.from_watts(gpu_power)
-        else:
-            self._gpu_power += gpu_power
+
+        self._gpu_power += gpu_power
         self._gpu_reads += 1
 
     def get_idle_power(self) -> float:
@@ -159,7 +157,6 @@ class Profiler():
             total_energy: Energy = Energy.from_power_and_time(power=avg_power, time=time_elapsed)
             self._emission_tracker.final_emissions_data.energy_consumed = total_energy
             self._emission_tracker.final_emissions_data = self._emission_tracker._prepare_emissions_data()
-        self._gpu_power: Power = Power.from_watts(0.0)
         if self._gpu_details_available:
             try:
                 self._gpu_scheduler.stop()

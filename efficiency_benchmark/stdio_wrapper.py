@@ -51,7 +51,8 @@ class StdioWrapper(ABC):
             except:
                 # Irrelavent output in stdout
                 continue
-            yield output_batch
+            for output in output_batch:
+                yield output
             num_batches_yielded += 1
 
     def _set_blocking(self, block_until_read_num_batches: int = None):
@@ -75,7 +76,6 @@ class StdioWrapper(ABC):
             print("Below is the traceback of the subprocess:")
             print("=========================")
             while line != "":
-                print(line)
                 line = self._process.stdout.readline().decode("utf-8").strip()
             raise SubprocessError
         return line
@@ -83,20 +83,23 @@ class StdioWrapper(ABC):
     def predict(self, batches: List[List[Dict[str, Any]]]) -> Iterator[str]:
         num_total_outputs = 0
         start_time = time.monotonic()
+        outputs = []
         try:
             for batch in tqdm.tqdm(batches, desc="Making predictions", miniters=10):
                 num_outputs_yielded = 0
                 self._write_batch(batch)
                 output_batch = self._exhaust_and_yield_stdout(1)
                 for output in output_batch:
-                    yield output
+                    outputs.append(output)
                     num_outputs_yielded += 1
                     num_total_outputs += 1
                 assert num_outputs_yielded == len(batch), "Number of outputs does not match number of inputs."
         except:
             if time.monotonic() - start_time > TIMEOUT:
-                print(f"Job did not finish within {TIMEOUT} seconds.")
-        assert num_total_outputs == sum([len(b) for b in batches]), "Number of outputs does not match number of inputs."
+                # print(f"Job did not finish within {TIMEOUT} seconds.")
+                raise SubprocessError(f"Job did not finish within {TIMEOUT} seconds.")
+        assert num_total_outputs == sum([len(b) for b in batches]), f"Number of outputs {num_total_outputs} does not match number of inputs {sum([len(b) for b in batches])}."
+        return outputs
             # Make sure the batch size does not exceed a user defined maximum.
             # Split into smaller batches if necessary.
             # splitted_batches = list(more_itertools.chunked(input_batch, max_batch_size))
@@ -163,7 +166,8 @@ class StdioWrapper(ABC):
         try:
             self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         except:
-            print('1!!!!!!!!!')
+            print("Failed to start docker process.")
+
     def dummy_predict(self, dummy_inputs: List[Dict[str, Any]]) -> List[str]:
         dummy_outputs = self.predict(batches=[dummy_inputs])
         return list(dummy_outputs)
