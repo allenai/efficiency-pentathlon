@@ -1,5 +1,5 @@
 # For efficiency benchmark
-codecarbon
+codecarbon==2.2.3
 sacrebleu>=1.5.0
 sentencepiece
 pyyaml>=5.4.1

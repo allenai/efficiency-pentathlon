@@ -1,7 +1,7 @@
 # FROM nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04
 ARG DIST
 ARG TARGET
-FROM --platform=linux/amd64 nvidia/cuda:11.5.1-cudnn8-devel-ubuntu20.04
+FROM --platform=linux/amd64 nvidia/cuda:11.5.2-cudnn8-devel-ubuntu20.04
 
 ARG DEBIAN_FRONTEND="noninteractive"
 ENV TZ="America/Los_Angeles"
