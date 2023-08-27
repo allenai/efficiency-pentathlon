@@ -8,7 +8,7 @@ import time
 import tqdm
 
 
-TIMEOUT = 1800
+TIMEOUT = 3600
 
 
 class StdioWrapper(ABC):

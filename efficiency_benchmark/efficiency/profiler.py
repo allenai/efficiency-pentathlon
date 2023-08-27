@@ -23,6 +23,7 @@ class Profiler():
             **kwargs):
         self.gpu_ids = gpu_ids
         self.interval = interval
+        is_submission = True
         self._is_submission = is_submission
         self._start_time: Optional[float] = None
         self._emission_tracker = EmissionsTracker(
@@ -38,7 +39,7 @@ class Profiler():
         self._gpu_utilization: Optional[float] = None
         self._gpu_reads: Optional[int] = None
         self._gpu_power: Optional[float] = None
-        self._idle_power = self.get_idle_power()
+        self._idle_power: float = self.get_idle_power()
 
         if self._gpu_details_available:
             self._gpu_scheduler = PeriodicScheduler(
@@ -120,7 +121,7 @@ class Profiler():
             powers = []
             for r in power_monitor_reads:
                 powers.append(np.array([ float(r[f]) for f in POWER_FIELDS ]).sum())
-            idle_power: Power = Power.from_watts(np.array(powers).mean())
+            idle_power: Power = np.array(powers).mean()
         else:
             idle_power_profiler = EmissionsTracker(
                 measure_power_secs=self.interval,

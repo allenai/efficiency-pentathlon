@@ -15,7 +15,7 @@ from efficiency_benchmark.tasks.efficiency_benchmark import EfficiencyBenchmarkW
 from efficiency_benchmark.tasks.efficiency_benchmark import EfficiencyBenchmarkInstance
 
 EXPECTED_BATCH_SIZE = 128
-NUM_BATCHES = 1000
+NUM_BATCHES = 100
 
 
 class PredictStep():
